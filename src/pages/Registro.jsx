@@ -1,26 +1,28 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { registrarUsuario } from '../services/authService'
+import { useAuth } from '../context/AuthContext'
 
 function Registro() {
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
+  const [dni, setDni] = useState('')
   const [password, setPassword] = useState('')
   const [confirmar, setConfirmar] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  // useNavigate nos permite cambiar de pantalla por código
-  // Por ejemplo: navigate('/horarios') lleva al usuario a esa ruta
   const navigate = useNavigate()
+  const { guardarSesion } = useAuth()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    // Validaciones
     if (!nombre || !email || !password || !confirmar) {
       setError('Completá todos los campos')
       return
     }
+    
 
     if (password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres')
@@ -32,49 +34,47 @@ function Registro() {
       return
     }
 
+    if (!/^\d{7,8}$/.test(dni)) {
+    setError('El DNI debe tener 7 u 8 números')
+    return
+    }
+
     setError('')
     setLoading(true)
 
-    // Por ahora simulamos el registro
-    // Acá después va la llamada al backend
-    console.log('Registrando usuario:', { nombre, email, password })
+    try {
+      const data = await registrarUsuario(nombre, email, password, dni)
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
+      // Después del registro guardamos la sesión directo
+      guardarSesion(data.token, data.usuario)
+      navigate('/horarios')
 
-    setLoading(false)
-
-    // Después del registro exitoso redirigimos al login
-    alert('¡Registro exitoso! Ahora podés iniciar sesión.')
-    navigate('/')
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al registrarse')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ backgroundColor: '#02020eef' }}
+      style={{ backgroundColor: '#778899' }}
     >
       <div
         className="w-full max-w-sm rounded-2xl shadow-lg p-8"
         style={{ backgroundColor: '#f0f7ff' }}
       >
-
-        {/* Título */}
         <div className="text-center mb-8">
-          <h1
-            className="text-3xl font-bold"
-            style={{ color: '#2c4a5a' }}
-          >
-            💪Destribat Training Center
+          <h1 className="text-3xl font-bold" style={{ color: '#2c4a5a' }}>
+            💪 GymApp
           </h1>
           <p className="mt-1 text-sm" style={{ color: '#778899' }}>
             Creá tu cuenta
           </p>
         </div>
 
-        {/* Formulario */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-
-          {/* Nombre */}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium" style={{ color: '#2c4a5a' }}>
               Nombre completo
@@ -88,8 +88,21 @@ function Registro() {
               style={{ borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }}
             />
           </div>
+          
+          <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium" style={{ color: '#2c4a5a' }}>
+          DNI
+          </label>
+      <input
+    type="text"
+    placeholder="12345678"
+    value={dni}
+    onChange={(e) => setDni(e.target.value)}
+    className="rounded-lg px-4 py-2 text-sm outline-none border"
+    style={{ borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }}
+  />
+</div>
 
-          {/* Email */}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium" style={{ color: '#2c4a5a' }}>
               Email
@@ -104,7 +117,6 @@ function Registro() {
             />
           </div>
 
-          {/* Contraseña */}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium" style={{ color: '#2c4a5a' }}>
               Contraseña
@@ -119,7 +131,6 @@ function Registro() {
             />
           </div>
 
-          {/* Confirmar contraseña */}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium" style={{ color: '#2c4a5a' }}>
               Confirmar contraseña
@@ -134,14 +145,12 @@ function Registro() {
             />
           </div>
 
-          {/* Error */}
           {error && (
             <p className="text-sm text-center" style={{ color: '#e05555' }}>
               {error}
             </p>
           )}
 
-          {/* Botón */}
           <button
             type="submit"
             disabled={loading}
@@ -153,10 +162,8 @@ function Registro() {
           >
             {loading ? 'Registrando...' : 'Crear cuenta'}
           </button>
-
         </form>
 
-        {/* Volver al login */}
         <p className="text-center text-sm mt-6" style={{ color: '#778899' }}>
           ¿Ya tenés cuenta?{' '}
           <span
@@ -167,7 +174,6 @@ function Registro() {
             Iniciá sesión
           </span>
         </p>
-
       </div>
     </div>
   )
