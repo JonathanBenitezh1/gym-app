@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { io } from 'socket.io-client'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
@@ -48,11 +49,12 @@ export default function PanelPC() {
   }, [usuario])
 
   // Cargar datos según sección activa
-  useEffect(() => {
-  if (seccion === 'clases')   { cargarClases(); cargarProfesores() }
-  if (seccion === 'horarios') cargarClases()
-  if (seccion === 'usuarios') cargarUsuarios()
-  if (seccion === 'reservas') cargarReservas()
+useEffect(() => {
+  if (seccion === 'dashboard')  { cargarReservas(); cargarClases() }
+  if (seccion === 'clases')     { cargarClases(); cargarProfesores() }
+  if (seccion === 'horarios')   cargarClases()
+  if (seccion === 'usuarios')   cargarUsuarios()
+  if (seccion === 'reservas')   cargarReservas()
 }, [seccion])
 
   const cargarClases   = async () => { try { setClases(await obtenerClases()) } catch(e) { setError('Error al cargar clases') } }
@@ -122,7 +124,33 @@ export default function PanelPC() {
     setError('Error al cargar profesores')
   }
 }
+    const socketRef = useRef(null)
 
+  useEffect(() => {
+  socketRef.current = io('http://localhost:3000')
+
+  socketRef.current.on('nueva_reserva', () => {
+    cargarReservas()
+    cargarClases()
+  })
+
+  socketRef.current.on('pago_confirmado', () => {
+    cargarReservas()
+  })
+
+  socketRef.current.on('reserva_cancelada', () => {
+    cargarReservas()
+    cargarClases()
+  })
+
+  socketRef.current.on('nuevo_pago', () => {
+    cargarReservas()
+  })
+
+  return () => {
+    socketRef.current.disconnect()
+  }
+}, [])
   const inputStyle = {
     borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff'
   }
@@ -154,7 +182,7 @@ export default function PanelPC() {
 
       {/* Tabs de navegación */}
       <div className="flex gap-2 px-6 pt-4">
-        {['clases', 'horarios', 'usuarios', 'reservas'].map(s => (
+        {['dashboard', 'clases', 'horarios', 'usuarios', 'reservas'].map(s => (
           <button
             key={s}
             onClick={() => { setSeccion(s); setError(''); setExito('') }}
@@ -176,6 +204,137 @@ export default function PanelPC() {
       </div>
 
       <div className="px-6 pb-8">
+{/* ─── DASHBOARD TIEMPO REAL ─── */}
+{seccion === 'dashboard' && (
+  <div className="flex flex-col gap-4 mt-4">
+
+    {/* Tarjetas resumen */}
+    <div className="grid grid-cols-2 gap-3">
+      <div className="rounded-2xl p-4 text-center" style={{ backgroundColor: '#f0f7ff' }}>
+        <p className="text-3xl font-bold" style={{ color: '#2c4a5a' }}>
+          {reservas.length}
+        </p>
+        <p className="text-xs mt-1" style={{ color: '#778899' }}>
+          Reservas totales
+        </p>
+      </div>
+      <div className="rounded-2xl p-4 text-center" style={{ backgroundColor: '#f0f7ff' }}>
+        <p className="text-3xl font-bold" style={{ color: '#2c4a5a' }}>
+          {reservas.filter(r => r.estado === 'pagado').length}
+        </p>
+        <p className="text-xs mt-1" style={{ color: '#778899' }}>
+          Pagos confirmados
+        </p>
+      </div>
+      <div className="rounded-2xl p-4 text-center" style={{ backgroundColor: '#f0f7ff' }}>
+        <p className="text-3xl font-bold" style={{ color: '#2c4a5a' }}>
+          {reservas.filter(r => r.estado === 'pendiente').length}
+        </p>
+        <p className="text-xs mt-1" style={{ color: '#778899' }}>
+          Pendientes de pago
+        </p>
+      </div>
+      <div className="rounded-2xl p-4 text-center" style={{ backgroundColor: '#f0f7ff' }}>
+        <p className="text-3xl font-bold" style={{ color: '#2c4a5a' }}>
+          ${reservas
+            .filter(r => r.estado === 'pagado')
+            .reduce((acc, r) => acc + parseFloat(r.total || 0), 0)
+            .toFixed(0)}
+        </p>
+        <p className="text-xs mt-1" style={{ color: '#778899' }}>
+          Total recaudado
+        </p>
+      </div>
+    </div>
+
+    {/* Indicador tiempo real */}
+    <div className="rounded-2xl p-3 flex items-center gap-2"
+      style={{ backgroundColor: '#e8f5e9' }}>
+      <div className="w-2 h-2 rounded-full animate-pulse"
+        style={{ backgroundColor: '#2d8a4e' }}/>
+      <p className="text-xs font-medium" style={{ color: '#2d8a4e' }}>
+        Panel en tiempo real — se actualiza automáticamente
+      </p>
+    </div>
+
+    {/* Últimas reservas */}
+    <div className="rounded-2xl p-5" style={{ backgroundColor: '#f0f7ff' }}>
+      <h2 className="text-sm font-bold mb-3" style={{ color: '#2c4a5a' }}>
+        Últimas reservas
+      </h2>
+      {reservas.length === 0
+        ? <p className="text-sm" style={{ color: '#778899' }}>No hay reservas aún.</p>
+        : reservas.slice(0, 10).map(r => (
+          <div key={r.id}
+            className="flex items-center justify-between py-3"
+            style={{ borderBottom: '1px solid #e0ecf4' }}>
+            <div>
+              <p className="font-medium text-sm" style={{ color: '#2c4a5a' }}>
+                {r.alumno}
+              </p>
+              <p className="text-xs" style={{ color: '#778899' }}>
+                {r.clase} · {r.dia_semana} {r.hora_inicio?.slice(0,5)} · {r.tipo}
+              </p>
+              <p className="text-xs" style={{ color: '#778899' }}>
+                DNI: {r.dni}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="font-bold text-sm" style={{ color: '#2c4a5a' }}>
+                ${parseFloat(r.total || 0).toFixed(0)}
+              </p>
+              <span
+                className="text-xs px-2 py-0.5 rounded-full"
+                style={r.estado === 'pagado'
+                  ? { backgroundColor: '#e8f5e9', color: '#2d8a4e' }
+                  : r.estado === 'cancelado'
+                  ? { backgroundColor: '#fce8e8', color: '#e05555' }
+                  : { backgroundColor: '#fff8e1', color: '#b8860b' }
+                }
+              >
+                {r.estado}
+              </span>
+              {r.estado === 'pendiente' && r.metodo === 'efectivo' && (
+                <button
+                  onClick={() => handleConfirmarPago(r.id)}
+                  className="block text-xs px-2 py-0.5 rounded-lg mt-1"
+                  style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}
+                >
+                  Confirmar
+                </button>
+              )}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+
+    {/* Cupos por clase en tiempo real */}
+    <div className="rounded-2xl p-5" style={{ backgroundColor: '#f0f7ff' }}>
+      <h2 className="text-sm font-bold mb-3" style={{ color: '#2c4a5a' }}>
+        Cupos por clase
+      </h2>
+      {clases.length === 0
+        ? <p className="text-sm" style={{ color: '#778899' }}>No hay clases cargadas.</p>
+        : clases.map(c => (
+          <div key={c.id}
+            className="flex items-center justify-between py-2"
+            style={{ borderBottom: '1px solid #e0ecf4' }}>
+            <div>
+              <p className="font-medium text-sm" style={{ color: '#2c4a5a' }}>{c.nombre}</p>
+              <p className="text-xs capitalize" style={{ color: '#778899' }}>{c.rama}</p>
+            </div>
+            <span className="text-xs px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}>
+              {c.cantidad_horarios} horarios
+            </span>
+          </div>
+        ))
+      }
+    </div>
+
+  </div>
+)}
 
         {/* ─── SECCIÓN CLASES ─── */}
         {seccion === 'clases' && (

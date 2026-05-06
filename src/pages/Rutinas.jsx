@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { obtenerMisRutinas } from '../services/clasesService'
-
+import { obtenerMisRutinas } from '../services/profesorService'
+import NavBar from '../components/NavBar'
 export default function Rutinas() {
   const { usuario, cerrarSesion } = useAuth()
   const navigate = useNavigate()
@@ -180,6 +180,7 @@ export default function Rutinas() {
           </div>
         )}
       </div>
+      <NavBar />
     </div>
   )
 }

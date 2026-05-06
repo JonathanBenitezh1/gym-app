@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { io } from 'socket.io-client'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { obtenerHorarios, crearReserva } from '../services/clasesService'
+import { obtenerHorarios, crearReserva,obtenerHorariosReservados } from '../services/clasesService'
+import NavBar from '../components/NavBar'
 
 const RAMAS = ['todos', 'gimnasio', 'disciplina', 'profesional']
 const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -9,6 +11,7 @@ const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 export default function Horarios() {
   const { usuario, cerrarSesion } = useAuth()
   const navigate = useNavigate()
+  const socketRef = useRef(null)
 
   const [horarios, setHorarios]       = useState([])
   const [seleccion, setSeleccion]     = useState([]) // horarios elegidos
@@ -19,21 +22,55 @@ export default function Horarios() {
   const [error, setError]             = useState('')
   const [exito, setExito]             = useState('')
   const [verResumen, setVerResumen]   = useState(false)
+  const [yaReservados, setYaReservados] = useState([])
+  
 
-  useEffect(() => {
-    if (!usuario) navigate('/')
-    cargarHorarios()
-  }, [])
+useEffect(() => {
+  if (!usuario) navigate('/')
+  cargarHorarios()
+  cargarReservados()
+}, [])
 
-  const cargarHorarios = async () => {
-    try {
-      const data = await obtenerHorarios()
-      setHorarios(data)
-    } catch {
-      setError('Error al cargar los horarios')
-    }
+useEffect(() => {
+  const socket = io('http://localhost:3000')
+
+  socket.on('connect', () => {
+    console.log('Socket conectado en Horarios')
+  })
+
+ socket.on('actualizacion_horarios', () => {
+  console.log('Actualizacion horarios recibida')
+  obtenerHorarios().then(data => setHorarios(data))
+  obtenerHorariosReservados().then(data => setYaReservados(data))
+})
+
+  socket.on('reserva_cancelada', () => {
+    console.log('Reserva cancelada recibida')
+    obtenerHorarios().then(data => setHorarios(data))
+    obtenerHorariosReservados().then(data => setYaReservados(data))
+  })
+
+  return () => {
+    socket.disconnect()
   }
+}, [])
 
+const cargarReservados = async () => {
+  try {
+    const data = await obtenerHorariosReservados()
+    setYaReservados(data)
+  } catch {
+    console.error('Error al cargar horarios reservados')
+  }
+}
+const cargarHorarios = async () => {
+  try {
+    const data = await obtenerHorarios()
+    setHorarios(data)
+  } catch {
+    setError('Error al cargar los horarios')
+  }
+}
   // Filtrar horarios según rama y día
   const horariosFiltrados = horarios.filter(h => {
     const porRama = ramaFiltro === 'todos' || h.rama === ramaFiltro
@@ -50,7 +87,7 @@ export default function Horarios() {
       setSeleccion([...seleccion, horario])
     }
   }
-
+  const estaReservado = (id) => yaReservados.includes(id)
   const estaSeleccionado = (id) => seleccion.some(s => s.id === id)
 
   // Calcular total
@@ -69,32 +106,32 @@ export default function Horarios() {
   }
 
   const handleReservar = async () => {
-    if (seleccion.length === 0) {
-      setError('Seleccioná al menos una clase')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
-    try {
-      const { fecha_inicio, fecha_fin } = calcularFechas()
-      await crearReserva({
-        horarios_ids: seleccion.map(s => s.id),
-        tipo,
-        fecha_inicio,
-        fecha_fin
-      })
-      setExito('¡Reserva creada! Ahora podés proceder al pago.')
-      setSeleccion([])
-      setVerResumen(false)
-      await cargarHorarios()
-    } catch (err) {
-      setError(err.response?.data?.error || 'Error al crear la reserva')
-    } finally {
-      setLoading(false)
-    }
+  if (seleccion.length === 0) {
+    setError('Seleccioná al menos una clase')
+    return
   }
+
+  setLoading(true)
+  setError('')
+
+  try {
+    const { fecha_inicio, fecha_fin } = calcularFechas()
+    await crearReserva({
+      horarios_ids: seleccion.map(s => s.id),
+      tipo,
+      fecha_inicio,
+      fecha_fin
+    })
+    setExito('¡Reserva creada! Ahora podés proceder al pago.')
+    setSeleccion([])
+    await cargarHorarios()
+    await cargarReservados() // ← actualizamos los reservados
+  } catch (err) {
+    setError(err.response?.data?.error || 'Error al crear la reserva')
+  } finally {
+    setLoading(false)
+  }
+}
 
   const inputStyle = { borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }
 
@@ -200,70 +237,90 @@ export default function Horarios() {
             ))}
           </div>
         </div>
-
-        {/* Lista de horarios */}
-        <div className="flex flex-col gap-3">
-          {horariosFiltrados.length === 0
-            ? (
+                {/* Lista de horarios */}
+              <div className="flex flex-col gap-3">
+                {horariosFiltrados.length === 0
+                      ? (
               <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: '#f0f7ff' }}>
                 <p className="text-sm" style={{ color: '#778899' }}>
                   No hay clases disponibles con ese filtro.
                 </p>
               </div>
             )
-            : horariosFiltrados.map(h => (
-              <div
-                key={h.id}
-                onClick={() => h.cupos_disponibles > 0 && toggleSeleccion(h)}
-                className="rounded-2xl p-4 cursor-pointer transition-all"
-                style={{
-                  backgroundColor: estaSeleccionado(h.id) ? '#87CEEB' : '#f0f7ff',
-                  opacity: h.cupos_disponibles === 0 ? 0.5 : 1,
-                  cursor: h.cupos_disponibles === 0 ? 'not-allowed' : 'pointer'
-                }}
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full font-medium capitalize"
-                        style={{
-                          backgroundColor: estaSeleccionado(h.id) ? '#2c4a5a' : '#87CEEB',
-                          color: estaSeleccionado(h.id) ? '#87CEEB' : '#1a3a4a'
-                        }}
-                      >
-                        {h.rama}
-                      </span>
-                      {h.cupos_disponibles === 0 && (
-                        <span className="text-xs px-2 py-0.5 rounded-full"
-                          style={{ backgroundColor: '#fce8e8', color: '#e05555' }}>
-                          Sin cupos
+            : horariosFiltrados.map(h => {
+              const reservado    = estaReservado(h.id)
+              const seleccionado = estaSeleccionado(h.id)
+              const sinCupos     = h.cupos_disponibles === 0
+
+              return (
+                <div
+                  key={h.id}
+                  onClick={() => !reservado && !sinCupos && toggleSeleccion(h)}
+                  className="rounded-2xl p-4 transition-all"
+                  style={{
+                    backgroundColor: reservado
+                      ? '#e8f5e9'
+                      : seleccionado
+                      ? '#87CEEB'
+                      : '#f0f7ff',
+                    opacity: sinCupos ? 0.5 : 1,
+                    cursor: reservado || sinCupos ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-full font-medium capitalize"
+                          style={{
+                            backgroundColor: seleccionado ? '#2c4a5a' : '#87CEEB',
+                            color: seleccionado ? '#87CEEB' : '#1a3a4a'
+                          }}
+                        >
+                          {h.rama}
                         </span>
+                        {sinCupos && (
+                          <span className="text-xs px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: '#fce8e8', color: '#e05555' }}>
+                            Sin cupos
+                          </span>
+                        )}
+                        {reservado && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                            style={{ backgroundColor: '#2d8a4e', color: '#ffffff' }}>
+                            ✓ Ya reservada
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-semibold text-sm"
+                        style={{ color: seleccionado ? '#1a3a4a' : '#2c4a5a' }}>
+                        {h.clase}
+                      </p>
+                      <p className="text-xs mt-0.5"
+                        style={{ color: seleccionado ? '#2c4a5a' : '#778899' }}>
+                        {h.dia_semana} · {h.hora_inicio.slice(0,5)} - {h.hora_fin.slice(0,5)}
+                      </p>
+                      {h.profesor && (
+                        <p className="text-xs"
+                          style={{ color: seleccionado ? '#2c4a5a' : '#778899' }}>
+                          Prof. {h.profesor}
+                        </p>
                       )}
                     </div>
-                    <p className="font-semibold text-sm" style={{ color: estaSeleccionado(h.id) ? '#1a3a4a' : '#2c4a5a' }}>
-                      {h.clase}
-                    </p>
-                    <p className="text-xs mt-0.5" style={{ color: estaSeleccionado(h.id) ? '#2c4a5a' : '#778899' }}>
-                      {h.dia_semana} · {h.hora_inicio.slice(0,5)} - {h.hora_fin.slice(0,5)}
-                    </p>
-                    {h.profesor && (
-                      <p className="text-xs" style={{ color: estaSeleccionado(h.id) ? '#2c4a5a' : '#778899' }}>
-                        Prof. {h.profesor}
+                    <div className="text-right">
+                      <p className="font-bold text-sm"
+                        style={{ color: seleccionado ? '#1a3a4a' : '#2c4a5a' }}>
+                        ${parseFloat(h.precio).toFixed(2)}
                       </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-sm" style={{ color: estaSeleccionado(h.id) ? '#1a3a4a' : '#2c4a5a' }}>
-                      ${parseFloat(h.precio).toFixed(2)}
-                    </p>
-                    <p className="text-xs" style={{ color: estaSeleccionado(h.id) ? '#2c4a5a' : '#778899' }}>
-                      {h.cupos_disponibles}/{h.cupos_totales} cupos
-                    </p>
+                      <p className="text-xs"
+                        style={{ color: seleccionado ? '#2c4a5a' : '#778899' }}>
+                        {h.cupos_disponibles}/{h.cupos_totales} cupos
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              )
+            })
           }
         </div>
       </div>
@@ -271,8 +328,8 @@ export default function Horarios() {
       {/* Barra inferior de resumen flotante */}
       {seleccion.length > 0 && (
         <div
-          className="fixed bottom-0 left-0 right-0 px-4 py-4"
-          style={{ backgroundColor: '#2c4a5a' }}
+          className="fixed left-0 right-0 px-4 py-4"
+          style={{ backgroundColor: '#2c4a5a', bottom: '64px' }}
         >
           <div className="flex items-center justify-between mb-2">
             <div>
@@ -303,7 +360,7 @@ export default function Horarios() {
           </div>
         </div>
       )}
-
+   <NavBar />
     </div>
   )
 }

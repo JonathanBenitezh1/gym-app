@@ -28,28 +28,28 @@ export default function Pagar() {
     return null
   }
 
-  const handlePagoEfectivo = async () => {
-    setLoading(true)
-    setError('')
+const handlePagoEfectivo = async () => {
+  setLoading(true)
+  setError('')
 
-    try {
-      // Registramos el pago en efectivo como pendiente
-      // El admin lo confirma desde su panel cuando recibe el dinero
-      await axios.post(`${API}/pagos`, {
-        reserva_id: reserva.id,
-        monto: reserva.total,
-        metodo: 'efectivo'
-      }, config())
+  try {
+    await axios.post(`${API}/pagos`, {
+      reserva_id: reserva.id,
+      monto: reserva.total,
+      metodo: 'efectivo'
+    }, config())
 
-      setExito('¡Pago registrado! Acercate al gimnasio para abonar en efectivo. El admin confirmará tu pago.')
-      setTimeout(() => navigate('/reservas'), 3000)
+    // Redirigimos directo a reservas con mensaje
+    navigate('/reservas', {
+      state: { mensaje: '✅ Recordá abonar antes de iniciar tu entrenamiento.' }
+    })
 
-    } catch (err) {
-      setError(err.response?.data?.error || 'Error al registrar el pago')
-    } finally {
-      setLoading(false)
-    }
+  } catch (err) {
+    setError(err.response?.data?.error || 'Error al registrar el pago')
+  } finally {
+    setLoading(false)
   }
+}
 
   const handlePagoMercadoPago = async () => {
     setLoading(true)

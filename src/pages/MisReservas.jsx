@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { io } from 'socket.io-client'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { obtenerMisReservas, cancelarReserva } from '../services/clasesService'
+import NavBar from '../components/NavBar'
+import { useLocation } from 'react-router-dom'
 
 export default function MisReservas() {
   const { usuario, cerrarSesion } = useAuth()
@@ -11,11 +14,27 @@ export default function MisReservas() {
   const [loading, setLoading]   = useState(true)
   const [error, setError]       = useState('')
   const [exito, setExito]       = useState('')
+  const location = useLocation()
+  const mensajeEstado = location.state?.mensaje
+  const socketRef = useRef(null)
 
   useEffect(() => {
     if (!usuario) navigate('/')
     cargarReservas()
   }, [])
+
+  useEffect(() => {
+  socketRef.current = io('http://localhost:3000')
+
+  // Cuando el admin confirma un pago actualizamos las reservas
+  socketRef.current.on('pago_confirmado', () => {
+    cargarReservas()
+  })
+
+  return () => {
+    socketRef.current.disconnect()
+  }
+}, [])
 
   const cargarReservas = async () => {
     try {
@@ -92,24 +111,34 @@ export default function MisReservas() {
       )}
 
       {/* Botón cancelar solo si está pendiente */}
-      {r.estado === 'pendiente' && (
-        <div className="flex gap-2 mt-2">
-          <button
-            onClick={() => navigate('/pagar', { state: { reserva: r } })}
-            className="flex-1 py-2 rounded-lg text-xs font-semibold"
-            style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}
-          >
-            Pagar ahora
-          </button>
-          <button
-            onClick={() => handleCancelar(r.id)}
-            className="px-4 py-2 rounded-lg text-xs"
-            style={{ backgroundColor: '#fce8e8', color: '#e05555' }}
-          >
-            Cancelar
-          </button>
-        </div>
-      )}
+ {r.estado === 'pendiente' && (
+  <div className="flex flex-col gap-2 mt-2">
+    {r.metodo === 'efectivo' ? (
+      // Si ya eligió efectivo mostramos el cartel en lugar del botón
+      <div className="w-full py-2 px-3 rounded-lg text-xs font-medium text-center"
+        style={{ backgroundColor: '#fff8e1', color: '#b8860b' }}>
+        💵 Recordá abonar antes de iniciar tu entrenamiento
+      </div>
+    ) : (
+      // Si todavía no pagó mostramos el botón
+      <button
+        onClick={() => navigate('/pagar', { state: { reserva: r } })}
+        className="flex-1 py-2 rounded-lg text-xs font-semibold"
+        style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}
+      >
+        Pagar ahora
+      </button>
+    )}
+    <button
+      onClick={() => handleCancelar(r.id)}
+      className="px-4 py-2 rounded-lg text-xs"
+      style={{ backgroundColor: '#fce8e8', color: '#e05555' }}
+    >
+      Cancelar
+    </button>
+  </div>
+)}
+      <NavBar />
     </div>
   )
 
@@ -143,7 +172,14 @@ export default function MisReservas() {
         {/* Mensajes */}
         {error && <p className="text-sm mb-3 text-center" style={{ color: '#e05555' }}>{error}</p>}
         {exito && <p className="text-sm mb-3 text-center" style={{ color: '#2d8a4e' }}>{exito}</p>}
-
+        {mensajeEstado && (
+          <div className="rounded-2xl p-4 mb-3"
+            style={{ backgroundColor: '#fff8e1' }}>
+            <p className="text-sm font-medium text-center" style={{ color: '#b8860b' }}>
+              {mensajeEstado}
+            </p>
+          </div>
+        )}
         {loading ? (
           <p className="text-center text-sm mt-8" style={{ color: '#f0f7ff' }}>
             Cargando reservas...
@@ -198,6 +234,8 @@ export default function MisReservas() {
           </>
         )}
       </div>
+      <NavBar />
     </div>
   )
+  
 }

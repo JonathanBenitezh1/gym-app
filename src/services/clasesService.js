@@ -27,3 +27,7 @@ export const cancelarReserva = async (id) => {
   const res = await axios.put(`${API}/reservas/${id}/cancelar`, {}, config())
   return res.data
 }
+export const obtenerHorariosReservados = async () => {
+  const res = await axios.get(`${API}/reservas/reservados`, config())
+  return res.data
+}

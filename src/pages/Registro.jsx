@@ -7,6 +7,7 @@ function Registro() {
   const [nombre, setNombre] = useState('')
   const [email, setEmail] = useState('')
   const [dni, setDni] = useState('')
+  const [telefono, setTelefono] = useState('')
   const [password, setPassword] = useState('')
   const [confirmar, setConfirmar] = useState('')
   const [error, setError] = useState('')
@@ -33,11 +34,17 @@ function Registro() {
       setError('Las contraseñas no coinciden')
       return
     }
+    
+    if (!/^\d{10,15}$/.test(telefono)) {
+  setError('El teléfono debe tener entre 10 y 15 números')
+  return
+}
 
     if (!/^\d{7,8}$/.test(dni)) {
     setError('El DNI debe tener 7 u 8 números')
     return
     }
+
 
     setError('')
     setLoading(true)
@@ -98,6 +105,20 @@ function Registro() {
     placeholder="12345678"
     value={dni}
     onChange={(e) => setDni(e.target.value)}
+    className="rounded-lg px-4 py-2 text-sm outline-none border"
+    style={{ borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }}
+  />
+</div>
+
+<div className="flex flex-col gap-1">
+  <label className="text-sm font-medium" style={{ color: '#2c4a5a' }}>
+    Teléfono
+  </label>
+  <input
+    type="tel"
+    placeholder="Ej: 3512345678"
+    value={telefono}
+    onChange={(e) => setTelefono(e.target.value)}
     className="rounded-lg px-4 py-2 text-sm outline-none border"
     style={{ borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }}
   />
