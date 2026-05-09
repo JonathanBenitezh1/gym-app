@@ -50,7 +50,7 @@ function Registro() {
     setLoading(true)
 
     try {
-      const data = await registrarUsuario(nombre, email, password, dni)
+      const data = await registrarUsuario(nombre, email, password, dni,telefono)
 
       // Después del registro guardamos la sesión directo
       guardarSesion(data.token, data.usuario)
