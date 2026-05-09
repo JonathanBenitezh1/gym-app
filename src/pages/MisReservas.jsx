@@ -25,7 +25,7 @@ export default function MisReservas() {
   }, [])
 
 useEffect(() => {
-  const socket = io(import.meta.env.VITE_SOCKET_URL)
+  socketRef.current = io(import.meta.env.VITE_SOCKET_URL)
 
   socketRef.current.on('pago_confirmado', () => {
     cargarReservas()
@@ -40,7 +40,7 @@ useEffect(() => {
   })
 
   return () => {
-    socketRef.current.disconnect()
+    if (socketRef.current) socketRef.current.disconnect()
   }
 }, [])
 
