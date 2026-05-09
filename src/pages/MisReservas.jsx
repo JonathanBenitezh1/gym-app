@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { obtenerMisReservas, cancelarReserva } from '../services/clasesService'
 import NavBar from '../components/NavBar'
 import { useLocation } from 'react-router-dom'
+import logoDtc from './img/logo_png.png'
 
 export default function MisReservas() {
   const { usuario, cerrarSesion } = useAuth()
@@ -23,11 +24,18 @@ export default function MisReservas() {
     cargarReservas()
   }, [])
 
-  useEffect(() => {
-  socketRef.current = io('http://localhost:3000')
+useEffect(() => {
+  const socket = io(import.meta.env.VITE_SOCKET_URL)
 
-  // Cuando el admin confirma un pago actualizamos las reservas
   socketRef.current.on('pago_confirmado', () => {
+    cargarReservas()
+  })
+
+  socketRef.current.on('reserva_cancelada', () => {
+    cargarReservas()
+  })
+
+  socketRef.current.on('actualizacion_horarios', () => {
     cargarReservas()
   })
 
@@ -111,16 +119,23 @@ export default function MisReservas() {
       )}
 
       {/* Botón cancelar solo si está pendiente */}
- {r.estado === 'pendiente' && (
+{r.estado === 'pendiente' && (
   <div className="flex flex-col gap-2 mt-2">
-    {r.metodo === 'efectivo' ? (
-      // Si ya eligió efectivo mostramos el cartel en lugar del botón
-      <div className="w-full py-2 px-3 rounded-lg text-xs font-medium text-center"
-        style={{ backgroundColor: '#fff8e1', color: '#b8860b' }}>
-        💵 Recordá abonar antes de iniciar tu entrenamiento
-      </div>
+    {r.metodo ? (
+      // Ya tiene método registrado → solo mostrar cartel o mensaje
+      r.metodo === 'efectivo' ? (
+        <div className="w-full py-2 px-3 rounded-lg text-xs font-medium text-center"
+          style={{ backgroundColor: '#fff8e1', color: '#b8860b' }}>
+          💵 Recordá abonar antes de iniciar tu entrenamiento
+        </div>
+      ) : (
+        <div className="w-full py-2 px-3 rounded-lg text-xs font-medium text-center"
+          style={{ backgroundColor: '#e8f5e9', color: '#2d8a4e' }}>
+          ✅ Pago registrado por {r.metodo}
+        </div>
+      )
     ) : (
-      // Si todavía no pagó mostramos el botón
+      // Sin método → mostrar botón pagar
       <button
         onClick={() => navigate('/pagar', { state: { reserva: r } })}
         className="flex-1 py-2 rounded-lg text-xs font-semibold"
@@ -148,7 +163,7 @@ export default function MisReservas() {
       {/* Navbar */}
       <div className="flex items-center justify-between px-6 py-4"
         style={{ backgroundColor: '#25272e' }}>
-        <h1 className="text-lg font-bold text-white">💪 Mis Reservas</h1>
+        <img src={logoDtc} alt="Logo" className="h-8 w-auto" />
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/horarios')}

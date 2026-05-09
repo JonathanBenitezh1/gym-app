@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { obtenerMisRutinas } from '../services/profesorService'
 import NavBar from '../components/NavBar'
+import logoDtc from './img/logo_png.png'
 export default function Rutinas() {
   const { usuario, cerrarSesion } = useAuth()
   const navigate = useNavigate()
@@ -47,7 +48,7 @@ export default function Rutinas() {
       {/* Navbar */}
       <div className="flex items-center justify-between px-6 py-4"
         style={{ backgroundColor: '#25272e' }}>
-        <h1 className="text-lg font-bold text-white">💪 Mis Rutinas</h1>
+        <img src={logoDtc} alt="Logo" className="h-8 w-auto" />
         <div className="flex items-center gap-2">
           <button onClick={() => navigate('/horarios')}
             className="text-xs px-3 py-1 rounded-lg"

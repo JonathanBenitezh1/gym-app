@@ -5,6 +5,7 @@ import { obtenerPerfil, editarPerfil, cambiarPassword } from '../services/perfil
 import { obtenerMisReservas } from '../services/clasesService'
 import { obtenerMisRutinas } from '../services/profesorService'
 import NavBar from '../components/NavBar'
+import { io } from 'socket.io-client'
 
 export default function Perfil() {
   const { usuario, guardarSesion, cerrarSesion } = useAuth()
@@ -336,9 +337,9 @@ export default function Perfil() {
                         </span>
                       </div>
                     </div>
-                    {r.estado === 'pendiente' && (
+                    {r.estado === 'pendiente' && !r.metodo && (
                       <button
-                        onClick={() => navigate('/pagar', { state: { reserva: r } })}
+                            onClick={() => navigate('/pagar', { state: { reserva: r } })}
                         className="mt-2 w-full py-1.5 rounded-lg text-xs font-semibold"
                         style={{ backgroundColor: '#348941', color: '#dee5e8' }}
                       >

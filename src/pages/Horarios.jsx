@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { obtenerHorarios, crearReserva,obtenerHorariosReservados } from '../services/clasesService'
 import NavBar from '../components/NavBar'
+import logoDtc from './img/logo_png.png'
 
 const RAMAS = ['todos', 'Gimnasio', 'Disciplina', 'Profesional']
 const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -32,7 +33,7 @@ useEffect(() => {
 }, [])
 
 useEffect(() => {
-  const socket = io('http://localhost:3000')
+  const socket = io(import.meta.env.VITE_SOCKET_URL)
 
   socket.on('connect', () => {
     console.log('Socket conectado en Horarios')
@@ -141,7 +142,7 @@ const cargarHorarios = async () => {
       {/* Navbar */}
       <div className="flex items-center justify-between px-6 py-4"
         style={{ backgroundColor: '#25272e' }}>
-        <h1 className="text-lg font-bold text-white">💪 GymApp</h1>
+        <img src={logoDtc} alt="Logo" className="h-8 w-auto" />
         <div className="flex items-center gap-3">
           <span className="text-sm" style={{ color: '#e0e9ec' }}>
             {usuario?.nombre}

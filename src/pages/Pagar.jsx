@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import axios from 'axios'
 
-const API = 'http://localhost:3000/api'
+const API = import.meta.env.VITE_API_URL + '/api'
 
 const config = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }

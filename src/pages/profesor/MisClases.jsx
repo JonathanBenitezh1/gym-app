@@ -5,9 +5,9 @@ import {
   obtenerMisHorarios, modificarHorario,
   buscarAlumnoPorDni, obtenerRutinaDeAlumno, guardarRutina
 } from '../../services/profesorService'
-
+import { io } from 'socket.io-client'
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-
+const socket = io(import.meta.env.VITE_SOCKET_URL)
 const sesionVacia = () => ({
   nombre: '', orden: 1,
   ejercicios: [{ nombre: '', series: '', repeticiones: '', orden: 1 }]

@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // URL base del backend — en desarrollo apunta a localhost
-const API = 'http://localhost:3000/api'
+const API = import.meta.env.VITE_API_URL + '/api'
 
 export const registrarUsuario = async (nombre, email, password, dni, telefono) => {
   const response = await axios.post(`${API}/auth/registro`, {

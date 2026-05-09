@@ -9,6 +9,7 @@ import {
   obtenerReservas, confirmarPagoEfectivo,
   obtenerProfesores
 } from '../../services/adminService'
+import logoDtc from '../../pages/img/logo_png.png'
 
 const RAMAS = ['gimnasio', 'disciplina', 'profesional']
 const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -50,13 +51,19 @@ export default function PanelPC() {
   }, [seccion])
 
   useEffect(() => {
-    socketRef.current = io('http://localhost:3000')
-    socketRef.current.on('nueva_reserva',    () => { cargarReservas(); cargarClases() })
-    socketRef.current.on('pago_confirmado',  () => { cargarReservas() })
-    socketRef.current.on('reserva_cancelada',() => { cargarReservas(); cargarClases() })
-    socketRef.current.on('nuevo_pago',       () => { cargarReservas() })
-    return () => { socketRef.current.disconnect() }
-  }, [])
+  if (!usuario || usuario.rol !== 'admin') return
+
+  socketRef.current = io(import.meta.env.VITE_SOCKET_URL)
+  
+  socketRef.current.on('nueva_reserva',     () => { cargarReservas(); cargarClases() })
+  socketRef.current.on('pago_confirmado',   () => { cargarReservas() })
+  socketRef.current.on('reserva_cancelada', () => { cargarReservas(); cargarClases() })
+  socketRef.current.on('nuevo_pago',        () => { cargarReservas() })
+
+  return () => {
+    if (socketRef.current) socketRef.current.disconnect()
+  }
+}, [usuario])
 
   const cargarClases     = async () => { try { setClases(await obtenerClases()) }     catch { setError('Error al cargar clases') } }
   const cargarUsuarios   = async () => { try { setUsuarios(await obtenerUsuarios()) } catch { setError('Error al cargar usuarios') } }
@@ -127,7 +134,10 @@ export default function PanelPC() {
       {/* Navbar */}
       <div className="flex items-center justify-between px-6 py-4"
         style={{ backgroundColor: '#2b3134' }}>
-        <h1 className="text-xl font-bold text-white">💪 GymApp — Panel Admin</h1>
+        <div className="flex items-center gap-2">
+  <img src={logoDtc} alt="Logo" className="h-8 w-auto" />
+  <span className="text-lg font-bold text-white">Panel Admin</span>
+</div>
         <div className="flex items-center gap-4">
           <span className="text-sm" style={{ color: '#cad3d7' }}>{usuario?.nombre}</span>
           <button onClick={() => { cerrarSesion(); navigate('/') }}
@@ -197,7 +207,7 @@ export default function PanelPC() {
               <h2 className="text-sm font-bold mb-3" style={{ color: '#2c4a5a' }}>Últimas reservas</h2>
               {reservas.length === 0
                 ? <p className="text-sm" style={{ color: '#778899' }}>No hay reservas aún.</p>
-                : reservas.slice(0, 10).map(r => (
+                : reservas.filter(r => r.estado !== 'cancelado').slice(0, 10).map(r => (
                   <div key={`dash-res-${r.id}`}
                     className="flex items-center justify-between py-3"
                     style={{ borderBottom: '1px solid #e0ecf4' }}>
@@ -461,8 +471,8 @@ export default function PanelPC() {
             <h2 className="text-lg font-bold mb-4" style={{ color: '#2c4a5a' }}>Reservas y pagos</h2>
             {reservas.length === 0
               ? <p className="text-sm" style={{ color: '#778899' }}>No hay reservas aún.</p>
-              : reservas.map(r => (
-                <div key={`reserva-${r.id}`}
+              : reservas.filter(r => r.estado !== 'cancelado').map(r => (
+                  <div key={`reserva-${r.id}`}
                   className="flex items-center justify-between border-b py-3"
                   style={{ borderColor: '#87CEEB' }}>
                   <div>
