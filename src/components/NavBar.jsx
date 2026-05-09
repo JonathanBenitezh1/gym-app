@@ -23,14 +23,14 @@ export default function NavBar() {
         target="_blank"
         rel="noopener noreferrer"
         className="fixed right-4 flex items-center justify-center w-12 h-12 rounded-full shadow-lg"
-        style={{ backgroundColor: '#25D366', bottom: '80px' }}
+        style={{ backgroundColor: '#227942', bottom: '80px' }}
       >
         <span className="text-2xl">📱</span>
       </a>
 
       <div
         className="fixed bottom-0 left-0 right-0 flex items-center justify-around px-2 py-2"
-        style={{ backgroundColor: '#2c4a5a', borderTop: '1px solid #3d6070' }}
+        style={{ backgroundColor: '#25272e', borderTop: '1px solid #131516' }}
       >
         {botones.map(b => (
           <button

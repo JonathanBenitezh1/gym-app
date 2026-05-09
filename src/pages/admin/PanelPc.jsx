@@ -119,17 +119,17 @@ export default function PanelPC() {
   }
 
   const inputStyle  = { borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }
-  const btnPrimario = { backgroundColor: '#87CEEB', color: '#1a3a4a' }
+  const btnPrimario = { backgroundColor: '#465c63', color: '#dadfe1' }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#778899' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#202123'}}>
 
       {/* Navbar */}
       <div className="flex items-center justify-between px-6 py-4"
-        style={{ backgroundColor: '#2c4a5a' }}>
+        style={{ backgroundColor: '#2b3134' }}>
         <h1 className="text-xl font-bold text-white">💪 GymApp — Panel Admin</h1>
         <div className="flex items-center gap-4">
-          <span className="text-sm" style={{ color: '#87CEEB' }}>{usuario?.nombre}</span>
+          <span className="text-sm" style={{ color: '#cad3d7' }}>{usuario?.nombre}</span>
           <button onClick={() => { cerrarSesion(); navigate('/') }}
             className="text-sm px-3 py-1 rounded-lg"
             style={btnPrimario}>

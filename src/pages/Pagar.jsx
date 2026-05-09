@@ -74,7 +74,7 @@ const handlePagoEfectivo = async () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#778899' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#202123' }}>
 
       {/* Navbar */}
       <div className="flex items-center justify-between px-6 py-4"
@@ -138,7 +138,7 @@ const handlePagoEfectivo = async () => {
             onClick={() => setMetodo('mercadopago')}
             className="flex items-center gap-3 p-4 rounded-xl mb-3 cursor-pointer border-2 transition-all"
             style={{
-              borderColor: metodo === 'mercadopago' ? '#87CEEB' : 'transparent',
+              borderColor: metodo === 'mercadopago' ? '#161819' : 'transparent',
               backgroundColor: metodo === 'mercadopago' ? '#e8f4fb' : '#f8fbff'
             }}
           >
@@ -173,7 +173,7 @@ const handlePagoEfectivo = async () => {
             onClick={() => setMetodo('efectivo')}
             className="flex items-center gap-3 p-4 rounded-xl cursor-pointer border-2 transition-all"
             style={{
-              borderColor: metodo === 'efectivo' ? '#87CEEB' : 'transparent',
+              borderColor: metodo === 'efectivo' ? '#161819' : 'transparent',
               backgroundColor: metodo === 'efectivo' ? '#e8f4fb' : '#f8fbff'
             }}
           >
@@ -221,8 +221,8 @@ const handlePagoEfectivo = async () => {
             disabled={loading}
             className="w-full py-3 rounded-2xl font-bold text-sm"
             style={{
-              backgroundColor: loading ? '#b0d8ed' : '#87CEEB',
-              color: '#1a3a4a'
+              backgroundColor: loading ? '#b0d8ed' : '#3d6438',
+              color: '#cfdbe1'
             }}
           >
             {loading

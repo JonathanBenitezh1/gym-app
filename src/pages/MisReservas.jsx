@@ -73,25 +73,25 @@ export default function MisReservas() {
   const CardReserva = ({ r }) => (
     <div
       className="rounded-2xl p-4 mb-3"
-      style={{ backgroundColor: '#f0f7ff' }}
+      style={{ backgroundColor: '#3e4045' }}
     >
       <div className="flex items-start justify-between mb-2">
         <div>
-          <p className="font-semibold text-sm" style={{ color: '#2c4a5a' }}>
+          <p className="font-semibold text-sm" style={{ color: '#f2f5f6' }}>
             {r.clase}
           </p>
-          <p className="text-xs mt-0.5" style={{ color: '#778899' }}>
+          <p className="text-xs mt-0.5" style={{ color: '#f2f5f6' }}>
             {r.dia_semana} · {r.hora_inicio?.slice(0,5)} - {r.hora_fin?.slice(0,5)}
           </p>
-          <p className="text-xs" style={{ color: '#778899' }}>
+          <p className="text-xs" style={{ color: '#f2f5f6' }}>
             {r.rama} · {r.tipo}
           </p>
-          <p className="text-xs" style={{ color: '#778899' }}>
+          <p className="text-xs" style={{ color: '#f2f5f6' }}>
             {r.fecha_inicio} → {r.fecha_fin}
           </p>
         </div>
         <div className="text-right">
-          <p className="font-bold text-sm" style={{ color: '#2c4a5a' }}>
+          <p className="font-bold text-sm" style={{ color: '#1e863f' }}>
             ${parseFloat(r.total).toFixed(2)}
           </p>
           <span
@@ -143,24 +143,24 @@ export default function MisReservas() {
   )
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#778899' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#202123' }}>
 
       {/* Navbar */}
       <div className="flex items-center justify-between px-6 py-4"
-        style={{ backgroundColor: '#2c4a5a' }}>
-        <h1 className="text-lg font-bold text-white">💪 Mis reservas</h1>
+        style={{ backgroundColor: '#25272e' }}>
+        <h1 className="text-lg font-bold text-white">💪 Mis Reservas</h1>
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/horarios')}
             className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}
+            style={{  backgroundColor: '#144a4e', color: '#d6dde0' }}
           >
             Ver clases
           </button>
           <button
             onClick={() => { cerrarSesion(); navigate('/') }}
             className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#f0f7ff', color: '#778899' }}
+            style={{ backgroundColor: '#742b17', color: '#dce3eb' }}
           >
             Salir
           </button>
@@ -185,8 +185,8 @@ export default function MisReservas() {
             Cargando reservas...
           </p>
         ) : reservas.length === 0 ? (
-          <div className="rounded-2xl p-8 text-center mt-4" style={{ backgroundColor: '#f0f7ff' }}>
-            <p className="text-sm font-medium mb-1" style={{ color: '#2c4a5a' }}>
+          <div className="rounded-2xl p-8 text-center mt-4" style={{ backgroundColor: '#2f373f' }}>
+            <p className="text-sm font-medium mb-1" style={{ color: '#ccdae1' }}>
               No tenés reservas todavía
             </p>
             <p className="text-xs mb-4" style={{ color: '#778899' }}>
@@ -195,7 +195,7 @@ export default function MisReservas() {
             <button
               onClick={() => navigate('/horarios')}
               className="px-6 py-2 rounded-lg text-sm font-semibold"
-              style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}
+              style={{ backgroundColor: '#144a4e', color: '#d6dde0' }}
             >
               Ver clases
             </button>

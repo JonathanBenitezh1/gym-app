@@ -42,26 +42,26 @@ export default function Rutinas() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#778899' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#202123' }}>
 
       {/* Navbar */}
       <div className="flex items-center justify-between px-6 py-4"
-        style={{ backgroundColor: '#2c4a5a' }}>
-        <h1 className="text-lg font-bold text-white">💪 Mis rutinas</h1>
+        style={{ backgroundColor: '#25272e' }}>
+        <h1 className="text-lg font-bold text-white">💪 Mis Rutinas</h1>
         <div className="flex items-center gap-2">
           <button onClick={() => navigate('/horarios')}
             className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}>
+            style={{ backgroundColor: '#144a4e', color: '#d6dde0' }}>
             Clases
           </button>
           <button onClick={() => navigate('/reservas')}
             className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}>
+            style={{ backgroundColor: '#144a4e', color: '#d6dde0' }}>
             Reservas
           </button>
           <button onClick={() => { cerrarSesion(); navigate('/') }}
             className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#f0f7ff', color: '#778899' }}>
+            style={{ backgroundColor: '#642828', color: '#eff1f4' }}>
             Salir
           </button>
         </div>
@@ -75,12 +75,12 @@ export default function Rutinas() {
           <p className="text-center text-sm mt-8" style={{ color: '#f0f7ff' }}>Cargando rutinas...</p>
 
         ) : rutinas.length === 0 ? (
-          <div className="rounded-2xl p-8 text-center mt-4" style={{ backgroundColor: '#f0f7ff' }}>
+          <div className="rounded-2xl p-8 text-center mt-4" style={{ backgroundColor: '#2f373f' }}>
             <p className="text-2xl mb-3">📋</p>
-            <p className="font-medium text-sm mb-1" style={{ color: '#2c4a5a' }}>
+            <p className="font-medium text-sm mb-1" style={{ color: '#ccdae1' }}>
               Todavía no tenés rutinas asignadas
             </p>
-            <p className="text-xs" style={{ color: '#778899' }}>
+            <p className="text-xs" style={{ color: '#328723' }}>
               Tu profesor te va a cargar una rutina personalizada
             </p>
           </div>

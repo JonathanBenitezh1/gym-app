@@ -152,7 +152,7 @@ export default function MisClases() {
   const inputStyle = { borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#778899' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#202123' }}>
 
       {/* Navbar */}
       <div className="flex items-center justify-between px-6 py-4"

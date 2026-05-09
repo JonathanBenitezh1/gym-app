@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { obtenerHorarios, crearReserva,obtenerHorariosReservados } from '../services/clasesService'
 import NavBar from '../components/NavBar'
 
-const RAMAS = ['todos', 'gimnasio', 'disciplina', 'profesional']
+const RAMAS = ['todos', 'Gimnasio', 'Disciplina', 'Profesional']
 const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 export default function Horarios() {
@@ -136,27 +136,27 @@ const cargarHorarios = async () => {
   const inputStyle = { borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }
 
   return (
-    <div className="min-h-screen pb-32" style={{ backgroundColor: '#778899' }}>
+    <div className="min-h-screen pb-32" style={{ backgroundColor: '#202123' }}>
 
       {/* Navbar */}
       <div className="flex items-center justify-between px-6 py-4"
-        style={{ backgroundColor: '#2c4a5a' }}>
+        style={{ backgroundColor: '#25272e' }}>
         <h1 className="text-lg font-bold text-white">💪 GymApp</h1>
         <div className="flex items-center gap-3">
-          <span className="text-sm" style={{ color: '#87CEEB' }}>
+          <span className="text-sm" style={{ color: '#e0e9ec' }}>
             {usuario?.nombre}
           </span>
           <button
             onClick={() => navigate('/reservas')}
             className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}
+            style={{ backgroundColor: '#144a4e', color: '#d6dde0' }}
           >
-            Mis reservas
+            Mis Reservas
           </button>
           <button
             onClick={() => { cerrarSesion(); navigate('/') }}
             className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#f0f7ff', color: '#778899' }}
+            style={{ backgroundColor: '#642828', color: '#eff1f4' }}
           >
             Salir
           </button>
@@ -170,8 +170,8 @@ const cargarHorarios = async () => {
         {exito && <p className="text-sm mb-3 text-center" style={{ color: '#2d8a4e' }}>{exito}</p>}
 
         {/* Tipo de reserva */}
-        <div className="rounded-2xl p-4 mb-4" style={{ backgroundColor: '#f0f7ff' }}>
-          <p className="text-sm font-medium mb-2" style={{ color: '#2c4a5a' }}>
+        <div className="rounded-2xl p-4 mb-4" style={{ backgroundColor: '#2f373f' }}>
+          <p className="text-sm font-medium mb-2" style={{ color: '#e6eaed' }}>
             Tipo de reserva
           </p>
           <div className="flex gap-2">
@@ -181,8 +181,8 @@ const cargarHorarios = async () => {
                 onClick={() => setTipo(t)}
                 className="flex-1 py-2 rounded-lg text-sm font-medium capitalize"
                 style={tipo === t
-                  ? { backgroundColor: '#87CEEB', color: '#1a3a4a' }
-                  : { backgroundColor: '#e8f0f7', color: '#778899' }
+                 ? { backgroundColor: '#1e5761', color: '#dbe4e8' }
+                  : { backgroundColor: '#6a7278', color: '#e0e2e5' }
                 }
               >
                 {t}
@@ -192,8 +192,8 @@ const cargarHorarios = async () => {
         </div>
 
         {/* Filtros */}
-        <div className="rounded-2xl p-4 mb-4" style={{ backgroundColor: '#f0f7ff' }}>
-          <p className="text-sm font-medium mb-2" style={{ color: '#2c4a5a' }}>
+        <div className="rounded-2xl p-4 mb-4" style={{ backgroundColor: '#2f373f' }}>
+          <p className="text-sm font-medium mb-2" style={{ color: '#e6ebee' }}>
             Filtrar por
           </p>
           <div className="flex gap-2 flex-wrap mb-2">
@@ -203,8 +203,8 @@ const cargarHorarios = async () => {
                 onClick={() => setRamaFiltro(r)}
                 className="px-3 py-1 rounded-lg text-xs capitalize"
                 style={ramaFiltro === r
-                  ? { backgroundColor: '#87CEEB', color: '#1a3a4a' }
-                  : { backgroundColor: '#e8f0f7', color: '#778899' }
+                  ? { backgroundColor: '#1e5761', color: '#dbe4e8' }
+                  : { backgroundColor: '#6a7278', color: '#e0e2e5' }
                 }
               >
                 {r}
@@ -216,8 +216,8 @@ const cargarHorarios = async () => {
               onClick={() => setDiaFiltro('todos')}
               className="px-3 py-1 rounded-lg text-xs"
               style={diaFiltro === 'todos'
-                ? { backgroundColor: '#87CEEB', color: '#1a3a4a' }
-                : { backgroundColor: '#e8f0f7', color: '#778899' }
+                 ? { backgroundColor: '#1e5761', color: '#dbe4e8' }
+                  : { backgroundColor: '#6a7278', color: '#e0e2e5' }
               }
             >
               Todos los días
@@ -228,8 +228,8 @@ const cargarHorarios = async () => {
                 onClick={() => setDiaFiltro(d)}
                 className="px-3 py-1 rounded-lg text-xs"
                 style={diaFiltro === d
-                  ? { backgroundColor: '#87CEEB', color: '#1a3a4a' }
-                  : { backgroundColor: '#e8f0f7', color: '#778899' }
+                   ? { backgroundColor: '#1e5761', color: '#dbe4e8' }
+                  : { backgroundColor: '#6a7278', color: '#e0e2e5' }
                 }
               >
                 {d}
@@ -241,8 +241,8 @@ const cargarHorarios = async () => {
               <div className="flex flex-col gap-3">
                 {horariosFiltrados.length === 0
                       ? (
-              <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: '#f0f7ff' }}>
-                <p className="text-sm" style={{ color: '#778899' }}>
+              <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: '#2f373f' }}>
+                <p className="text-sm" style={{ color: '#bec0c2' }}>
                   No hay clases disponibles con ese filtro.
                 </p>
               </div>

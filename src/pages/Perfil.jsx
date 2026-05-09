@@ -118,10 +118,10 @@ export default function Perfil() {
   const inputStyle = { borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: '#778899' }}>
+    <div className="min-h-screen pb-24" style={{ backgroundColor: '#202123' }}>
 
       {/* Header */}
-      <div className="px-6 py-6" style={{ backgroundColor: '#2c4a5a' }}>
+      <div className="px-6 py-6" style={{ backgroundColor: '#25272e' }}>
         <div className="flex items-center gap-4">
           <div
             className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-bold"
@@ -131,8 +131,8 @@ export default function Perfil() {
           </div>
           <div>
             <p className="font-bold text-white text-lg">{perfil?.nombre}</p>
-            <p className="text-xs" style={{ color: '#87CEEB' }}>{perfil?.email}</p>
-            <p className="text-xs" style={{ color: '#87CEEB' }}>DNI: {perfil?.dni}</p>
+            <p className="text-xs" style={{ color: '#b4b8b9' }}>{perfil?.email}</p>
+            <p className="text-xs" style={{ color: '#b4b8b9' }}>DNI: {perfil?.dni}</p>
           </div>
         </div>
       </div>
@@ -166,23 +166,23 @@ export default function Perfil() {
                 <>
                   <div className="flex flex-col gap-2 pt-3">
                     <div className="flex justify-between">
-                      <span className="text-xs" style={{ color: '#778899' }}>Nombre</span>
+                      <span className="text-xs" style={{ color: '#202224' }}>Nombre:</span>
                       <span className="text-sm font-medium" style={{ color: '#2c4a5a' }}>{perfil?.nombre}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-xs" style={{ color: '#778899' }}>Email</span>
+                      <span className="text-xs" style={{  color: '#202224' }}>Email:</span>
                       <span className="text-sm font-medium" style={{ color: '#2c4a5a' }}>{perfil?.email}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-xs" style={{ color: '#778899' }}>Teléfono</span>
+                      <span className="text-xs" style={{  color: '#202224' }}>Teléfono:</span>
                       <span className="text-sm font-medium" style={{ color: '#2c4a5a' }}>{perfil?.telefono || 'No cargado'}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-xs" style={{ color: '#778899' }}>DNI</span>
+                      <span className="text-xs" style={{  color: '#202224' }}>DNI:</span>
                       <span className="text-sm font-medium" style={{ color: '#2c4a5a' }}>{perfil?.dni}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-xs" style={{ color: '#778899' }}>Miembro desde</span>
+                      <span className="text-xs" style={{  color: '#202224' }}>Miembro desde:</span>
                       <span className="text-sm font-medium" style={{ color: '#2c4a5a' }}>
                         {perfil?.created_at && formatearFecha(perfil.created_at)}
                       </span>
@@ -191,7 +191,7 @@ export default function Perfil() {
                   <button
                     onClick={() => setEditando(true)}
                     className="w-full py-2 rounded-lg text-sm font-semibold"
-                    style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}
+                    style={{ backgroundColor: '#161717', color: '#d6dde0' }}
                   >
                     Editar datos
                   </button>
@@ -228,14 +228,14 @@ export default function Perfil() {
                       onClick={handleEditarPerfil}
                       disabled={loading}
                       className="flex-1 py-2 rounded-lg text-sm font-semibold"
-                      style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}
+                      style={{ backgroundColor: '#202424', color: '#d6dde0' }}
                     >
                       {loading ? 'Guardando...' : 'Guardar'}
                     </button>
                     <button
                       onClick={() => setEditando(false)}
                       className="px-4 py-2 rounded-lg text-sm"
-                      style={{ backgroundColor: '#e8f0f7', color: '#778899' }}
+                      style={{ backgroundColor: '#e76464', color: '#e4eaef' }}
                     >
                       Cancelar
                     </button>
@@ -299,7 +299,7 @@ export default function Perfil() {
                 Mis reservas
                 {reservas.filter(r => r.estado === 'pendiente').length > 0 && (
                   <span className="ml-2 px-2 py-0.5 rounded-full text-xs"
-                    style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}>
+                    style={{ backgroundColor: '#dbdb0c', color: '#323739' }}>
                     {reservas.filter(r => r.estado === 'pendiente').length} pendientes
                   </span>
                 )}
@@ -340,7 +340,7 @@ export default function Perfil() {
                       <button
                         onClick={() => navigate('/pagar', { state: { reserva: r } })}
                         className="mt-2 w-full py-1.5 rounded-lg text-xs font-semibold"
-                        style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}
+                        style={{ backgroundColor: '#348941', color: '#dee5e8' }}
                       >
                         Pagar ahora
                       </button>
