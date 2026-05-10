@@ -40,3 +40,15 @@ export const obtenerMisRutinas    = async () => {
   const res = await axios.get(`${API}/profesor/mis-rutinas`, config())
   return res.data
 }
+export const obtenerAlumnosDeHorario = async (horario_id, fecha) => {
+  const res = await axios.get(
+    `${API}/asistencia/${horario_id}/alumnos?fecha=${fecha}`, 
+    config()
+  )
+  return res.data
+}
+
+export const marcarAsistencia = async (datos) => {
+  const res = await axios.post(`${API}/asistencia/marcar`, datos, config())
+  return res.data
+}

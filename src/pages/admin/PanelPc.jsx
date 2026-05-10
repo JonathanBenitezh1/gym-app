@@ -7,7 +7,7 @@ import {
   crearHorario, editarHorario, eliminarHorario,
   obtenerUsuarios, cambiarRol,
   obtenerReservas, confirmarPagoEfectivo,
-  obtenerProfesores
+  obtenerProfesores, verificarClase
 } from '../../services/adminService'
 import logoDtc from '../../pages/img/logo_png.png'
 
@@ -88,15 +88,38 @@ export default function PanelPC() {
   }
 
   const handleEditarClase = async (id) => {
-    setLoading(true)
-    try {
-      await editarClase(id, formEditClase)
-      setEditandoClase(null)
-      await cargarClases()
-      mostrarExito('Clase actualizada correctamente')
-    } catch { setError('Error al editar la clase') }
-    finally { setLoading(false) }
+  setLoading(true)
+  setError('')
+
+  try {
+    // Si están desactivando la clase verificamos reservas
+    if (formEditClase.activo === false) {
+      const verificacion = await verificarClase(id)
+
+      if (verificacion.pagadas > 0) {
+        const confirmar = window.confirm(
+          `⚠️ Esta clase tiene ${verificacion.pagadas} reserva${verificacion.pagadas > 1 ? 's' : ''} ya pagada${verificacion.pagadas > 1 ? 's' : ''}.\n\n` +
+          `Esos alumnos deberán ser contactados manualmente para coordinar un reembolso o cambio.\n\n` +
+          `Las ${verificacion.pendientes} reserva${verificacion.pendientes !== 1 ? 's' : ''} pendiente${verificacion.pendientes !== 1 ? 's' : ''} se cancelarán automáticamente.\n\n` +
+          `¿Querés continuar de todas formas?`
+        )
+        if (!confirmar) {
+          setLoading(false)
+          return
+        }
+      }
+    }
+
+    await editarClase(id, formEditClase)
+    setEditandoClase(null)
+    await cargarClases()
+    mostrarExito('Clase actualizada correctamente')
+  } catch {
+    setError('Error al editar la clase')
+  } finally {
+    setLoading(false)
   }
+}
 
   const handleCrearHorario = async (e) => {
     e.preventDefault()

@@ -61,7 +61,10 @@ export const cambiarRol = async (id, rol) => {
 }
 
 // ─── RESERVAS ─────────────────────────────────────────
-
+export const verificarClase = async (id) => {
+  const res = await axios.get(`${API}/admin/clases/${id}/verificar`, config())
+  return res.data
+}
 export const obtenerReservas = async () => {
   const res = await axios.get(`${API}/admin/reservas`, config())
   return res.data

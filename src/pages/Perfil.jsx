@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { obtenerPerfil, editarPerfil, cambiarPassword } from '../services/perfilService'
+import { obtenerPerfil, editarPerfil, cambiarPassword, obtenerHistorialPagos } from '../services/perfilService'
 import { obtenerMisReservas } from '../services/clasesService'
 import { obtenerMisRutinas } from '../services/profesorService'
 import NavBar from '../components/NavBar'
@@ -15,9 +15,11 @@ export default function Perfil() {
   const [perfil, setPerfil]           = useState(null)
   const [editando, setEditando]       = useState(false)
   const [formPerfil, setFormPerfil]   = useState({})
+  const [pagos, setPagos] = useState([])
   const [formPassword, setFormPassword] = useState({
     password_actual: '', password_nueva: '', confirmar: ''
   })
+  
 
   // Estados acordeón
   const [seccionAbierta, setSeccionAbierta] = useState(null)
@@ -37,20 +39,22 @@ export default function Perfil() {
   }, [])
 
   const cargarDatos = async () => {
-    try {
-      const [p, r, ru] = await Promise.all([
-        obtenerPerfil(),
-        obtenerMisReservas(),
-        obtenerMisRutinas()
-      ])
-      setPerfil(p)
-      setFormPerfil({ nombre: p.nombre, email: p.email, telefono: p.telefono || '' })
-      setReservas(r)
-      setRutinas(ru)
-    } catch {
-      setError('Error al cargar los datos')
-    }
+  try {
+    const [p, r, ru, pg] = await Promise.all([
+      obtenerPerfil(),
+      obtenerMisReservas(),
+      obtenerMisRutinas(),
+      obtenerHistorialPagos()
+    ])
+    setPerfil(p)
+    setFormPerfil({ nombre: p.nombre, email: p.email, telefono: p.telefono || '' })
+    setReservas(r)
+    setRutinas(ru)
+    setPagos(pg)
+  } catch {
+    setError('Error al cargar los datos')
   }
+}
 
   const mostrarExito = (msg) => {
     setExito(msg)
@@ -353,6 +357,70 @@ export default function Perfil() {
           )}
         </div>
 
+        
+        {/* ─── ACORDEÓN: HISTORIAL DE PAGOS ─── */}
+        <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#f0f7ff' }}>
+          <div
+            onClick={() => toggleSeccion('pagos')}
+            className="flex items-center justify-between px-5 py-4 cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <span>💰</span>
+              <p className="font-semibold text-sm" style={{ color: '#2c4a5a' }}>
+                Historial de pagos
+                {pagos.filter(p => p.estado === 'pendiente').length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 rounded-full text-xs"
+                    style={{ backgroundColor: '#dbdb0c', color: '#323739' }}>
+                    {pagos.filter(p => p.estado === 'pendiente').length} pendientes
+                  </span>
+                )}
+              </p>
+            </div>
+            <span style={{ color: '#87CEEB' }}>
+              {seccionAbierta === 'pagos' ? '▲' : '▼'}
+            </span>
+          </div>
+
+          {seccionAbierta === 'pagos' && (
+            <div className="px-5 pb-5" style={{ borderTop: '1px solid #e0ecf4' }}>
+              {pagos.length === 0
+                ? <p className="text-sm pt-4" style={{ color: '#778899' }}>No tenés pagos registrados.</p>
+                : pagos.map(p => (
+                  <div key={p.id} className="py-3" style={{ borderBottom: '1px solid #e0ecf4' }}>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-sm" style={{ color: '#2c4a5a' }}>{p.clase}</p>
+                        <p className="text-xs" style={{ color: '#778899' }}>
+                          {p.dia_semana} · {p.hora_inicio?.slice(0,5)} · {p.tipo}
+                        </p>
+                        <p className="text-xs" style={{ color: '#778899' }}>
+                          {p.fecha_inicio} → {p.fecha_fin}
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: '#778899' }}>
+                          Método: <span className="font-medium capitalize">{p.metodo}</span>
+                        </p>
+                        <p className="text-xs" style={{ color: '#778899' }}>
+                          Fecha: {formatearFecha(p.created_at)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm" style={{ color: '#2c4a5a' }}>
+                          ${parseFloat(p.monto).toFixed(2)}
+                        </p>
+                        <span className="text-xs px-2 py-0.5 rounded-full"
+                          style={p.estado === 'pagado'
+                            ? { backgroundColor: '#e8f5e9', color: '#2d8a4e' }
+                            : { backgroundColor: '#fff8e1', color: '#b8860b' }}>
+                          {p.estado}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+  )}
+</div>
         {/* ─── ACORDEÓN: MIS RUTINAS ─── */}
         <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#f0f7ff' }}>
           <div

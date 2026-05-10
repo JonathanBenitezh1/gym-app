@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
   obtenerMisHorarios, modificarHorario,
-  buscarAlumnoPorDni, obtenerRutinaDeAlumno, guardarRutina
+  buscarAlumnoPorDni, obtenerRutinaDeAlumno, guardarRutina,
+  obtenerAlumnosDeHorario, marcarAsistencia
 } from '../../services/profesorService'
+
 import { io } from 'socket.io-client'
+
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const sesionVacia = () => ({
   nombre: '', orden: 1,
@@ -15,7 +18,10 @@ const sesionVacia = () => ({
 export default function MisClases() {
   const { usuario, cerrarSesion } = useAuth()
   const navigate = useNavigate()
-
+  const [horarioSeleccionado, setHorarioSeleccionado] = useState(null)
+  const [fechaAsistencia, setFechaAsistencia]         = useState(new Date().toISOString().split('T')[0])
+  const [alumnos, setAlumnos]                         = useState([])
+  const [loadingAsistencia, setLoadingAsistencia]     = useState(false)
   const [seccion, setSeccion]         = useState('horarios')
   const [horarios, setHorarios]       = useState([])
   const [editando, setEditando]       = useState(null)
@@ -40,6 +46,31 @@ export default function MisClases() {
     catch { setError('Error al cargar los horarios') }
   }
 
+  const cargarAlumnos = async (horario_id, fecha) => {
+  setLoadingAsistencia(true)
+  try {
+    const data = await obtenerAlumnosDeHorario(horario_id, fecha)
+    setAlumnos(data)
+  } catch {
+    setError('Error al cargar los alumnos')
+  } finally {
+    setLoadingAsistencia(false)
+  }
+}
+
+const handleToggleAsistencia = async (usuario_id, asistio) => {
+  try {
+    await marcarAsistencia({
+      horario_id: horarioSeleccionado,
+      usuario_id,
+      fecha: fechaAsistencia,
+      asistio: !asistio
+    })
+    await cargarAlumnos(horarioSeleccionado, fechaAsistencia)
+  } catch {
+    setError('Error al marcar asistencia')
+  }
+}
   const mostrarExito = (msg) => {
     setExito(msg)
     setTimeout(() => setExito(''), 3000)
@@ -169,7 +200,7 @@ export default function MisClases() {
 
       {/* Tabs */}
       <div className="flex gap-2 px-4 pt-4">
-        {['horarios', 'rutinas'].map(s => (
+        {['horarios', 'rutinas', 'asistencia'].map(s => (
           <button key={s} onClick={() => { setSeccion(s); setError(''); setExito('') }}
             className="px-4 py-2 rounded-lg text-sm font-medium capitalize"
             style={seccion === s
@@ -400,6 +431,103 @@ export default function MisClases() {
           </div>
         )}
       </div>
+
+      {/* ─── ASISTENCIA ─── */}
+{seccion === 'asistencia' && (
+  <div className="flex flex-col gap-4">
+
+    {/* Selector de horario y fecha */}
+    <div className="rounded-2xl p-5" style={{ backgroundColor: '#f0f7ff' }}>
+      <p className="text-sm font-semibold mb-3" style={{ color: '#2c4a5a' }}>
+        Seleccioná horario y fecha
+      </p>
+      <div className="flex flex-col gap-3">
+        <select
+          value={horarioSeleccionado || ''}
+          onChange={e => {
+            setHorarioSeleccionado(e.target.value)
+            if (e.target.value) cargarAlumnos(e.target.value, fechaAsistencia)
+          }}
+          className="border rounded-lg px-4 py-2 text-sm outline-none"
+          style={{ borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }}
+        >
+          <option value="">Seleccioná un horario</option>
+          {horarios.map(h => (
+            <option key={h.id} value={h.id}>
+              {h.clase} — {h.dia_semana} {h.hora_inicio.slice(0,5)}
+            </option>
+          ))}
+        </select>
+        <input
+          type="date"
+          value={fechaAsistencia}
+          onChange={e => {
+            setFechaAsistencia(e.target.value)
+            if (horarioSeleccionado) cargarAlumnos(horarioSeleccionado, e.target.value)
+          }}
+          className="border rounded-lg px-4 py-2 text-sm outline-none"
+          style={{ borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }}
+        />
+      </div>
+    </div>
+
+    {/* Lista de alumnos */}
+    {horarioSeleccionado && (
+      <div className="rounded-2xl p-5" style={{ backgroundColor: '#f0f7ff' }}>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-sm font-semibold" style={{ color: '#2c4a5a' }}>
+            Alumnos
+          </p>
+          <span className="text-xs px-2 py-1 rounded-full"
+            style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}>
+            {alumnos.filter(a => a.asistio).length}/{alumnos.length} presentes
+          </span>
+        </div>
+
+        {loadingAsistencia ? (
+          <p className="text-sm text-center" style={{ color: '#778899' }}>
+            Cargando alumnos...
+          </p>
+        ) : alumnos.length === 0 ? (
+          <p className="text-sm" style={{ color: '#778899' }}>
+            No hay alumnos reservados para este horario.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {alumnos.map(a => (
+              <div
+                key={a.id}
+                onClick={() => handleToggleAsistencia(a.id, a.asistio)}
+                className="flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all"
+                style={{
+                  backgroundColor: a.asistio ? '#e8f5e9' : '#f8fbff',
+                  border: `2px solid ${a.asistio ? '#2d8a4e' : '#e0ecf4'}`
+                }}
+              >
+                <div>
+                  <p className="font-medium text-sm" style={{ color: '#2c4a5a' }}>
+                    {a.nombre}
+                  </p>
+                  <p className="text-xs" style={{ color: '#778899' }}>
+                    DNI: {a.dni}
+                  </p>
+                </div>
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-lg"
+                  style={{
+                    backgroundColor: a.asistio ? '#2d8a4e' : '#e0ecf4'
+                  }}
+                >
+                  {a.asistio ? '✓' : ''}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )}
+  </div>
+)}
     </div>
   )
 }

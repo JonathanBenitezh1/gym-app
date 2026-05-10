@@ -11,6 +11,10 @@ export const obtenerPerfil = async () => {
   return res.data
 }
 
+export const obtenerHistorialPagos = async () => {
+  const res = await axios.get(`${API}/perfil/pagos`, config())
+  return res.data
+}
 export const editarPerfil = async (datos) => {
   const res = await axios.put(`${API}/perfil`, datos, config())
   return res.data
