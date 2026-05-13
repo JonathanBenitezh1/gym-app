@@ -5,8 +5,9 @@ import { useAuth } from '../context/AuthContext'
 import { obtenerHorarios, crearReserva,obtenerHorariosReservados } from '../services/clasesService'
 import NavBar from '../components/NavBar'
 import logoDtc from './img/logo_png.png'
+import { SkeletonListaHorarios } from '../components/Skeleton'
 
-const RAMAS = ['todos', 'Gimnasio', 'Disciplina', 'Profesional']
+const RAMAS = ['todos', 'gimnasio', 'disciplina', 'profesional']
 const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 export default function Horarios() {
@@ -20,6 +21,7 @@ export default function Horarios() {
   const [diaFiltro, setDiaFiltro]     = useState('todos')
   const [tipo, setTipo]               = useState('semanal')
   const [loading, setLoading]         = useState(false)
+  const [cargandoHorarios, setCargandoHorarios] = useState(true)
   const [error, setError]             = useState('')
   const [exito, setExito]             = useState('')
   const [verResumen, setVerResumen]   = useState(false)
@@ -28,8 +30,7 @@ export default function Horarios() {
 
 useEffect(() => {
   if (!usuario) navigate('/')
-  cargarHorarios()
-  cargarReservados()
+  cargarTodo()
 }, [])
 
 useEffect(() => {
@@ -56,21 +57,29 @@ useEffect(() => {
   }
 }, [])
 
-const cargarReservados = async () => {
+const cargarTodo = async () => {
+  setCargandoHorarios(true)
   try {
-    const data = await obtenerHorariosReservados()
-    setYaReservados(data)
-  } catch {
-    console.error('Error al cargar horarios reservados')
-  }
-}
-const cargarHorarios = async () => {
-  try {
-    const data = await obtenerHorarios()
-    setHorarios(data)
+    const [dataHorarios, dataReservados] = await Promise.all([
+      obtenerHorarios(),
+      obtenerHorariosReservados()
+    ])
+    setHorarios(dataHorarios)
+    setYaReservados(dataReservados)
   } catch {
     setError('Error al cargar los horarios')
+  } finally {
+    setCargandoHorarios(false)
   }
+}
+
+const cargarHorarios  = async () => {
+  const data = await obtenerHorarios()
+  setHorarios(data)
+}
+const cargarReservados = async () => {
+  const data = await obtenerHorariosReservados()
+  setYaReservados(data)
 }
   // Filtrar horarios según rama y día
   const horariosFiltrados = horarios.filter(h => {
@@ -239,6 +248,9 @@ const cargarHorarios = async () => {
           </div>
         </div>
                 {/* Lista de horarios */}
+                {cargandoHorarios ? (
+                  <SkeletonListaHorarios />
+                ) : (
               <div className="flex flex-col gap-3">
                 {horariosFiltrados.length === 0
                       ? (
@@ -324,6 +336,7 @@ const cargarHorarios = async () => {
             })
           }
         </div>
+        )}
       </div>
 
       {/* Barra inferior de resumen flotante */}

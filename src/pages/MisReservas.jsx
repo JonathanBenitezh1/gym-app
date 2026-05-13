@@ -6,6 +6,7 @@ import { obtenerMisReservas, cancelarReserva } from '../services/clasesService'
 import NavBar from '../components/NavBar'
 import { useLocation } from 'react-router-dom'
 import logoDtc from './img/logo_png.png'
+import { SkeletonListaReservas } from '../components/Skeleton'
 
 export default function MisReservas() {
   const { usuario, cerrarSesion } = useAuth()
@@ -196,6 +197,8 @@ useEffect(() => {
           </div>
         )}
         {loading ? (
+  <SkeletonListaReservas />
+) : reservas.length === 0 ? (
           <p className="text-center text-sm mt-8" style={{ color: '#f0f7ff' }}>
             Cargando reservas...
           </p>
