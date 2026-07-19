@@ -68,6 +68,7 @@ const cargarTodo = async () => {
     setYaReservados(dataReservados)
   } catch {
     setError('Error al cargar los horarios')
+    setTimeout(() => setError(''), 4000)
   } finally {
     setCargandoHorarios(false)
   }
@@ -109,15 +110,21 @@ const cargarReservados = async () => {
   // Calcular fechas según tipo
   const calcularFechas = () => {
     const hoy = new Date()
-    const inicio = hoy.toISOString().split('T')[0]
-    const fin = new Date(hoy)
-    fin.setDate(fin.getDate() + (tipo === 'quincenal' ? 14 : 7))
-    return { fecha_inicio: inicio, fecha_fin: fin.toISOString().split('T')[0] }
+    const dia = hoy.getDay() // 0=domingo, 1=lunes, ..., 6=sábado
+    const diasHastaLunes = dia === 0 ? 1 : 8 - dia // si hoy es domingo saltamos al lunes siguiente, sino al próximo lunes
+    const inicio = new Date(hoy)
+    inicio.setDate(hoy.getDate() + diasHastaLunes)
+    const fin = new Date(inicio)
+    fin.setDate(inicio.getDate() + (tipo === 'quincenal' ? 14 : 7))
+    return {
+      fecha_inicio: inicio.toISOString().split('T')[0],
+      fecha_fin: fin.toISOString().split('T')[0]
+    }
   }
-
   const handleReservar = async () => {
   if (seleccion.length === 0) {
     setError('Seleccioná al menos una clase')
+    setTimeout(() => setError(''), 4000)
     return
   }
 
@@ -138,6 +145,7 @@ const cargarReservados = async () => {
     await cargarReservados() // ← actualizamos los reservados
   } catch (err) {
     setError(err.response?.data?.error || 'Error al crear la reserva')
+    setTimeout(() => setError(''), 4000)
   } finally {
     setLoading(false)
   }
@@ -162,13 +170,6 @@ const cargarReservados = async () => {
             style={{ backgroundColor: '#144a4e', color: '#d6dde0' }}
           >
             Mis Reservas
-          </button>
-          <button
-            onClick={() => { cerrarSesion(); navigate('/') }}
-            className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#642828', color: '#eff1f4' }}
-          >
-            Salir
           </button>
         </div>
       </div>

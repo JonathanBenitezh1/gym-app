@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { loginUsuario } from '../services/authService'
 import { useAuth } from '../context/AuthContext'
 
-// 1. IMPORTA TU LOGO AQUÍ (Ajusta la ruta y el nombre del archivo)
+// IMPORTAR TU LOGO ACA
 import logoDtc from '../pages/img/logo_png.png' 
 
 function Login() {

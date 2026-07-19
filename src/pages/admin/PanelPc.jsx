@@ -193,10 +193,10 @@ export default function PanelPC() {
         {/* ─── DASHBOARD ─── */}
         {seccion === 'dashboard' && (
           <div className="flex flex-col gap-4 mt-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
               <div className="rounded-2xl p-4 text-center" style={{ backgroundColor: '#f0f7ff' }}>
-                <p className="text-3xl font-bold" style={{ color: '#2c4a5a' }}>{reservas.length}</p>
-                <p className="text-xs mt-1" style={{ color: '#778899' }}>Reservas totales</p>
+                <p className="text-3xl font-bold" style={{ color: '#2c4a5a' }}>{reservas.filter(r => r.estado !== 'cancelado').length}</p>
+<p className="text-xs mt-1" style={{ color: '#778899' }}>Reservas activas</p>
               </div>
               <div className="rounded-2xl p-4 text-center" style={{ backgroundColor: '#f0f7ff' }}>
                 <p className="text-3xl font-bold" style={{ color: '#2c4a5a' }}>
@@ -217,6 +217,12 @@ export default function PanelPC() {
                 </p>
                 <p className="text-xs mt-1" style={{ color: '#778899' }}>Total recaudado</p>
               </div>
+              <div className="rounded-2xl p-4 text-center" style={{ backgroundColor: '#fce8e8' }}>
+              <p className="text-3xl font-bold" style={{ color: '#e05555' }}>
+                {reservas.filter(r => r.estado === 'cancelado').length}
+              </p>
+              <p className="text-xs mt-1" style={{ color: '#e05555' }}>Canceladas</p>
+            </div>
             </div>
 
             <div className="rounded-2xl p-3 flex items-center gap-2" style={{ backgroundColor: '#e8f5e9' }}>
@@ -257,7 +263,7 @@ export default function PanelPC() {
                         <button onClick={() => handleConfirmarPago(r.id)}
                           className="block text-xs px-2 py-0.5 rounded-lg mt-1"
                           style={btnPrimario}>
-                          Confirmar
+                          Confirmar Pago
                         </button>
                       )}
                     </div>
@@ -513,7 +519,7 @@ export default function PanelPC() {
                     <button onClick={() => handleConfirmarPago(r.id)}
                       className="text-xs px-3 py-1 rounded-lg"
                       style={{ backgroundColor: '#e8f5e9', color: '#2d8a4e' }}>
-                      Confirmar pago
+                      Confirmar Pago
                     </button>
                   )}
                 </div>

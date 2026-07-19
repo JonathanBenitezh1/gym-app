@@ -60,11 +60,6 @@ export default function Rutinas() {
             style={{ backgroundColor: '#144a4e', color: '#d6dde0' }}>
             Reservas
           </button>
-          <button onClick={() => { cerrarSesion(); navigate('/') }}
-            className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#642828', color: '#eff1f4' }}>
-            Salir
-          </button>
         </div>
       </div>
 

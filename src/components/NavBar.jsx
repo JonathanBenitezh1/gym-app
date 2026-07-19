@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { obtenerMisReservas } from '../services/clasesService'
 import { io } from 'socket.io-client'
+import { useAuth } from '../context/AuthContext'
 
 const WHATSAPP_NUMERO  = '5493512345678'
 const WHATSAPP_MENSAJE = 'Hola! Te contacto desde la app del gimnasio.'
@@ -9,6 +10,7 @@ const WHATSAPP_MENSAJE = 'Hola! Te contacto desde la app del gimnasio.'
 export default function NavBar() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { cerrarSesion } = useAuth()
   const [pendientes, setPendientes] = useState(0)
   const [notificacion, setNotificacion] = useState('')
 
@@ -113,6 +115,13 @@ export default function NavBar() {
             </span>
           </button>
         ))}
+        <button
+          onClick={() => { if (confirm('¿Querés cerrar sesión?')) { cerrarSesion(); navigate('/') } }}
+          className="flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-all"
+        >
+          <span className="text-xl">🚪</span>
+          <span className="text-xs font-medium" style={{ color: '#8ba8b8' }}>Salir</span>
+        </button>
       </div>
     </>
   )

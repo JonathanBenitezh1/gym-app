@@ -154,7 +154,6 @@ useEffect(() => {
     </button>
   </div>
 )}
-      <NavBar />
     </div>
   )
 
@@ -172,13 +171,6 @@ useEffect(() => {
             style={{  backgroundColor: '#144a4e', color: '#d6dde0' }}
           >
             Ver clases
-          </button>
-          <button
-            onClick={() => { cerrarSesion(); navigate('/') }}
-            className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#742b17', color: '#dce3eb' }}
-          >
-            Salir
           </button>
         </div>
       </div>
@@ -199,10 +191,6 @@ useEffect(() => {
         {loading ? (
   <SkeletonListaReservas />
 ) : reservas.length === 0 ? (
-          <p className="text-center text-sm mt-8" style={{ color: '#f0f7ff' }}>
-            Cargando reservas...
-          </p>
-        ) : reservas.length === 0 ? (
           <div className="rounded-2xl p-8 text-center mt-4" style={{ backgroundColor: '#2f373f' }}>
             <p className="text-sm font-medium mb-1" style={{ color: '#ccdae1' }}>
               No tenés reservas todavía
@@ -226,7 +214,7 @@ useEffect(() => {
                 <p className="text-xs font-semibold mb-2 px-1" style={{ color: '#f0f7ff' }}>
                   PENDIENTES DE PAGO ({pendientes.length})
                 </p>
-                {pendientes.map(r => <CardReserva key={r.id} r={r} />)}
+                {pendientes.map(r => <CardReserva key={`pendiente-${r.id}`} r={r} />)}
               </div>
             )}
 
@@ -236,7 +224,7 @@ useEffect(() => {
                 <p className="text-xs font-semibold mb-2 px-1" style={{ color: '#f0f7ff' }}>
                   CONFIRMADAS ({pagadas.length})
                 </p>
-                {pagadas.map(r => <CardReserva key={r.id} r={r} />)}
+                {pagadas.map(r => <CardReserva key={`pagada-${r.id}`} r={r} />)}
               </div>
             )}
 
@@ -246,7 +234,7 @@ useEffect(() => {
                 <p className="text-xs font-semibold mb-2 px-1" style={{ color: '#f0f7ff' }}>
                   CANCELADAS ({canceladas.length})
                 </p>
-                {canceladas.map(r => <CardReserva key={r.id} r={r} />)}
+                {canceladas.map(r => <CardReserva key={`cancelada-${r.id}`} r={r} />)}
               </div>
             )}
           </>

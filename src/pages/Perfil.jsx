@@ -43,17 +43,17 @@ export default function Perfil() {
 const cargarDatos = async () => {
   setCargando(true)
   try {
-    const [p, r, ru, pg] = await Promise.all([
+    const [p, r, ru, pg] = await Promise.allSettled([
       obtenerPerfil(),
       obtenerMisReservas(),
       obtenerMisRutinas(),
       obtenerHistorialPagos()
     ])
-    setPerfil(p)
-    setFormPerfil({ nombre: p.nombre, email: p.email, telefono: p.telefono || '' })
-    setReservas(r)
-    setRutinas(ru)
-    setPagos(pg)
+    setPerfil(p.value)
+    setFormPerfil({ nombre: p.value?.nombre, email: p.value?.email, telefono: p.value?.telefono || '' })
+    setReservas(r.value || [])
+    setRutinas(ru.value || [])
+    setPagos(pg.value || [])
   } catch {
     setError('Error al cargar los datos')
   } finally {
@@ -493,15 +493,6 @@ return (
               </div>
             )}
           </div>
-
-          {/* Botón cerrar sesión */}
-          <button
-            onClick={() => { cerrarSesion(); navigate('/') }}
-            className="w-full py-3 rounded-2xl text-sm font-semibold mt-2"
-            style={{ backgroundColor: '#fce8e8', color: '#e05555' }}
-          >
-            Cerrar sesión
-          </button>
 
         </div>
       </>
