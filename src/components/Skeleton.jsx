@@ -1,126 +1,110 @@
-// Bloque animado genérico
-export function SkeletonBlock({ className = '', style = {} }) {
+/**
+ * Esqueletos de carga.
+ *
+ * Muestran la forma del contenido mientras llega, en vez de un
+ * "Cargando..." suelto: la pantalla no salta cuando aparecen los datos.
+ */
+
+export function Bloque({ className = '', style = {} }) {
   return (
     <div
-      className={`rounded-lg animate-pulse ${className}`}
-      style={{ backgroundColor: '#3a4048', ...style }}
+      className={`animate-pulse rounded-md ${className}`}
+      style={{ backgroundColor: 'var(--color-elevado)', ...style }}
+      aria-hidden="true"
     />
   )
 }
 
-// Skeleton para una card de horario
-export function SkeletonHorario() {
+function TarjetaHorario() {
   return (
-    <div className="rounded-2xl p-4" style={{ backgroundColor: '#2f373f' }}>
-      <div className="flex items-start justify-between">
+    <div className="tarjeta p-3.5">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <SkeletonBlock className="h-4 w-20 mb-2" />
-          <SkeletonBlock className="h-4 w-40 mb-1" />
-          <SkeletonBlock className="h-3 w-32 mb-1" />
-          <SkeletonBlock className="h-3 w-24" />
+          <Bloque className="mb-2 h-4 w-20" style={{ borderRadius: 999 }} />
+          <Bloque className="mb-2 h-4 w-32" />
+          <Bloque className="mb-1.5 h-3 w-24" />
+          <Bloque className="h-3 w-20" />
         </div>
-        <div className="ml-4">
-          <SkeletonBlock className="h-4 w-14 mb-1" />
-          <SkeletonBlock className="h-3 w-16" />
+        <div className="shrink-0">
+          <Bloque className="mb-2 h-4 w-16" />
+          <Bloque className="h-3 w-10" />
         </div>
       </div>
     </div>
   )
 }
 
-// Skeleton para la lista completa de horarios
 export function SkeletonListaHorarios() {
   return (
-    <div className="flex flex-col gap-3">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <SkeletonHorario key={i} />
+    <div className="flex flex-col gap-6" role="status" aria-label="Cargando horarios">
+      {[0, 1].map(grupo => (
+        <div key={grupo}>
+          <Bloque className="mb-2 h-3 w-24" />
+          <div className="grid gap-2.5 sm:grid-cols-2">
+            <TarjetaHorario />
+            <TarjetaHorario />
+          </div>
+        </div>
       ))}
     </div>
   )
 }
 
-// Skeleton para una card de reserva
-export function SkeletonReserva() {
+function TarjetaReserva() {
   return (
-    <div className="rounded-2xl p-4 mb-3" style={{ backgroundColor: '#3e4045' }}>
-      <div className="flex items-start justify-between mb-3">
+    <div className="tarjeta p-4">
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex-1">
-          <SkeletonBlock className="h-4 w-36 mb-1" />
-          <SkeletonBlock className="h-3 w-44 mb-1" />
-          <SkeletonBlock className="h-3 w-32 mb-1" />
-          <SkeletonBlock className="h-3 w-40" />
+          <Bloque className="mb-2 h-4 w-32" />
+          <Bloque className="mb-1.5 h-3 w-40" />
+          <Bloque className="h-3 w-28" />
         </div>
-        <div className="ml-4">
-          <SkeletonBlock className="h-4 w-16 mb-1" />
-          <SkeletonBlock className="h-5 w-20" style={{ borderRadius: '9999px' }} />
+        <div className="shrink-0">
+          <Bloque className="mb-2 h-4 w-16" />
+          <Bloque className="h-5 w-20" style={{ borderRadius: 999 }} />
         </div>
       </div>
-      <div className="flex gap-2 mt-2">
-        <SkeletonBlock className="h-8 flex-1" style={{ borderRadius: '0.5rem' }} />
-        <SkeletonBlock className="h-8 w-24" style={{ borderRadius: '0.5rem' }} />
-      </div>
+      <Bloque className="h-9 w-full" style={{ borderRadius: '0.7rem' }} />
     </div>
   )
 }
 
-// Skeleton para lista de reservas
 export function SkeletonListaReservas() {
   return (
-    <div>
-      <SkeletonBlock className="h-3 w-40 mb-2 mx-1" />
-      <SkeletonReserva />
-      <SkeletonReserva />
-      <SkeletonBlock className="h-3 w-36 mb-2 mx-1 mt-4" />
-      <SkeletonReserva />
-    </div>
-  )
-}
-// Skeleton para el header de perfil
-export function SkeletonPerfilHeader() {
-  return (
-    <div className="px-6 py-6" style={{ backgroundColor: '#25272e' }}>
-      <div className="flex items-center gap-4">
-        <SkeletonBlock
-          className="w-14 h-14"
-          style={{ borderRadius: '9999px', flexShrink: 0 }}
-        />
-        <div>
-          <SkeletonBlock className="h-5 w-36 mb-1" />
-          <SkeletonBlock className="h-3 w-44 mb-1" />
-          <SkeletonBlock className="h-3 w-24" />
-        </div>
-      </div>
+    <div className="flex flex-col gap-3" role="status" aria-label="Cargando reservas">
+      <Bloque className="h-3 w-36" />
+      <TarjetaReserva />
+      <TarjetaReserva />
     </div>
   )
 }
 
-// Skeleton para un acordeón
-export function SkeletonAcordeon() {
-  return (
-    <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: '#2f373f' }}>
-      <div className="flex items-center justify-between px-5 py-4">
-        <div className="flex items-center gap-3">
-          <SkeletonBlock className="h-5 w-5" style={{ borderRadius: '0.25rem' }} />
-          <SkeletonBlock className="h-4 w-32" />
-        </div>
-        <SkeletonBlock className="h-3 w-3" />
-      </div>
-    </div>
-  )
-}
-
-// Skeleton página completa de Perfil
 export function SkeletonPerfil() {
   return (
-    <>
-      <SkeletonPerfilHeader />
-      <div className="px-4 pt-4 pb-4 flex flex-col gap-3">
-        <SkeletonAcordeon />
-        <SkeletonAcordeon />
-        <SkeletonAcordeon />
-        <SkeletonAcordeon />
-        <SkeletonBlock className="h-12 w-full" style={{ borderRadius: '1rem' }} />
+    <div role="status" aria-label="Cargando perfil">
+      <div className="contenedor flex items-center gap-4 py-6">
+        <Bloque className="h-16 w-16" style={{ borderRadius: 999 }} />
+        <div className="flex-1">
+          <Bloque className="mb-2 h-5 w-36" />
+          <Bloque className="mb-1.5 h-3 w-44" />
+          <Bloque className="h-3 w-24" />
+        </div>
       </div>
-    </>
+      <div className="contenedor flex flex-col gap-2.5">
+        {[0, 1, 2, 3].map(i => (
+          <Bloque key={i} className="h-14 w-full" style={{ borderRadius: '1rem' }} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export function SkeletonLista({ filas = 3 }) {
+  return (
+    <div className="flex flex-col gap-2.5" role="status" aria-label="Cargando">
+      {Array.from({ length: filas }).map((_, i) => (
+        <Bloque key={i} className="h-20 w-full" style={{ borderRadius: '1rem' }} />
+      ))}
+    </div>
   )
 }

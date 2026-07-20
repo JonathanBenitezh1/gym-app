@@ -11,57 +11,47 @@ import PanelPC from './pages/admin/PanelPC'
 import MisClases from './pages/profesor/MisClases'
 import Perfil from './pages/Perfil'
 
+// Los profesionales (nutrición, kinesiología, entrenamiento personal)
+// gestionan sus clases igual que los profesores.
+const DOCENTES = ['profesor', 'profesional', 'admin']
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* Rutas públicas */}
-        <Route path="/"          element={<Login />} />
-        <Route path="/registro"  element={<Registro />} />
+        {/* Públicas */}
+        <Route path="/"         element={<Login />} />
+        <Route path="/registro" element={<Registro />} />
 
-        {/* Rutas solo para alumnos */}
+        {/* Alumnos */}
         <Route path="/horarios" element={
-          <RutaProtegida roles={['alumno']}>
-            <Horarios />
-          </RutaProtegida>
+          <RutaProtegida roles={['alumno']}><Horarios /></RutaProtegida>
         } />
         <Route path="/perfil" element={
-          <RutaProtegida roles={['alumno']}>
-          <Perfil />
-          </RutaProtegida>
-              } />
+          <RutaProtegida roles={['alumno']}><Perfil /></RutaProtegida>
+        } />
         <Route path="/reservas" element={
-          <RutaProtegida roles={['alumno']}>
-            <MisReservas />
-          </RutaProtegida>
+          <RutaProtegida roles={['alumno']}><MisReservas /></RutaProtegida>
         } />
         <Route path="/pagar" element={
-          <RutaProtegida roles={['alumno']}>
-            <Pagar />
-          </RutaProtegida>
+          <RutaProtegida roles={['alumno']}><Pagar /></RutaProtegida>
         } />
         <Route path="/rutinas" element={
-          <RutaProtegida roles={['alumno']}>
-            <Rutinas />
-          </RutaProtegida>
+          <RutaProtegida roles={['alumno']}><Rutinas /></RutaProtegida>
         } />
 
-        {/* Rutas solo para profesores */}
+        {/* Profesores y profesionales */}
         <Route path="/mis-clases" element={
-          <RutaProtegida roles={['profesor', 'admin']}>
-            <MisClases />
-          </RutaProtegida>
+          <RutaProtegida roles={DOCENTES}><MisClases /></RutaProtegida>
         } />
 
-        {/* Rutas solo para admin */}
+        {/* Administración */}
         <Route path="/panel-gym" element={
-          <RutaProtegida roles={['admin']}>
-            <PanelPC />
-          </RutaProtegida>
+          <RutaProtegida roles={['admin']}><PanelPC /></RutaProtegida>
         } />
 
-        {/* Ruta para cualquier URL que no existe */}
+        {/* Cualquier otra dirección */}
         <Route path="*" element={<Login />} />
 
       </Routes>

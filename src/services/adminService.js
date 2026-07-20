@@ -33,6 +33,11 @@ export const eliminarClase = async (id) => {
 
 // ─── HORARIOS ─────────────────────────────────────────
 
+export const obtenerHorariosAdmin = async () => {
+  const res = await axios.get(`${API}/admin/horarios`, config())
+  return res.data
+}
+
 export const crearHorario = async (datos) => {
   const res = await axios.post(`${API}/admin/horarios`, datos, config())
   return res.data
@@ -57,6 +62,12 @@ export const obtenerUsuarios = async () => {
 
 export const cambiarRol = async (id, rol) => {
   const res = await axios.put(`${API}/admin/usuarios/${id}/rol`, { rol }, config())
+  return res.data
+}
+
+// Devuelve la contraseña temporal generada. Solo se ve una vez.
+export const restablecerPassword = async (id) => {
+  const res = await axios.put(`${API}/admin/usuarios/${id}/restablecer-password`, {}, config())
   return res.data
 }
 

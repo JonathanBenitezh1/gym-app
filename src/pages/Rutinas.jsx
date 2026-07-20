@@ -1,181 +1,194 @@
-import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useAvisos } from '../components/Avisos'
 import { obtenerMisRutinas } from '../services/profesorService'
 import NavBar from '../components/NavBar'
+import { SkeletonLista } from '../components/Skeleton'
+import { IconoChevron, IconoRutina } from '../components/Iconos'
+import { fechaCorta } from '../utils/formato'
 import logoDtc from './img/logo_png.png'
+
 export default function Rutinas() {
-  const { usuario, cerrarSesion } = useAuth()
-  const navigate = useNavigate()
+  const { usuario } = useAuth()
+  const { error: avisarError } = useAvisos()
 
-  const [rutinas, setRutinas]           = useState([])
-  const [sesionAbierta, setSesionAbierta] = useState({}) // { rutina_id: sesion_id }
-  const [loading, setLoading]           = useState(true)
-  const [error, setError]               = useState('')
+  const [rutinas, setRutinas]   = useState([])
+  const [abierta, setAbierta]   = useState({})   // { [rutinaId]: sesionId }
+  const [cargando, setCargando] = useState(true)
 
-  useEffect(() => {
-    if (!usuario) navigate('/')
-    cargarRutinas()
-  }, [])
-
-  const cargarRutinas = async () => {
+  const cargar = useCallback(async () => {
     try {
-      const data = await obtenerMisRutinas()
-      setRutinas(data)
+      const datos = await obtenerMisRutinas()
+      setRutinas(datos)
+      // Abrimos la primera sesión de cada rutina: casi siempre es lo que
+      // el alumno viene a mirar, y ahorra un toque.
+      const iniciales = {}
+      for (const r of datos) {
+        if (r.sesiones?.length) iniciales[r.id] = r.sesiones[0].id
+      }
+      setAbierta(iniciales)
     } catch {
-      setError('Error al cargar las rutinas')
+      avisarError('No pudimos cargar tus rutinas')
     } finally {
-      setLoading(false)
+      setCargando(false)
     }
-  }
+  }, [avisarError])
 
-  const toggleSesion = (rutina_id, sesion_id) => {
-    setSesionAbierta(prev => ({
+  useEffect(() => { cargar() }, [cargar])
+
+  const alternar = (rutinaId, sesionId) => {
+    setAbierta(prev => ({
       ...prev,
-      [rutina_id]: prev[rutina_id] === sesion_id ? null : sesion_id
+      [rutinaId]: prev[rutinaId] === sesionId ? null : sesionId
     }))
   }
 
-  const formatearFecha = (fecha) => {
-    return new Date(fecha).toLocaleDateString('es-AR', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-    })
-  }
-
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#202123' }}>
+    <div className="min-h-screen" style={{ paddingBottom: 'calc(var(--alto-nav) + 1.5rem)' }}>
 
-      {/* Navbar */}
-      <div className="flex items-center justify-between px-6 py-4"
-        style={{ backgroundColor: '#25272e' }}>
-        <img src={logoDtc} alt="Logo" className="h-8 w-auto" />
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate('/horarios')}
-            className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#144a4e', color: '#d6dde0' }}>
-            Clases
-          </button>
-          <button onClick={() => navigate('/reservas')}
-            className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#144a4e', color: '#d6dde0' }}>
-            Reservas
-          </button>
+      <header
+        className="sticky top-0 z-20"
+        style={{
+          backgroundColor: 'var(--color-superficie)',
+          borderBottom: '1px solid var(--color-linea-sutil)'
+        }}
+      >
+        <div className="contenedor-ancho flex items-center py-3">
+          <img src={logoDtc} alt="DTC Fight & Fitness" className="h-9 w-auto" />
         </div>
-      </div>
+      </header>
 
-      <div className="px-4 pt-4 pb-8">
+      <main className="contenedor-ancho pt-5">
 
-        {error && <p className="text-sm mb-3 text-center" style={{ color: '#e05555' }}>{error}</p>}
+        <h1 className="text-lg font-bold tracking-tight">Mis rutinas</h1>
+        <p className="mt-0.5 text-sm" style={{ color: 'var(--color-texto-2)' }}>
+          Los planes que te armó tu profesor
+        </p>
 
-        {loading ? (
-          <p className="text-center text-sm mt-8" style={{ color: '#f0f7ff' }}>Cargando rutinas...</p>
-
+        {cargando ? (
+          <div className="mt-6"><SkeletonLista filas={2} /></div>
         ) : rutinas.length === 0 ? (
-          <div className="rounded-2xl p-8 text-center mt-4" style={{ backgroundColor: '#2f373f' }}>
-            <p className="text-2xl mb-3">📋</p>
-            <p className="font-medium text-sm mb-1" style={{ color: '#ccdae1' }}>
-              Todavía no tenés rutinas asignadas
-            </p>
-            <p className="text-xs" style={{ color: '#328723' }}>
-              Tu profesor te va a cargar una rutina personalizada
+          <div className="tarjeta mt-6 p-8 text-center">
+            <span
+              className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full"
+              style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
+            >
+              <IconoRutina size={22} />
+            </span>
+            <p className="font-semibold">Todavía no tenés rutinas</p>
+            <p className="mx-auto mt-1 max-w-xs text-sm" style={{ color: 'var(--color-texto-2)' }}>
+              Cuando tu profesor te cargue un plan personalizado, va a aparecer acá
             </p>
           </div>
-
         ) : (
-          <div className="flex flex-col gap-5 mt-2">
+          <div className="mt-6 flex flex-col gap-4">
             {rutinas.map(rutina => (
-              <div key={rutina.id} className="rounded-2xl overflow-hidden"
-                style={{ backgroundColor: '#f0f7ff' }}>
+              <article key={rutina.id} className="tarjeta overflow-hidden">
 
-                {/* Header del plan */}
-                <div className="px-5 py-4"
-                  style={{ backgroundColor: '#87CEEB' }}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-sm uppercase tracking-wide"
-                        style={{ color: '#1a3a4a' }}>
-                        Plan de {usuario?.nombre}
-                      </p>
-                      <p className="text-xs mt-0.5" style={{ color: '#2c4a5a' }}>
-                        Plan personalizado
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs font-medium" style={{ color: '#2c4a5a' }}>
-                        Prof. {rutina.profesor}
-                      </p>
-                      <p className="text-xs" style={{ color: '#2c4a5a' }}>
-                        Actualizado: {formatearFecha(rutina.updated_at)}
-                      </p>
-                    </div>
+                <div
+                  className="flex items-center justify-between gap-3 px-4 py-3.5"
+                  style={{ backgroundColor: 'var(--color-elevado)' }}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold">
+                      Plan de {usuario?.nombre?.split(' ')[0]}
+                    </p>
+                    <p className="truncate text-xs" style={{ color: 'var(--color-texto-2)' }}>
+                      Prof. {rutina.profesor}
+                    </p>
                   </div>
+                  {rutina.updated_at && (
+                    <span className="insignia insignia-neutra shrink-0">
+                      {fechaCorta(rutina.updated_at)}
+                    </span>
+                  )}
                 </div>
 
-                {/* Sesiones acordeón */}
-                {rutina.sesiones?.length > 0
-                  ? rutina.sesiones.map(sesion => (
-                    <div key={sesion.id}
-                      style={{ borderBottom: '1px solid #e0ecf4' }}>
+                {rutina.sesiones?.length > 0 ? (
+                  <div>
+                    {rutina.sesiones.map(sesion => {
+                      const expandida = abierta[rutina.id] === sesion.id
+                      const ejercicios = sesion.ejercicios || []
+                      return (
+                        <div
+                          key={sesion.id}
+                          style={{ borderTop: '1px solid var(--color-linea-sutil)' }}
+                        >
+                          <button
+                            onClick={() => alternar(rutina.id, sesion.id)}
+                            aria-expanded={expandida}
+                            className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-white/[.03]"
+                          >
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-semibold uppercase tracking-wide">
+                                {sesion.nombre}
+                              </span>
+                              <span className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
+                                {ejercicios.length} {ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}
+                              </span>
+                            </span>
+                            <span
+                              className="shrink-0 transition-transform"
+                              style={{
+                                color: 'var(--color-acento)',
+                                transform: expandida ? 'rotate(180deg)' : 'none'
+                              }}
+                            >
+                              <IconoChevron size={18} />
+                            </span>
+                          </button>
 
-                      {/* Header sesión - clickeable */}
-                      <div
-                        onClick={() => toggleSesion(rutina.id, sesion.id)}
-                        className="flex items-center justify-between px-5 py-4 cursor-pointer"
-                        style={{ backgroundColor: '#ffffff' }}
-                      >
-                        <p className="font-semibold text-sm uppercase tracking-wide"
-                          style={{ color: '#2c4a5a' }}>
-                          {sesion.nombre}
-                        </p>
-                        <span style={{ color: '#87CEEB', fontSize: 18 }}>
-                          {sesionAbierta[rutina.id] === sesion.id ? '▲' : '▼'}
-                        </span>
-                      </div>
-
-                      {/* Ejercicios — se muestran si la sesión está abierta */}
-                      {sesionAbierta[rutina.id] === sesion.id && (
-                        <div style={{ backgroundColor: '#f8fbff' }}>
-                          {sesion.ejercicios?.map((ej, idx) => (
-                            <div key={ej.id || idx}
-                              className="px-5 py-3"
-                              style={{ borderTop: '1px solid #e0ecf4' }}>
-                              <p className="font-medium text-sm uppercase mb-1"
-                                style={{ color: '#2c4a5a' }}>
-                                {ej.nombre}
-                              </p>
-                              <div className="flex gap-6">
-                                <div>
-                                  <p className="text-xs" style={{ color: '#778899' }}>Series</p>
-                                  <p className="text-sm font-semibold" style={{ color: '#87CEEB' }}>
-                                    {ej.series}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-xs" style={{ color: '#778899' }}>Reps.</p>
-                                  <p className="text-sm font-semibold" style={{ color: '#87CEEB' }}>
-                                    {ej.repeticiones}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                          {expandida && (
+                            <ul className="aparecer flex flex-col">
+                              {ejercicios.length === 0 ? (
+                                <li className="px-4 pb-4 text-sm" style={{ color: 'var(--color-texto-3)' }}>
+                                  Esta sesión todavía no tiene ejercicios cargados.
+                                </li>
+                              ) : ejercicios.map((ej, i) => (
+                                <li
+                                  key={ej.id || i}
+                                  className="flex items-center justify-between gap-3 px-4 py-2.5"
+                                  style={{
+                                    borderTop: '1px solid var(--color-linea-sutil)',
+                                    backgroundColor: 'var(--color-fondo)'
+                                  }}
+                                >
+                                  <span className="flex min-w-0 items-center gap-2.5">
+                                    <span
+                                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold"
+                                      style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
+                                    >
+                                      {i + 1}
+                                    </span>
+                                    <span className="truncate text-sm font-medium">{ej.nombre}</span>
+                                  </span>
+                                  <span className="flex shrink-0 gap-3 text-xs">
+                                    <span style={{ color: 'var(--color-texto-3)' }}>
+                                      <b style={{ color: 'var(--color-acento)' }}>{ej.series}</b> series
+                                    </span>
+                                    <span style={{ color: 'var(--color-texto-3)' }}>
+                                      <b style={{ color: 'var(--color-acento)' }}>{ej.repeticiones}</b> reps
+                                    </span>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))
-                  : (
-                    <div className="px-5 py-4">
-                      <p className="text-sm" style={{ color: '#778899' }}>
-                        Esta rutina no tiene sesiones cargadas aún.
-                      </p>
-                    </div>
-                  )
-                }
-              </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="px-4 py-4 text-sm" style={{ color: 'var(--color-texto-3)' }}>
+                    Esta rutina todavía no tiene sesiones cargadas.
+                  </p>
+                )}
+              </article>
             ))}
           </div>
         )}
-      </div>
+      </main>
+
       <NavBar />
     </div>
   )

@@ -2,206 +2,184 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { registrarUsuario } from '../services/authService'
 import { useAuth } from '../context/AuthContext'
-import logoDtc from '../pages/img/logo_png.png' 
+import { IconoOjo, IconoOjoTachado } from '../components/Iconos'
+import logoDtc from './img/logo_png.png'
 
-function Registro() {
-  const [nombre, setNombre] = useState('')
-  const [email, setEmail] = useState('')
-  const [dni, setDni] = useState('')
-  const [telefono, setTelefono] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmar, setConfirmar] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+const VACIO = { nombre: '', dni: '', telefono: '', email: '', password: '', confirmar: '' }
+
+/**
+ * Definido fuera del componente a propósito: si se declara adentro,
+ * React lo trata como un tipo nuevo en cada render y vuelve a montar
+ * el input, con lo cual se pierde el foco a cada tecla.
+ */
+function CampoTexto({ id, etiqueta, ayuda, error, valor, alCambiar, ...props }) {
+  return (
+    <div>
+      <label htmlFor={id} className="etiqueta-campo">{etiqueta}</label>
+      <input
+        id={id}
+        value={valor}
+        onChange={alCambiar}
+        className={`campo ${error ? 'campo-error' : ''}`}
+        {...props}
+      />
+      {error
+        ? <p className="mt-1 text-xs" style={{ color: 'var(--color-error)' }}>{error}</p>
+        : ayuda && <p className="mt-1 text-xs" style={{ color: 'var(--color-texto-3)' }}>{ayuda}</p>
+      }
+    </div>
+  )
+}
+
+export default function Registro() {
+  const [datos, setDatos]       = useState(VACIO)
+  const [errores, setErrores]   = useState({})
+  const [errorGeneral, setErrorGeneral] = useState('')
+  const [verClave, setVerClave] = useState(false)
+  const [cargando, setCargando] = useState(false)
 
   const navigate = useNavigate()
   const { guardarSesion } = useAuth()
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const cambiar = (campo) => (e) => {
+    setDatos(d => ({ ...d, [campo]: e.target.value }))
+    // Al corregir un campo, sacamos su error para no dejarlo marcado en rojo
+    setErrores(err => (err[campo] ? { ...err, [campo]: null } : err))
+  }
 
-    if (!nombre || !email || !password || !confirmar) {
-      setError('Completá todos los campos')
-      return
-    }
-    
+  /** Valida todo junto para poder señalar cada campo con su propio mensaje. */
+  const validar = () => {
+    const e = {}
+    if (datos.nombre.trim().length < 2)        e.nombre    = 'Ingresá tu nombre completo'
+    if (!/^\d{7,8}$/.test(datos.dni.trim()))   e.dni       = 'El DNI debe tener 7 u 8 números, sin puntos'
+    if (!/^\d{10,15}$/.test(datos.telefono.trim())) e.telefono = 'Ingresá el número con característica, sin 0 ni 15'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.email.trim())) e.email = 'Revisá el formato del email'
+    if (datos.password.length < 6)             e.password  = 'Mínimo 6 caracteres'
+    if (datos.password !== datos.confirmar)    e.confirmar = 'Las contraseñas no coinciden'
+    return e
+  }
 
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
-      return
-    }
+  const enviar = async (ev) => {
+    ev.preventDefault()
 
-    if (password !== confirmar) {
-      setError('Las contraseñas no coinciden')
-      return
-    }
-    
-    if (!/^\d{10,15}$/.test(telefono)) {
-  setError('El teléfono debe tener entre 10 y 15 números')
-  return
-}
+    const encontrados = validar()
+    setErrores(encontrados)
+    setErrorGeneral('')
+    if (Object.keys(encontrados).length > 0) return
 
-    if (!/^\d{7,8}$/.test(dni)) {
-    setError('El DNI debe tener 7 u 8 números')
-    return
-    }
-
-
-    setError('')
-    setLoading(true)
-
+    setCargando(true)
     try {
-      const data = await registrarUsuario(nombre, email, password, dni,telefono)
-
-      // Después del registro guardamos la sesión directo
-      guardarSesion(data.token, data.usuario)
-      navigate('/horarios')
-
+      const resultado = await registrarUsuario(
+        datos.nombre.trim(),
+        datos.email.trim(),
+        datos.password,
+        datos.dni.trim(),
+        datos.telefono.trim()
+      )
+      guardarSesion(resultado.token, resultado.usuario)
+      navigate('/horarios', { replace: true })
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al registrarse')
+      setErrorGeneral(
+        err.response?.data?.error ||
+        (err.response ? 'No pudimos crear tu cuenta' : 'No pudimos conectar con el gimnasio. Revisá tu conexión.')
+      )
     } finally {
-      setLoading(false)
+      setCargando(false)
     }
   }
 
+  // Props comunes de cada campo, para no repetirlas en el formulario
+  const propsDe = (id) => ({
+    id,
+    valor: datos[id],
+    alCambiar: cambiar(id),
+    error: errores[id]
+  })
+
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{ backgroundColor: '#202123' }}
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl shadow-lg p-8"
-        style={{ backgroundColor: '#31363c' }}
-      >
-        <div className="text-center mb-8">
-          <img 
-                      src={logoDtc} 
-                      alt="DTC Fight & Fitness Logo" 
-                      className="mx-auto h-32 w-auto mb-2" // Subí un poco el tamaño a h-32 para que se luzca el detalle
-                      style={{ display: 'block', filter: 'drop-shadow(0px 4px 6px rgba(0,0,0,0.3))' }} 
-                    />
-          <p className="mt-1 text-sm" style={{ color: '#dce2e7' }}>
-            Creá tu cuenta
+    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-10">
+      <div className="w-full max-w-sm">
+
+        <div className="mb-7 text-center">
+          <img
+            src={logoDtc}
+            alt="DTC Fight & Fitness"
+            className="mx-auto mb-4 h-24 w-auto"
+            style={{ filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.45))' }}
+          />
+          <h1 className="text-xl font-bold tracking-tight">Creá tu cuenta</h1>
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-texto-2)' }}>
+            Es gratis y te lleva un minuto
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium" style={{ color: '#dce2e7' }}>
-              Nombre completo
-            </label>
-            <input
-              type="text"
-              placeholder="Juan Pérez"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="rounded-lg px-4 py-2 text-sm outline-none border"
-              style={{ borderColor: '#121213', color: '#2c4a5a', backgroundColor: '#ffffff' }}
-            />
-          </div>
-          
-          <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium" style={{ color: '#dce2e7'}}>
-          DNI
-          </label>
-      <input
-    type="text"
-    placeholder="12345678"
-    value={dni}
-    onChange={(e) => setDni(e.target.value)}
-    className="rounded-lg px-4 py-2 text-sm outline-none border"
-    style={{ borderColor: '#121213', color: '#2c4a5a', backgroundColor: '#ffffff' }}
-  />
-</div>
+        <form onSubmit={enviar} className="tarjeta flex flex-col gap-4 p-6" noValidate>
+          <CampoTexto {...propsDe('nombre')}   etiqueta="Nombre completo" type="text" placeholder="Juan Pérez" autoComplete="name" />
+          <CampoTexto {...propsDe('dni')}      etiqueta="DNI" type="text" inputMode="numeric" placeholder="30123456" ayuda="Sin puntos" />
+          <CampoTexto {...propsDe('telefono')} etiqueta="Teléfono" type="tel" inputMode="numeric" placeholder="3511234567" ayuda="Con característica, sin 0 ni 15" />
+          <CampoTexto {...propsDe('email')}    etiqueta="Email" type="email" inputMode="email" placeholder="tu@email.com" autoComplete="email" />
 
-<div className="flex flex-col gap-1">
-  <label className="text-sm font-medium" style={{ color: '#dce2e7'}}>
-    Teléfono
-  </label>
-  <input
-    type="tel"
-    placeholder="Ej: 3512345678"
-    value={telefono}
-    onChange={(e) => setTelefono(e.target.value)}
-    className="rounded-lg px-4 py-2 text-sm outline-none border"
-    style={{ borderColor: '#121213', color: '#2c4a5a', backgroundColor: '#ffffff' }}
-  />
-</div>
-
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium" style={{ color: '#dce2e7' }}>
-              Email
-            </label>
-            <input
-              type="email"
-              placeholder="tu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="rounded-lg px-4 py-2 text-sm outline-none border"
-              style={{ borderColor: '#121213', color: '#2c4a5a', backgroundColor: '#ffffff' }}
-            />
+          <div>
+            <label htmlFor="password" className="etiqueta-campo">Contraseña</label>
+            <div className="relative">
+              <input
+                id="password"
+                type={verClave ? 'text' : 'password'}
+                autoComplete="new-password"
+                placeholder="Mínimo 6 caracteres"
+                value={datos.password}
+                onChange={cambiar('password')}
+                className={`campo pr-12 ${errores.password ? 'campo-error' : ''}`}
+              />
+              <button
+                type="button"
+                onClick={() => setVerClave(v => !v)}
+                aria-label={verClave ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-lg p-2.5 transition-colors hover:bg-white/5"
+                style={{ color: 'var(--color-texto-3)' }}
+              >
+                {verClave ? <IconoOjoTachado size={19} /> : <IconoOjo size={19} />}
+              </button>
+            </div>
+            {errores.password && (
+              <p className="mt-1 text-xs" style={{ color: 'var(--color-error)' }}>{errores.password}</p>
+            )}
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium" style={{ color: '#dce2e7' }}>
-              Contraseña
-            </label>
-            <input
-              type="password"
-              placeholder="Mínimo 6 caracteres"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="rounded-lg px-4 py-2 text-sm outline-none border"
-              style={{ borderColor: '#121213', color: '#2c4a5a', backgroundColor: '#ffffff' }}
-            />
-          </div>
+          <CampoTexto
+            {...propsDe('confirmar')}
+            etiqueta="Repetir contraseña"
+            type={verClave ? 'text' : 'password'}
+            placeholder="Repetí tu contraseña"
+            autoComplete="new-password"
+          />
 
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium" style={{ color: '#dce2e7' }}>
-              Confirmar contraseña
-            </label>
-            <input
-              type="password"
-              placeholder="Repetí tu contraseña"
-              value={confirmar}
-              onChange={(e) => setConfirmar(e.target.value)}
-              className="rounded-lg px-4 py-2 text-sm outline-none border"
-              style={{ borderColor: '#121213', color: '#2c4a5a', backgroundColor: '#ffffff' }}
-            />
-          </div>
-
-          {error && (
-            <p className="text-sm text-center" style={{ color: '#e05555' }}>
-              {error}
+          {errorGeneral && (
+            <p
+              className="rounded-lg px-3 py-2 text-sm"
+              style={{ backgroundColor: 'var(--color-error-bajo)', color: 'var(--color-error)' }}
+              role="alert"
+            >
+              {errorGeneral}
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="font-semibold py-2 rounded-lg transition-opacity"
-            style={{
-              backgroundColor: loading ? '#b0d8ed' : '#161717',
-              color: '#d6dde0'
-            }}
-          >
-            {loading ? 'Registrando...' : 'Crear cuenta'}
+          <button type="submit" disabled={cargando} className="btn btn-primario btn-bloque mt-1">
+            {cargando ? 'Creando cuenta…' : 'Crear cuenta'}
           </button>
         </form>
 
-        <p className="text-center text-sm mt-6" style={{ color: '#778899' }}>
+        <p className="mt-6 text-center text-sm" style={{ color: 'var(--color-texto-2)' }}>
           ¿Ya tenés cuenta?{' '}
-          <span
-            className="cursor-pointer hover:underline font-medium"
-            style={{ color: '#dce2e7' }}
+          <button
             onClick={() => navigate('/')}
+            className="font-semibold underline-offset-4 hover:underline"
+            style={{ color: 'var(--color-acento)' }}
           >
             Iniciá sesión
-          </span>
+          </button>
         </p>
       </div>
     </div>
   )
 }
-
-export default Registro

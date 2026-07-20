@@ -23,7 +23,25 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // Este proyecto no incluye eslint-plugin-react, así que la regla base
+      // no reconoce el uso de un identificador dentro de JSX. Por eso se
+      // ignoran los nombres en mayúscula (componentes), tanto en variables
+      // como en parámetros: si no, marca como "sin usar" componentes que sí
+      // se están renderizando.
+      'no-unused-vars': ['error', {
+        varsIgnorePattern: '^[A-Z_]',
+        argsIgnorePattern: '^[A-Z_]|^_',
+      }],
+
+      // Cargar datos al montar la pantalla y guardar el resultado en estado
+      // es el patrón que usa toda la app. La regla lo señala igual, así que
+      // queda como aviso: sirve para revisarlo, pero no frena la compilación.
+      'react-hooks/set-state-in-effect': 'warn',
+
+      // Solo afecta al refresco instantáneo mientras se programa. Varios
+      // archivos exportan el componente y su hook asociado a propósito
+      // (por ejemplo el contexto de sesión), que es lo habitual.
+      'react-refresh/only-export-components': 'warn',
     },
   },
 ])

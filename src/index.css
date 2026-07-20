@@ -1,6 +1,291 @@
-@import "tailwindcss" ;
+@import "tailwindcss";
+
+/* ══════════════════════════════════════════════════════════════
+   SISTEMA DE DISEÑO — DTC Fight & Fitness
+
+   Paleta construida sobre los colores originales de la marca:
+   el gris carbón del fondo y el celeste del logo. La diferencia
+   es que ahora todo el tema es oscuro y coherente: antes había
+   tarjetas blancas sobre fondo negro, que cortaban la lectura.
+   ══════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* Superficies — del más profundo al más elevado */
+  --color-fondo:      #1b1d20;
+  --color-superficie: #23272b;
+  --color-elevado:    #2c3137;
+  --color-linea:      #363c43;
+  --color-linea-sutil: #2b3036;
+
+  /* Texto */
+  --color-texto:      #eef1f3;
+  --color-texto-2:    #a3aeb6;
+  --color-texto-3:    #6d7982;
+
+  /* Acento de marca — el celeste del logo */
+  --color-acento:      #87ceeb;
+  --color-acento-alto: #a8dcf1;
+  --color-acento-bajo: #1e3a47;
+  --color-sobre-acento: #0d1b22;
+
+  /* Verde azulado secundario, de los botones originales */
+  --color-teal:      #1e5761;
+  --color-teal-alto: #2a7481;
+
+  /* Estados */
+  --color-exito:     #45c47c;
+  --color-exito-bajo: #14301f;
+  --color-alerta:     #e3ab45;
+  --color-alerta-bajo: #322713;
+  --color-error:      #ec6a65;
+  --color-error-bajo: #351c1c;
+
+  /* Tipografía */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ─── Base ─────────────────────────────────────────────── */
 
 :root {
-  --color-fondo: #778899;
-  --color-primario: #87CEEB;
+  /* Alto de la barra inferior. Lo usan las pantallas para dejar
+     espacio libre abajo y para ubicar los botones flotantes. */
+  --alto-nav: 60px;
 }
+
+html {
+  background-color: var(--color-fondo);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  /* Respeta la barra de gestos del celular */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Que el foco por teclado siempre se vea: accesibilidad */
+:focus-visible {
+  outline: 2px solid var(--color-acento);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Quitamos el resaltado azul al tocar en móvil */
+button, a, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Componentes ──────────────────────────────────────── */
+
+@layer components {
+
+  /* Contenedor central: en el celular ocupa todo,
+     en pantallas grandes se limita para que no quede estirado */
+  .contenedor {
+    width: 100%;
+    max-width: 640px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+  .contenedor-ancho {
+    width: 100%;
+    max-width: 1100px;
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  /* ── Tarjetas ── */
+  .tarjeta {
+    background-color: var(--color-superficie);
+    border: 1px solid var(--color-linea-sutil);
+    border-radius: 1rem;
+  }
+  .tarjeta-interactiva {
+    transition: border-color .15s ease, background-color .15s ease, transform .1s ease;
+    cursor: pointer;
+  }
+  .tarjeta-interactiva:hover {
+    border-color: var(--color-linea);
+    background-color: var(--color-elevado);
+  }
+  .tarjeta-interactiva:active { transform: scale(.995); }
+
+  /* ── Botones ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    font-weight: 600;
+    font-size: .875rem;
+    line-height: 1;
+    padding: .75rem 1.15rem;
+    border-radius: .7rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: filter .15s ease, background-color .15s ease, border-color .15s ease;
+    /* Área táctil cómoda en el celular */
+    min-height: 44px;
+  }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+  .btn:not(:disabled):hover { filter: brightness(1.08); }
+  .btn:not(:disabled):active { filter: brightness(.95); }
+
+  .btn-primario {
+    background-color: var(--color-acento);
+    color: var(--color-sobre-acento);
+  }
+  .btn-secundario {
+    background-color: var(--color-teal);
+    color: var(--color-texto);
+  }
+  .btn-contorno {
+    background-color: transparent;
+    border-color: var(--color-linea);
+    color: var(--color-texto-2);
+  }
+  .btn-contorno:not(:disabled):hover {
+    border-color: var(--color-acento);
+    color: var(--color-acento);
+  }
+  .btn-fantasma {
+    background-color: transparent;
+    color: var(--color-texto-2);
+  }
+  .btn-fantasma:not(:disabled):hover {
+    background-color: var(--color-elevado);
+    color: var(--color-texto);
+  }
+  .btn-peligro {
+    background-color: var(--color-error-bajo);
+    color: var(--color-error);
+    border-color: color-mix(in srgb, var(--color-error) 30%, transparent);
+  }
+  .btn-bloque { width: 100%; }
+  .btn-chico {
+    padding: .45rem .75rem;
+    font-size: .78rem;
+    min-height: 34px;
+    border-radius: .55rem;
+  }
+
+  /* ── Formularios ── */
+  .campo {
+    width: 100%;
+    background-color: var(--color-fondo);
+    border: 1px solid var(--color-linea);
+    border-radius: .7rem;
+    padding: .7rem .9rem;
+    color: var(--color-texto);
+    font-size: 1rem; /* 16px evita que iOS haga zoom al enfocar */
+    transition: border-color .15s ease;
+    min-height: 46px;
+  }
+  .campo::placeholder { color: var(--color-texto-3); }
+  .campo:focus {
+    outline: none;
+    border-color: var(--color-acento);
+  }
+  .campo-error { border-color: var(--color-error); }
+
+  .etiqueta-campo {
+    display: block;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--color-texto-2);
+    margin-bottom: .4rem;
+    letter-spacing: .02em;
+  }
+
+  select.campo {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236d7982' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right .7rem center;
+    background-size: 1.1rem;
+    padding-right: 2.4rem;
+  }
+
+  /* ── Insignias de estado ── */
+  .insignia {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    font-size: .7rem;
+    font-weight: 600;
+    padding: .22rem .55rem;
+    border-radius: 999px;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .insignia-exito  { background-color: var(--color-exito-bajo);  color: var(--color-exito); }
+  .insignia-alerta { background-color: var(--color-alerta-bajo); color: var(--color-alerta); }
+  .insignia-error  { background-color: var(--color-error-bajo);  color: var(--color-error); }
+  .insignia-neutra { background-color: var(--color-elevado);     color: var(--color-texto-2); }
+  .insignia-acento { background-color: var(--color-acento-bajo); color: var(--color-acento); }
+
+  /* ── Filtros tipo píldora ── */
+  .pildora {
+    font-size: .78rem;
+    font-weight: 600;
+    padding: .42rem .8rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-linea);
+    background-color: transparent;
+    color: var(--color-texto-2);
+    cursor: pointer;
+    transition: all .15s ease;
+    white-space: nowrap;
+    min-height: 34px;
+  }
+  .pildora:hover { border-color: var(--color-texto-3); color: var(--color-texto); }
+  .pildora-activa {
+    background-color: var(--color-acento);
+    border-color: var(--color-acento);
+    color: var(--color-sobre-acento);
+  }
+
+  /* ── Encabezados de sección ── */
+  .titulo-seccion {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--color-texto-3);
+  }
+
+  /* Fila de filtros que se desliza sin cortar en pantallas chicas */
+  .fila-scroll {
+    display: flex;
+    gap: .45rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: .15rem;
+  }
+  .fila-scroll::-webkit-scrollbar { display: none; }
+}
+
+/* ─── Animaciones ──────────────────────────────────────── */
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.aparecer { animation: aparecer .25s ease-out both; }
+
+@keyframes bajar-aviso {
+  from { opacity: 0; transform: translateY(-14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.bajar-aviso { animation: bajar-aviso .22s ease-out both; }

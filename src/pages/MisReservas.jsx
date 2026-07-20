@@ -1,247 +1,238 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { io } from 'socket.io-client'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useAvisos } from '../components/Avisos'
 import { obtenerMisReservas, cancelarReserva } from '../services/clasesService'
 import NavBar from '../components/NavBar'
-import { useLocation } from 'react-router-dom'
-import logoDtc from './img/logo_png.png'
 import { SkeletonListaReservas } from '../components/Skeleton'
+import { IconoReloj, IconoCalendario, IconoCheck, IconoAlerta } from '../components/Iconos'
+import { precio, rangoFechas, rangoHorario } from '../utils/formato'
+import logoDtc from './img/logo_png.png'
 
 export default function MisReservas() {
-  const { usuario, cerrarSesion } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const { exito, error: avisarError, confirmar } = useAvisos()
 
   const [reservas, setReservas] = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [error, setError]       = useState('')
-  const [exito, setExito]       = useState('')
-  const location = useLocation()
-  const mensajeEstado = location.state?.mensaje
-  const socketRef = useRef(null)
+  const [cargando, setCargando] = useState(true)
+
+  const cargar = useCallback(async () => {
+    try {
+      setReservas(await obtenerMisReservas())
+    } catch {
+      avisarError('No pudimos cargar tus reservas')
+    } finally {
+      setCargando(false)
+    }
+  }, [avisarError])
+
+  useEffect(() => { cargar() }, [cargar])
+
+  // Mensaje que llega al volver de la pantalla de pago
+  useEffect(() => {
+    if (location.state?.mensaje) {
+      exito(location.state.mensaje, 6000)
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state, location.pathname, exito, navigate])
 
   useEffect(() => {
-    if (!usuario) navigate('/')
-    cargarReservas()
-  }, [])
+    const socket = io(import.meta.env.VITE_SOCKET_URL)
+    socket.on('pago_confirmado', cargar)
+    socket.on('reserva_cancelada', cargar)
+    socket.on('actualizacion_horarios', cargar)
+    return () => socket.disconnect()
+  }, [cargar])
 
-useEffect(() => {
-  socketRef.current = io(import.meta.env.VITE_SOCKET_URL)
+  const cancelar = async (reserva) => {
+    const confirmado = await confirmar({
+      titulo: '¿Cancelar esta reserva?',
+      mensaje: `Se va a liberar tu lugar en ${reserva.clase} (${reserva.dia_semana}). Esta acción no se puede deshacer.`,
+      textoConfirmar: 'Sí, cancelar',
+      textoCancelar: 'No, volver',
+      peligroso: true
+    })
+    if (!confirmado) return
 
-  socketRef.current.on('pago_confirmado', () => {
-    cargarReservas()
-  })
-
-  socketRef.current.on('reserva_cancelada', () => {
-    cargarReservas()
-  })
-
-  socketRef.current.on('actualizacion_horarios', () => {
-    cargarReservas()
-  })
-
-  return () => {
-    if (socketRef.current) socketRef.current.disconnect()
-  }
-}, [])
-
-  const cargarReservas = async () => {
     try {
-      const data = await obtenerMisReservas()
-      setReservas(data)
-    } catch {
-      setError('Error al cargar las reservas')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleCancelar = async (id) => {
-    if (!confirm('¿Seguro que querés cancelar esta reserva?')) return
-    try {
-      await cancelarReserva(id)
-      setExito('Reserva cancelada correctamente')
-      setTimeout(() => setExito(''), 3000)
-      await cargarReservas()
+      await cancelarReserva(reserva.id)
+      exito('Reserva cancelada')
+      await cargar()
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al cancelar')
+      avisarError(err.response?.data?.error || 'No pudimos cancelar la reserva')
     }
   }
 
-  // Agrupamos las reservas por estado para mostrarlas ordenadas
-  const pendientes = reservas.filter(r => r.estado === 'pendiente')
-  const pagadas    = reservas.filter(r => r.estado === 'pagado')
-  const canceladas = reservas.filter(r => r.estado === 'cancelado')
+  const grupos = useMemo(() => ({
+    pendientes: reservas.filter(r => r.estado === 'pendiente'),
+    pagadas:    reservas.filter(r => r.estado === 'pagado'),
+    canceladas: reservas.filter(r => r.estado === 'cancelado')
+  }), [reservas])
 
-  const colorEstado = (estado) => {
-    if (estado === 'pagado')    return { backgroundColor: '#e8f5e9', color: '#2d8a4e' }
-    if (estado === 'cancelado') return { backgroundColor: '#fce8e8', color: '#e05555' }
-    return { backgroundColor: '#fff8e1', color: '#b8860b' }
-  }
-
-  const CardReserva = ({ r }) => (
-    <div
-      className="rounded-2xl p-4 mb-3"
-      style={{ backgroundColor: '#3e4045' }}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <div>
-          <p className="font-semibold text-sm" style={{ color: '#f2f5f6' }}>
-            {r.clase}
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: '#f2f5f6' }}>
-            {r.dia_semana} · {r.hora_inicio?.slice(0,5)} - {r.hora_fin?.slice(0,5)}
-          </p>
-          <p className="text-xs" style={{ color: '#f2f5f6' }}>
-            {r.rama} · {r.tipo}
-          </p>
-          <p className="text-xs" style={{ color: '#f2f5f6' }}>
-            {r.fecha_inicio} → {r.fecha_fin}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="font-bold text-sm" style={{ color: '#1e863f' }}>
-            ${parseFloat(r.total).toFixed(2)}
-          </p>
-          <span
-            className="text-xs px-2 py-0.5 rounded-full"
-            style={colorEstado(r.estado)}
-          >
-            {r.estado}
-          </span>
-        </div>
-      </div>
-
-      {/* Método de pago */}
-      {r.metodo && (
-        <p className="text-xs mb-2" style={{ color: '#778899' }}>
-          Pago: {r.metodo}
-        </p>
-      )}
-
-      {/* Botón cancelar solo si está pendiente */}
-{r.estado === 'pendiente' && (
-  <div className="flex flex-col gap-2 mt-2">
-    {r.metodo ? (
-      // Ya tiene método registrado → solo mostrar cartel o mensaje
-      r.metodo === 'efectivo' ? (
-        <div className="w-full py-2 px-3 rounded-lg text-xs font-medium text-center"
-          style={{ backgroundColor: '#fff8e1', color: '#b8860b' }}>
-          💵 Recordá abonar antes de iniciar tu entrenamiento
-        </div>
-      ) : (
-        <div className="w-full py-2 px-3 rounded-lg text-xs font-medium text-center"
-          style={{ backgroundColor: '#e8f5e9', color: '#2d8a4e' }}>
-          ✅ Pago registrado por {r.metodo}
-        </div>
-      )
-    ) : (
-      // Sin método → mostrar botón pagar
-      <button
-        onClick={() => navigate('/pagar', { state: { reserva: r } })}
-        className="flex-1 py-2 rounded-lg text-xs font-semibold"
-        style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}
-      >
-        Pagar ahora
-      </button>
-    )}
-    <button
-      onClick={() => handleCancelar(r.id)}
-      className="px-4 py-2 rounded-lg text-xs"
-      style={{ backgroundColor: '#fce8e8', color: '#e05555' }}
-    >
-      Cancelar
-    </button>
-  </div>
-)}
-    </div>
-  )
+  const sinNada = !cargando && reservas.length === 0
+  const aPagar  = grupos.pendientes.filter(r => !r.metodo).length
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#202123' }}>
+    <div className="min-h-screen" style={{ paddingBottom: 'calc(var(--alto-nav) + 1.5rem)' }}>
 
-      {/* Navbar */}
-      <div className="flex items-center justify-between px-6 py-4"
-        style={{ backgroundColor: '#25272e' }}>
-        <img src={logoDtc} alt="Logo" className="h-8 w-auto" />
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/horarios')}
-            className="text-xs px-3 py-1 rounded-lg"
-            style={{  backgroundColor: '#144a4e', color: '#d6dde0' }}
-          >
+      <header
+        className="sticky top-0 z-20"
+        style={{
+          backgroundColor: 'var(--color-superficie)',
+          borderBottom: '1px solid var(--color-linea-sutil)'
+        }}
+      >
+        <div className="contenedor-ancho flex items-center justify-between py-3">
+          <img src={logoDtc} alt="DTC Fight & Fitness" className="h-9 w-auto" />
+          <button onClick={() => navigate('/horarios')} className="btn btn-contorno btn-chico">
             Ver clases
           </button>
         </div>
-      </div>
+      </header>
 
-      <div className="px-4 pt-4 pb-8">
+      <main className="contenedor-ancho pt-5">
 
-        {/* Mensajes */}
-        {error && <p className="text-sm mb-3 text-center" style={{ color: '#e05555' }}>{error}</p>}
-        {exito && <p className="text-sm mb-3 text-center" style={{ color: '#2d8a4e' }}>{exito}</p>}
-        {mensajeEstado && (
-          <div className="rounded-2xl p-4 mb-3"
-            style={{ backgroundColor: '#fff8e1' }}>
-            <p className="text-sm font-medium text-center" style={{ color: '#b8860b' }}>
-              {mensajeEstado}
-            </p>
-          </div>
+        <h1 className="text-lg font-bold tracking-tight">Mis reservas</h1>
+        {aPagar > 0 && (
+          <p className="mt-0.5 flex items-center gap-1.5 text-sm" style={{ color: 'var(--color-alerta)' }}>
+            <IconoAlerta size={14} />
+            {aPagar === 1 ? 'Tenés 1 reserva sin pagar' : `Tenés ${aPagar} reservas sin pagar`}
+          </p>
         )}
-        {loading ? (
-  <SkeletonListaReservas />
-) : reservas.length === 0 ? (
-          <div className="rounded-2xl p-8 text-center mt-4" style={{ backgroundColor: '#2f373f' }}>
-            <p className="text-sm font-medium mb-1" style={{ color: '#ccdae1' }}>
-              No tenés reservas todavía
-            </p>
-            <p className="text-xs mb-4" style={{ color: '#778899' }}>
-              Explorá las clases disponibles y armá tu horario
-            </p>
-            <button
-              onClick={() => navigate('/horarios')}
-              className="px-6 py-2 rounded-lg text-sm font-semibold"
-              style={{ backgroundColor: '#144a4e', color: '#d6dde0' }}
+
+        {cargando ? (
+          <div className="mt-6"><SkeletonListaReservas /></div>
+        ) : sinNada ? (
+          <div className="tarjeta mt-6 p-8 text-center">
+            <span
+              className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full"
+              style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
             >
-              Ver clases
+              <IconoCalendario size={22} />
+            </span>
+            <p className="font-semibold">Todavía no reservaste ninguna clase</p>
+            <p className="mx-auto mt-1 max-w-xs text-sm" style={{ color: 'var(--color-texto-2)' }}>
+              Mirá los horarios disponibles y armá tu semana de entrenamiento
+            </p>
+            <button onClick={() => navigate('/horarios')} className="btn btn-primario mt-5">
+              Ver clases disponibles
             </button>
           </div>
         ) : (
-          <>
-            {/* Pendientes de pago */}
-            {pendientes.length > 0 && (
-              <div className="mb-4">
-                <p className="text-xs font-semibold mb-2 px-1" style={{ color: '#f0f7ff' }}>
-                  PENDIENTES DE PAGO ({pendientes.length})
-                </p>
-                {pendientes.map(r => <CardReserva key={`pendiente-${r.id}`} r={r} />)}
-              </div>
-            )}
-
-            {/* Pagadas */}
-            {pagadas.length > 0 && (
-              <div className="mb-4">
-                <p className="text-xs font-semibold mb-2 px-1" style={{ color: '#f0f7ff' }}>
-                  CONFIRMADAS ({pagadas.length})
-                </p>
-                {pagadas.map(r => <CardReserva key={`pagada-${r.id}`} r={r} />)}
-              </div>
-            )}
-
-            {/* Canceladas */}
-            {canceladas.length > 0 && (
-              <div className="mb-4">
-                <p className="text-xs font-semibold mb-2 px-1" style={{ color: '#f0f7ff' }}>
-                  CANCELADAS ({canceladas.length})
-                </p>
-                {canceladas.map(r => <CardReserva key={`cancelada-${r.id}`} r={r} />)}
-              </div>
-            )}
-          </>
+          <div className="mt-6 flex flex-col gap-7">
+            <Grupo
+              titulo="Pendientes de pago"
+              cantidad={grupos.pendientes.length}
+              reservas={grupos.pendientes}
+              alPagar={r => navigate('/pagar', { state: { reserva: r } })}
+              alCancelar={cancelar}
+            />
+            <Grupo
+              titulo="Confirmadas"
+              cantidad={grupos.pagadas.length}
+              reservas={grupos.pagadas}
+            />
+            <Grupo
+              titulo="Canceladas"
+              cantidad={grupos.canceladas.length}
+              reservas={grupos.canceladas}
+              atenuado
+            />
+          </div>
         )}
-      </div>
+      </main>
+
       <NavBar />
     </div>
   )
-  
+}
+
+/* ─── Grupo por estado ─────────────────────────────────── */
+
+function Grupo({ titulo, cantidad, reservas, alPagar, alCancelar, atenuado }) {
+  if (cantidad === 0) return null
+  return (
+    <section style={atenuado ? { opacity: 0.6 } : undefined}>
+      <h2 className="titulo-seccion mb-2">{titulo} ({cantidad})</h2>
+      <div className="grid gap-2.5 sm:grid-cols-2">
+        {reservas.map(r => (
+          <TarjetaReserva
+            key={r.id}
+            reserva={r}
+            alPagar={alPagar}
+            alCancelar={alCancelar}
+          />
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/* ─── Tarjeta de reserva ───────────────────────────────── */
+
+const ESTILO_ESTADO = {
+  pagado:    { clase: 'insignia-exito',  texto: 'Pagada' },
+  cancelado: { clase: 'insignia-error',  texto: 'Cancelada' },
+  pendiente: { clase: 'insignia-alerta', texto: 'Pendiente' }
+}
+
+function TarjetaReserva({ reserva, alPagar, alCancelar }) {
+  const estado = ESTILO_ESTADO[reserva.estado] || ESTILO_ESTADO.pendiente
+  const esperandoPago = reserva.estado === 'pendiente'
+
+  return (
+    <article className="tarjeta flex flex-col p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold">{reserva.clase}</p>
+          <p className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>
+            <IconoReloj size={13} />
+            {reserva.dia_semana} · {rangoHorario(reserva.hora_inicio, reserva.hora_fin)}
+          </p>
+          <p className="mt-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>
+            <IconoCalendario size={13} />
+            {rangoFechas(reserva.fecha_inicio, reserva.fecha_fin)}
+          </p>
+          <p className="mt-0.5 text-xs capitalize" style={{ color: 'var(--color-texto-3)' }}>
+            {reserva.rama} · {reserva.tipo}
+          </p>
+        </div>
+
+        <div className="shrink-0 text-right">
+          <p className="font-bold">{precio(reserva.total)}</p>
+          <span className={`insignia ${estado.clase} mt-1.5`}>{estado.texto}</span>
+        </div>
+      </div>
+
+      {esperandoPago && (
+        <div className="mt-4 flex flex-col gap-2">
+          {reserva.metodo ? (
+            <div
+              className="flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs"
+              style={reserva.metodo === 'efectivo'
+                ? { backgroundColor: 'var(--color-alerta-bajo)', color: 'var(--color-alerta)' }
+                : { backgroundColor: 'var(--color-exito-bajo)', color: 'var(--color-exito)' }}
+            >
+              {reserva.metodo === 'efectivo' ? <IconoAlerta size={14} /> : <IconoCheck size={14} />}
+              <span>
+                {reserva.metodo === 'efectivo'
+                  ? 'Acordate de abonar en el gimnasio antes de entrenar'
+                  : `Pago registrado por ${reserva.metodo}`}
+              </span>
+            </div>
+          ) : (
+            <button onClick={() => alPagar?.(reserva)} className="btn btn-primario btn-bloque">
+              Pagar ahora
+            </button>
+          )}
+          {alCancelar && (
+            <button onClick={() => alCancelar(reserva)} className="btn btn-fantasma btn-chico btn-bloque">
+              Cancelar reserva
+            </button>
+          )}
+        </div>
+      )}
+    </article>
+  )
 }

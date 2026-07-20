@@ -1,86 +1,124 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useAvisos } from '../../components/Avisos'
 import {
   obtenerMisHorarios, modificarHorario,
   buscarAlumnoPorDni, obtenerRutinaDeAlumno, guardarRutina,
   obtenerAlumnosDeHorario, marcarAsistencia
 } from '../../services/profesorService'
-
-import { io } from 'socket.io-client'
+import { SkeletonLista } from '../../components/Skeleton'
+import {
+  IconoReloj, IconoUsuarios, IconoCheck, IconoBuscar,
+  IconoMas, IconoCruz, IconoSalir, IconoLapiz
+} from '../../components/Iconos'
+import { rangoHorario, hoyISO, fechaCorta } from '../../utils/formato'
+import logoDtc from '../img/logo_png.png'
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-const sesionVacia = () => ({
-  nombre: '', orden: 1,
+const SOLAPAS = [
+  { id: 'horarios',   texto: 'Mis horarios' },
+  { id: 'rutinas',    texto: 'Rutinas' },
+  { id: 'asistencia', texto: 'Asistencia' }
+]
+
+const sesionVacia = (orden = 1) => ({
+  nombre: '', orden,
   ejercicios: [{ nombre: '', series: '', repeticiones: '', orden: 1 }]
 })
 
 export default function MisClases() {
   const { usuario, cerrarSesion } = useAuth()
+  const { exito, error: avisarError, confirmar } = useAvisos()
   const navigate = useNavigate()
-  const [horarioSeleccionado, setHorarioSeleccionado] = useState(null)
-  const [fechaAsistencia, setFechaAsistencia]         = useState(new Date().toISOString().split('T')[0])
-  const [alumnos, setAlumnos]                         = useState([])
-  const [loadingAsistencia, setLoadingAsistencia]     = useState(false)
-  const [seccion, setSeccion]         = useState('horarios')
-  const [horarios, setHorarios]       = useState([])
-  const [editando, setEditando]       = useState(null)
-  const [formHorario, setFormHorario] = useState({})
 
-  // Estados rutinas
-  const [dni, setDni]         = useState('')
-  const [alumno, setAlumno]   = useState(null)
-  const [sesiones, setSesiones] = useState([sesionVacia()])
+  const [solapa, setSolapa]     = useState('horarios')
+  const [horarios, setHorarios] = useState([])
+  const [cargando, setCargando] = useState(true)
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
-  const [exito, setExito]     = useState('')
+  const cargarHorarios = useCallback(async () => {
+    try {
+      setHorarios(await obtenerMisHorarios())
+    } catch {
+      avisarError('No pudimos cargar tus horarios')
+    } finally {
+      setCargando(false)
+    }
+  }, [avisarError])
 
-  useEffect(() => {
-    if (!usuario || (usuario.rol !== 'profesor' && usuario.rol !== 'admin')) navigate('/')
-    cargarHorarios()
-  }, [])
+  useEffect(() => { cargarHorarios() }, [cargarHorarios])
 
-  const cargarHorarios = async () => {
-    try { setHorarios(await obtenerMisHorarios()) }
-    catch { setError('Error al cargar los horarios') }
+  const salir = async () => {
+    if (await confirmar({ titulo: '¿Cerrar sesión?', textoConfirmar: 'Cerrar sesión' })) {
+      cerrarSesion()
+      navigate('/')
+    }
   }
 
-  const cargarAlumnos = async (horario_id, fecha) => {
-  setLoadingAsistencia(true)
-  try {
-    const data = await obtenerAlumnosDeHorario(horario_id, fecha)
-    setAlumnos(data)
-  } catch {
-    setError('Error al cargar los alumnos')
-  } finally {
-    setLoadingAsistencia(false)
-  }
+  return (
+    <div className="min-h-screen pb-12">
+
+      <header
+        className="sticky top-0 z-20"
+        style={{ backgroundColor: 'var(--color-superficie)', borderBottom: '1px solid var(--color-linea-sutil)' }}
+      >
+        <div className="contenedor-ancho flex items-center justify-between py-3">
+          <div className="flex items-center gap-3">
+            <img src={logoDtc} alt="DTC Fight & Fitness" className="h-9 w-auto" />
+            <div>
+              <p className="text-sm font-bold leading-tight">Panel del profesor</p>
+              <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
+            </div>
+          </div>
+          <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
+            <IconoSalir size={18} />
+          </button>
+        </div>
+
+        <div className="contenedor-ancho fila-scroll pb-2.5">
+          {SOLAPAS.map(s => (
+            <button
+              key={s.id}
+              onClick={() => setSolapa(s.id)}
+              className={`pildora ${solapa === s.id ? 'pildora-activa' : ''}`}
+            >
+              {s.texto}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <main className="contenedor-ancho pt-5">
+        {solapa === 'horarios' && (
+          <SeccionHorarios
+            horarios={horarios}
+            cargando={cargando}
+            alRecargar={cargarHorarios}
+            alExito={exito}
+            alError={avisarError}
+          />
+        )}
+        {solapa === 'rutinas' && (
+          <SeccionRutinas alExito={exito} alError={avisarError} />
+        )}
+        {solapa === 'asistencia' && (
+          <SeccionAsistencia horarios={horarios} alError={avisarError} />
+        )}
+      </main>
+    </div>
+  )
 }
 
-const handleToggleAsistencia = async (usuario_id, asistio) => {
-  try {
-    await marcarAsistencia({
-      horario_id: horarioSeleccionado,
-      usuario_id,
-      fecha: fechaAsistencia,
-      asistio: !asistio
-    })
-    await cargarAlumnos(horarioSeleccionado, fechaAsistencia)
-  } catch {
-    setError('Error al marcar asistencia')
-  }
-}
-  const mostrarExito = (msg) => {
-    setExito(msg)
-    setTimeout(() => setExito(''), 3000)
-  }
+/* ═══ HORARIOS ═══════════════════════════════════════════ */
 
-  // ─── HORARIOS ───────────────────────────────────────
+function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
+  const [editando, setEditando] = useState(null)
+  const [form, setForm]         = useState({})
+  const [guardando, setGuardando] = useState(false)
 
-  const handleEditar = (h) => {
+  const empezar = (h) => {
     setEditando(h.id)
-    setFormHorario({
+    setForm({
       dia_semana: h.dia_semana,
       hora_inicio: h.hora_inicio.slice(0, 5),
       hora_fin: h.hora_fin.slice(0, 5),
@@ -90,444 +128,446 @@ const handleToggleAsistencia = async (usuario_id, asistio) => {
     })
   }
 
-  const handleGuardarHorario = async (id) => {
-    setLoading(true)
+  const guardar = async (id) => {
+    if (Number(form.cupos_disponibles) > Number(form.cupos_totales)) {
+      return alError('Los cupos disponibles no pueden superar el total')
+    }
+    setGuardando(true)
     try {
-      await modificarHorario(id, formHorario)
+      await modificarHorario(id, form)
       setEditando(null)
-      await cargarHorarios()
-      mostrarExito('Horario actualizado correctamente')
-    } catch { setError('Error al guardar el horario') }
-    finally { setLoading(false) }
+      await alRecargar()
+      alExito('Horario actualizado')
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos guardar el horario')
+    } finally {
+      setGuardando(false)
+    }
   }
 
-  // ─── RUTINAS ────────────────────────────────────────
+  if (cargando) return <SkeletonLista filas={3} />
 
-  const handleBuscarAlumno = async () => {
-    if (!dni) return
-    setError('')
+  if (horarios.length === 0) {
+    return (
+      <div className="tarjeta p-8 text-center">
+        <p className="font-semibold">No tenés horarios asignados</p>
+        <p className="mt-1 text-sm" style={{ color: 'var(--color-texto-2)' }}>
+          El administrador del gimnasio tiene que asignarte clases
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-2.5 sm:grid-cols-2">
+      {horarios.map(h => (
+        <article key={h.id} className="tarjeta p-4">
+          {editando === h.id ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm font-semibold">{h.clase}</p>
+
+              <div>
+                <label className="etiqueta-campo">Día</label>
+                <select
+                  className="campo"
+                  value={form.dia_semana}
+                  onChange={e => setForm(f => ({ ...f, dia_semana: e.target.value }))}
+                >
+                  {DIAS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="etiqueta-campo">Desde</label>
+                  <input type="time" className="campo" value={form.hora_inicio}
+                         onChange={e => setForm(f => ({ ...f, hora_inicio: e.target.value }))} />
+                </div>
+                <div className="flex-1">
+                  <label className="etiqueta-campo">Hasta</label>
+                  <input type="time" className="campo" value={form.hora_fin}
+                         onChange={e => setForm(f => ({ ...f, hora_fin: e.target.value }))} />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="etiqueta-campo">Cupos totales</label>
+                  <input type="number" min="0" className="campo" value={form.cupos_totales}
+                         onChange={e => setForm(f => ({ ...f, cupos_totales: e.target.value }))} />
+                </div>
+                <div className="flex-1">
+                  <label className="etiqueta-campo">Disponibles</label>
+                  <input type="number" min="0" className="campo" value={form.cupos_disponibles}
+                         onChange={e => setForm(f => ({ ...f, cupos_disponibles: e.target.value }))} />
+                </div>
+              </div>
+
+              <label className="flex cursor-pointer items-center gap-2.5 text-sm">
+                <input type="checkbox" checked={Boolean(form.activo)} className="h-4 w-4 accent-sky-300"
+                       onChange={e => setForm(f => ({ ...f, activo: e.target.checked }))} />
+                Clase activa
+              </label>
+
+              <div className="flex gap-2">
+                <button onClick={() => guardar(h.id)} disabled={guardando} className="btn btn-primario flex-1">
+                  {guardando ? 'Guardando…' : 'Guardar'}
+                </button>
+                <button onClick={() => setEditando(null)} className="btn btn-contorno">Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate font-semibold">{h.clase}</p>
+                <p className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>
+                  <IconoReloj size={13} />
+                  {h.dia_semana} · {rangoHorario(h.hora_inicio, h.hora_fin)}
+                </p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>
+                  <IconoUsuarios size={13} />
+                  {h.cupos_disponibles} libres de {h.cupos_totales}
+                </p>
+                <span className={`insignia mt-2 ${h.activo ? 'insignia-exito' : 'insignia-error'}`}>
+                  {h.activo ? 'Activa' : 'Inactiva'}
+                </span>
+              </div>
+              <button onClick={() => empezar(h)} className="btn btn-contorno btn-chico shrink-0">
+                <IconoLapiz size={15} /> Editar
+              </button>
+            </div>
+          )}
+        </article>
+      ))}
+    </div>
+  )
+}
+
+/* ═══ RUTINAS ════════════════════════════════════════════ */
+
+function SeccionRutinas({ alExito, alError }) {
+  const [dni, setDni]         = useState('')
+  const [alumno, setAlumno]   = useState(null)
+  const [sesiones, setSesiones] = useState([sesionVacia()])
+  const [buscando, setBuscando] = useState(false)
+  const [guardando, setGuardando] = useState(false)
+
+  const buscar = async (e) => {
+    e?.preventDefault()
+    if (!dni.trim()) return
+    setBuscando(true)
     setAlumno(null)
-    setSesiones([sesionVacia()])
     try {
-      const data = await buscarAlumnoPorDni(dni)
-      setAlumno(data)
-      // Cargamos rutina existente si tiene
-      const rutina = await obtenerRutinaDeAlumno(data.id)
-      if (rutina && rutina.sesiones?.length > 0) {
+      const encontrado = await buscarAlumnoPorDni(dni.trim())
+      setAlumno(encontrado)
+
+      const rutina = await obtenerRutinaDeAlumno(encontrado.id)
+      if (rutina?.sesiones?.length > 0) {
         setSesiones(rutina.sesiones.map(s => ({
           nombre: s.nombre,
           orden: s.orden,
-          ejercicios: s.ejercicios?.length > 0
+          ejercicios: s.ejercicios?.length
             ? s.ejercicios
             : [{ nombre: '', series: '', repeticiones: '', orden: 1 }]
         })))
+        alExito('Ya tenía una rutina cargada, la abrimos para editar')
+      } else {
+        setSesiones([sesionVacia()])
       }
-    } catch { setError('No se encontró ningún alumno con ese DNI') }
+    } catch {
+      alError('No encontramos ningún alumno con ese DNI')
+    } finally {
+      setBuscando(false)
+    }
   }
 
-  // ─── Manejo de sesiones ─────────────────────────────
-
-  const agregarSesion = () => {
-    setSesiones([...sesiones, { nombre: '', orden: sesiones.length + 1, ejercicios: [{ nombre: '', series: '', repeticiones: '', orden: 1 }] }])
-  }
-
-  const eliminarSesion = (si) => {
-    setSesiones(sesiones.filter((_, i) => i !== si))
-  }
-
-  const actualizarSesion = (si, campo, valor) => {
-    const nuevas = [...sesiones]
-    nuevas[si][campo] = valor
-    setSesiones(nuevas)
-  }
-
-  // ─── Manejo de ejercicios ───────────────────────────
-
-  const agregarEjercicio = (si) => {
-    const nuevas = [...sesiones]
-    nuevas[si].ejercicios.push({
-      nombre: '', series: '', repeticiones: '',
-      orden: nuevas[si].ejercicios.length + 1
-    })
-    setSesiones(nuevas)
-  }
-
-  const eliminarEjercicio = (si, ei) => {
-    const nuevas = [...sesiones]
-    nuevas[si].ejercicios = nuevas[si].ejercicios.filter((_, i) => i !== ei)
-    setSesiones(nuevas)
+  const actualizarSesion = (i, campo, valor) => {
+    setSesiones(prev => prev.map((s, idx) => idx === i ? { ...s, [campo]: valor } : s))
   }
 
   const actualizarEjercicio = (si, ei, campo, valor) => {
-    const nuevas = [...sesiones]
-    nuevas[si].ejercicios[ei][campo] = valor
-    setSesiones(nuevas)
+    setSesiones(prev => prev.map((s, idx) => idx !== si ? s : {
+      ...s,
+      ejercicios: s.ejercicios.map((ej, j) => j === ei ? { ...ej, [campo]: valor } : ej)
+    }))
   }
 
-  const handleGuardarRutina = async () => {
-    if (!alumno) return
-    if (sesiones.some(s => !s.nombre)) {
-      setError('Completá el nombre de todas las sesiones')
-      return
+  const agregarSesion = () =>
+    setSesiones(prev => [...prev, sesionVacia(prev.length + 1)])
+
+  const quitarSesion = (i) =>
+    setSesiones(prev => prev.filter((_, idx) => idx !== i))
+
+  const agregarEjercicio = (si) =>
+    setSesiones(prev => prev.map((s, idx) => idx !== si ? s : {
+      ...s,
+      ejercicios: [...s.ejercicios, { nombre: '', series: '', repeticiones: '', orden: s.ejercicios.length + 1 }]
+    }))
+
+  const quitarEjercicio = (si, ei) =>
+    setSesiones(prev => prev.map((s, idx) => idx !== si ? s : {
+      ...s, ejercicios: s.ejercicios.filter((_, j) => j !== ei)
+    }))
+
+  const guardar = async () => {
+    if (sesiones.some(s => !s.nombre.trim())) {
+      return alError('Poné un nombre a cada sesión (por ejemplo: Espalda y bíceps)')
     }
-    setLoading(true)
-    setError('')
+    setGuardando(true)
     try {
       await guardarRutina({ alumno_id: alumno.id, sesiones })
-      mostrarExito('Rutina guardada correctamente')
-    } catch { setError('Error al guardar la rutina') }
-    finally { setLoading(false) }
+      alExito(`Rutina de ${alumno.nombre} guardada`)
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos guardar la rutina')
+    } finally {
+      setGuardando(false)
+    }
   }
 
-  const inputStyle = { borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }
-
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#202123' }}>
+    <div className="flex flex-col gap-4">
 
-      {/* Navbar */}
-      <div className="flex items-center justify-between px-6 py-4"
-        style={{ backgroundColor: '#2c4a5a' }}>
-        <h1 className="text-lg font-bold text-white">💪 Panel Profesor</h1>
-        <div className="flex items-center gap-3">
-          <span className="text-sm" style={{ color: '#87CEEB' }}>{usuario?.nombre}</span>
-          <button onClick={() => { cerrarSesion(); navigate('/') }}
-            className="text-xs px-3 py-1 rounded-lg"
-            style={{ backgroundColor: '#f0f7ff', color: '#778899' }}>
-            Salir
+      <form onSubmit={buscar} className="tarjeta p-4">
+        <label htmlFor="dni" className="etiqueta-campo">Buscar alumno por DNI</label>
+        <div className="flex gap-2">
+          <input
+            id="dni" className="campo flex-1" inputMode="numeric"
+            placeholder="30123456" value={dni}
+            onChange={e => setDni(e.target.value)}
+          />
+          <button type="submit" disabled={buscando} className="btn btn-primario">
+            <IconoBuscar size={17} />
+            <span className="hidden sm:inline">{buscando ? 'Buscando…' : 'Buscar'}</span>
           </button>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 px-4 pt-4">
-        {['horarios', 'rutinas', 'asistencia'].map(s => (
-          <button key={s} onClick={() => { setSeccion(s); setError(''); setExito('') }}
-            className="px-4 py-2 rounded-lg text-sm font-medium capitalize"
-            style={seccion === s
-              ? { backgroundColor: '#87CEEB', color: '#1a3a4a' }
-              : { backgroundColor: '#f0f7ff', color: '#778899' }
-            }>
-            {s}
-          </button>
-        ))}
-      </div>
-
-      <div className="px-4 pt-4 pb-8">
-
-        {error && <p className="text-sm mb-3" style={{ color: '#e05555' }}>{error}</p>}
-        {exito && <p className="text-sm mb-3" style={{ color: '#2d8a4e' }}>{exito}</p>}
-
-        {/* ─── HORARIOS ─── */}
-        {seccion === 'horarios' && (
-          <div className="flex flex-col gap-3">
-            {horarios.length === 0
-              ? <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: '#f0f7ff' }}>
-                  <p className="text-sm" style={{ color: '#778899' }}>No tenés horarios asignados.</p>
-                </div>
-              : horarios.map(h => (
-                <div key={h.id} className="rounded-2xl p-4" style={{ backgroundColor: '#f0f7ff' }}>
-                  {editando === h.id ? (
-                    <div className="flex flex-col gap-3">
-                      <p className="font-semibold text-sm mb-1" style={{ color: '#2c4a5a' }}>
-                        Editando: {h.clase}
-                      </p>
-                      <select value={formHorario.dia_semana}
-                        onChange={e => setFormHorario({...formHorario, dia_semana: e.target.value})}
-                        className="border rounded-lg px-3 py-2 text-sm outline-none" style={inputStyle}>
-                        {DIAS.map(d => <option key={d} value={d}>{d}</option>)}
-                      </select>
-                      <div className="flex gap-2">
-                        <input type="time" value={formHorario.hora_inicio}
-                          onChange={e => setFormHorario({...formHorario, hora_inicio: e.target.value})}
-                          className="border rounded-lg px-3 py-2 text-sm outline-none flex-1" style={inputStyle}/>
-                        <input type="time" value={formHorario.hora_fin}
-                          onChange={e => setFormHorario({...formHorario, hora_fin: e.target.value})}
-                          className="border rounded-lg px-3 py-2 text-sm outline-none flex-1" style={inputStyle}/>
-                      </div>
-                      <input type="number" placeholder="Cupos totales" value={formHorario.cupos_totales}
-                        onChange={e => setFormHorario({...formHorario, cupos_totales: e.target.value})}
-                        className="border rounded-lg px-3 py-2 text-sm outline-none" style={inputStyle}/>
-                      <input type="number" placeholder="Cupos disponibles" value={formHorario.cupos_disponibles}
-                        onChange={e => setFormHorario({...formHorario, cupos_disponibles: e.target.value})}
-                        className="border rounded-lg px-3 py-2 text-sm outline-none" style={inputStyle}/>
-                      <div className="flex items-center gap-2">
-                        <input type="checkbox" checked={formHorario.activo}
-                          onChange={e => setFormHorario({...formHorario, activo: e.target.checked})}/>
-                        <label className="text-sm" style={{ color: '#2c4a5a' }}>Activo</label>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => handleGuardarHorario(h.id)} disabled={loading}
-                          className="flex-1 py-2 rounded-lg text-sm font-semibold"
-                          style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}>
-                          {loading ? 'Guardando...' : 'Guardar'}
-                        </button>
-                        <button onClick={() => setEditando(null)}
-                          className="px-4 py-2 rounded-lg text-sm"
-                          style={{ backgroundColor: '#e8f0f7', color: '#778899' }}>
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-sm" style={{ color: '#2c4a5a' }}>{h.clase}</p>
-                        <p className="text-xs mt-0.5" style={{ color: '#778899' }}>
-                          {h.dia_semana} · {h.hora_inicio.slice(0,5)} - {h.hora_fin.slice(0,5)}
-                        </p>
-                        <p className="text-xs" style={{ color: '#778899' }}>
-                          Cupos: {h.cupos_disponibles}/{h.cupos_totales}
-                        </p>
-                        <span className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block"
-                          style={h.activo
-                            ? { backgroundColor: '#e8f5e9', color: '#2d8a4e' }
-                            : { backgroundColor: '#fce8e8', color: '#e05555' }}>
-                          {h.activo ? 'Activo' : 'Inactivo'}
-                        </span>
-                      </div>
-                      <button onClick={() => handleEditar(h)}
-                        className="text-xs px-3 py-1 rounded-lg"
-                        style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}>
-                        Editar
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))
-            }
+        {alumno && (
+          <div
+            className="aparecer mt-3 flex items-center gap-3 rounded-xl p-3"
+            style={{ backgroundColor: 'var(--color-acento-bajo)' }}
+          >
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+              style={{ backgroundColor: 'var(--color-acento)', color: 'var(--color-sobre-acento)' }}
+            >
+              {alumno.nombre.charAt(0).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{alumno.nombre}</p>
+              <p className="truncate text-xs" style={{ color: 'var(--color-texto-2)' }}>
+                DNI {alumno.dni} · {alumno.email}
+              </p>
+            </div>
           </div>
         )}
+      </form>
 
-        {/* ─── RUTINAS ─── */}
-        {seccion === 'rutinas' && (
-          <div className="flex flex-col gap-4">
+      {alumno && (
+        <>
+          <div className="flex items-center justify-between">
+            <h2 className="titulo-seccion">Sesiones del plan</h2>
+            <button onClick={agregarSesion} className="btn btn-contorno btn-chico">
+              <IconoMas size={15} /> Sesión
+            </button>
+          </div>
 
-            {/* Buscar alumno */}
-            <div className="rounded-2xl p-5" style={{ backgroundColor: '#f0f7ff' }}>
-              <p className="text-sm font-semibold mb-3" style={{ color: '#2c4a5a' }}>
-                Buscar alumno por DNI
-              </p>
-              <div className="flex gap-2">
-                <input type="text" placeholder="Ingresá el DNI"
-                  value={dni} onChange={e => setDni(e.target.value)}
-                  className="flex-1 border rounded-lg px-4 py-2 text-sm outline-none"
-                  style={inputStyle}/>
-                <button onClick={handleBuscarAlumno}
-                  className="px-4 py-2 rounded-lg text-sm font-semibold"
-                  style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}>
-                  Buscar
-                </button>
+          {sesiones.map((sesion, si) => (
+            <article key={si} className="tarjeta overflow-hidden">
+              <div
+                className="flex items-center gap-2 px-3 py-2.5"
+                style={{ backgroundColor: 'var(--color-elevado)' }}
+              >
+                <input
+                  className="campo flex-1 font-semibold uppercase"
+                  placeholder="Ej: Espalda y bíceps"
+                  value={sesion.nombre}
+                  onChange={e => actualizarSesion(si, 'nombre', e.target.value)}
+                />
+                {sesiones.length > 1 && (
+                  <button
+                    onClick={() => quitarSesion(si)}
+                    className="btn btn-peligro btn-chico shrink-0"
+                    aria-label="Quitar sesión"
+                  >
+                    <IconoCruz size={15} />
+                  </button>
+                )}
               </div>
 
-              {alumno && (
-                <div className="mt-3 p-3 rounded-xl" style={{ backgroundColor: '#e8f4fb' }}>
-                  <p className="font-semibold text-sm" style={{ color: '#2c4a5a' }}>{alumno.nombre}</p>
-                  <p className="text-xs" style={{ color: '#778899' }}>DNI: {alumno.dni} · {alumno.email}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Constructor de rutina */}
-            {alumno && (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold" style={{ color: '#f0f7ff' }}>
-                    Rutina de {alumno.nombre}
-                  </p>
-                  <button onClick={agregarSesion}
-                    className="text-xs px-3 py-1 rounded-lg font-semibold"
-                    style={{ backgroundColor: '#f0f7ff', color: '#2c4a5a' }}>
-                    + Sesión
-                  </button>
-                </div>
-
-                {sesiones.map((sesion, si) => (
-                  <div key={si} className="rounded-2xl overflow-hidden"
-                    style={{ backgroundColor: '#f0f7ff' }}>
-
-                    {/* Header sesión */}
-                    <div className="px-4 py-3 flex items-center gap-2"
-                      style={{ backgroundColor: '#2c4a5a' }}>
+              <div className="flex flex-col gap-2.5 p-3">
+                {sesion.ejercicios.map((ej, ei) => (
+                  <div key={ei} className="rounded-xl p-3" style={{ backgroundColor: 'var(--color-fondo)' }}>
+                    <div className="mb-2 flex items-center gap-2">
+                      <span
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold"
+                        style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
+                      >
+                        {ei + 1}
+                      </span>
                       <input
-                        placeholder="Nombre de la sesión (ej: ESPALDA - BÍCEPS)"
-                        value={sesion.nombre}
-                        onChange={e => actualizarSesion(si, 'nombre', e.target.value)}
-                        className="flex-1 rounded-lg px-3 py-1.5 text-sm outline-none font-semibold uppercase"
-                        style={{ backgroundColor: '#3d6070', color: '#ffffff', border: 'none' }}
+                        className="campo flex-1"
+                        placeholder="Nombre del ejercicio"
+                        value={ej.nombre}
+                        onChange={e => actualizarEjercicio(si, ei, 'nombre', e.target.value)}
                       />
-                      {sesiones.length > 1 && (
-                        <button onClick={() => eliminarSesion(si)}
-                          className="text-xs px-2 py-1 rounded-lg"
-                          style={{ backgroundColor: '#e05555', color: '#ffffff' }}>
-                          ✕
+                      {sesion.ejercicios.length > 1 && (
+                        <button
+                          onClick={() => quitarEjercicio(si, ei)}
+                          className="btn btn-fantasma btn-chico shrink-0"
+                          aria-label="Quitar ejercicio"
+                        >
+                          <IconoCruz size={14} />
                         </button>
                       )}
                     </div>
-
-                    {/* Ejercicios */}
-                    <div className="px-4 py-3 flex flex-col gap-3">
-                      {sesion.ejercicios.map((ej, ei) => (
-                        <div key={ei} className="rounded-xl p-3"
-                          style={{ backgroundColor: '#e8f4fb' }}>
-                          <div className="flex items-center gap-2 mb-2">
-                            <input
-                              placeholder="Nombre del ejercicio"
-                              value={ej.nombre}
-                              onChange={e => actualizarEjercicio(si, ei, 'nombre', e.target.value)}
-                              className="flex-1 border rounded-lg px-3 py-1.5 text-sm outline-none font-medium"
-                              style={inputStyle}
-                            />
-                            {sesion.ejercicios.length > 1 && (
-                              <button onClick={() => eliminarEjercicio(si, ei)}
-                                className="text-xs px-2 py-1 rounded-lg"
-                                style={{ backgroundColor: '#fce8e8', color: '#e05555' }}>
-                                ✕
-                              </button>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            <div className="flex-1">
-                              <p className="text-xs mb-1" style={{ color: '#778899' }}>Series</p>
-                              <input
-                                type="number"
-                                placeholder="3"
-                                value={ej.series}
-                                onChange={e => actualizarEjercicio(si, ei, 'series', e.target.value)}
-                                className="w-full border rounded-lg px-3 py-1.5 text-sm outline-none"
-                                style={inputStyle}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-xs mb-1" style={{ color: '#778899' }}>Repeticiones</p>
-                              <input
-                                placeholder="10-12"
-                                value={ej.repeticiones}
-                                onChange={e => actualizarEjercicio(si, ei, 'repeticiones', e.target.value)}
-                                className="w-full border rounded-lg px-3 py-1.5 text-sm outline-none"
-                                style={inputStyle}
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      <button onClick={() => agregarEjercicio(si)}
-                        className="w-full py-2 rounded-lg text-xs font-medium"
-                        style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}>
-                        + Agregar ejercicio
-                      </button>
+                    <div className="flex gap-2 pl-8">
+                      <div className="flex-1">
+                        <label className="etiqueta-campo">Series</label>
+                        <input
+                          type="number" min="1" className="campo" placeholder="3"
+                          value={ej.series}
+                          onChange={e => actualizarEjercicio(si, ei, 'series', e.target.value)}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="etiqueta-campo">Repeticiones</label>
+                        <input
+                          className="campo" placeholder="10-12"
+                          value={ej.repeticiones}
+                          onChange={e => actualizarEjercicio(si, ei, 'repeticiones', e.target.value)}
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
 
-                {/* Guardar rutina */}
-                <button onClick={handleGuardarRutina} disabled={loading}
-                  className="w-full py-3 rounded-2xl font-bold text-sm"
-                  style={{ backgroundColor: loading ? '#b0d8ed' : '#87CEEB', color: '#1a3a4a' }}>
-                  {loading ? 'Guardando...' : '💾 Guardar rutina'}
+                <button onClick={() => agregarEjercicio(si)} className="btn btn-contorno btn-chico btn-bloque">
+                  <IconoMas size={15} /> Agregar ejercicio
                 </button>
               </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ─── ASISTENCIA ─── */}
-{seccion === 'asistencia' && (
-  <div className="flex flex-col gap-4">
-
-    {/* Selector de horario y fecha */}
-    <div className="rounded-2xl p-5" style={{ backgroundColor: '#f0f7ff' }}>
-      <p className="text-sm font-semibold mb-3" style={{ color: '#2c4a5a' }}>
-        Seleccioná horario y fecha
-      </p>
-      <div className="flex flex-col gap-3">
-        <select
-          value={horarioSeleccionado || ''}
-          onChange={e => {
-            setHorarioSeleccionado(e.target.value)
-            if (e.target.value) cargarAlumnos(e.target.value, fechaAsistencia)
-          }}
-          className="border rounded-lg px-4 py-2 text-sm outline-none"
-          style={{ borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }}
-        >
-          <option value="">Seleccioná un horario</option>
-          {horarios.map(h => (
-            <option key={h.id} value={h.id}>
-              {h.clase} — {h.dia_semana} {h.hora_inicio.slice(0,5)}
-            </option>
+            </article>
           ))}
-        </select>
-        <input
-          type="date"
-          value={fechaAsistencia}
-          onChange={e => {
-            setFechaAsistencia(e.target.value)
-            if (horarioSeleccionado) cargarAlumnos(horarioSeleccionado, e.target.value)
-          }}
-          className="border rounded-lg px-4 py-2 text-sm outline-none"
-          style={{ borderColor: '#87CEEB', color: '#2c4a5a', backgroundColor: '#ffffff' }}
-        />
-      </div>
+
+          <button onClick={guardar} disabled={guardando} className="btn btn-primario btn-bloque">
+            {guardando ? 'Guardando…' : `Guardar rutina de ${alumno.nombre.split(' ')[0]}`}
+          </button>
+        </>
+      )}
     </div>
+  )
+}
 
-    {/* Lista de alumnos */}
-    {horarioSeleccionado && (
-      <div className="rounded-2xl p-5" style={{ backgroundColor: '#f0f7ff' }}>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold" style={{ color: '#2c4a5a' }}>
-            Alumnos
-          </p>
-          <span className="text-xs px-2 py-1 rounded-full"
-            style={{ backgroundColor: '#87CEEB', color: '#1a3a4a' }}>
-            {alumnos.filter(a => a.asistio).length}/{alumnos.length} presentes
-          </span>
-        </div>
+/* ═══ ASISTENCIA ═════════════════════════════════════════ */
 
-        {loadingAsistencia ? (
-          <p className="text-sm text-center" style={{ color: '#778899' }}>
-            Cargando alumnos...
-          </p>
-        ) : alumnos.length === 0 ? (
-          <p className="text-sm" style={{ color: '#778899' }}>
-            No hay alumnos reservados para este horario.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {alumnos.map(a => (
-              <div
-                key={a.id}
-                onClick={() => handleToggleAsistencia(a.id, a.asistio)}
-                className="flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all"
-                style={{
-                  backgroundColor: a.asistio ? '#e8f5e9' : '#f8fbff',
-                  border: `2px solid ${a.asistio ? '#2d8a4e' : '#e0ecf4'}`
-                }}
-              >
-                <div>
-                  <p className="font-medium text-sm" style={{ color: '#2c4a5a' }}>
-                    {a.nombre}
-                  </p>
-                  <p className="text-xs" style={{ color: '#778899' }}>
-                    DNI: {a.dni}
-                  </p>
-                </div>
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-lg"
-                  style={{
-                    backgroundColor: a.asistio ? '#2d8a4e' : '#e0ecf4'
-                  }}
-                >
-                  {a.asistio ? '✓' : ''}
-                </div>
-              </div>
+function SeccionAsistencia({ horarios, alError }) {
+  const [horarioId, setHorarioId] = useState('')
+  const [fecha, setFecha]         = useState(hoyISO())
+  const [alumnos, setAlumnos]     = useState([])
+  const [cargando, setCargando]   = useState(false)
+
+  const cargar = useCallback(async (id, dia) => {
+    if (!id) return
+    setCargando(true)
+    try {
+      setAlumnos(await obtenerAlumnosDeHorario(id, dia))
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos cargar los alumnos')
+      setAlumnos([])
+    } finally {
+      setCargando(false)
+    }
+  }, [alError])
+
+  useEffect(() => { cargar(horarioId, fecha) }, [horarioId, fecha, cargar])
+
+  const alternar = async (alumno) => {
+    // Actualización optimista: la marca se ve al instante y, si falla,
+    // se revierte al recargar. Tomar asistencia tiene que ser ágil.
+    setAlumnos(prev => prev.map(a => a.id === alumno.id ? { ...a, asistio: !a.asistio } : a))
+    try {
+      await marcarAsistencia({
+        horario_id: horarioId,
+        usuario_id: alumno.id,
+        fecha,
+        asistio: !alumno.asistio
+      })
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos registrar la asistencia')
+      cargar(horarioId, fecha)
+    }
+  }
+
+  const presentes = alumnos.filter(a => a.asistio).length
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="tarjeta flex flex-col gap-3 p-4">
+        <div>
+          <label htmlFor="hor" className="etiqueta-campo">Clase</label>
+          <select id="hor" className="campo" value={horarioId} onChange={e => setHorarioId(e.target.value)}>
+            <option value="">Elegí una clase</option>
+            {horarios.map(h => (
+              <option key={h.id} value={h.id}>
+                {h.clase} — {h.dia_semana} {h.hora_inicio.slice(0, 5)}
+              </option>
             ))}
-          </div>
-        )}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="fec" className="etiqueta-campo">Fecha</label>
+          <input id="fec" type="date" className="campo" value={fecha} onChange={e => setFecha(e.target.value)} />
+        </div>
       </div>
-    )}
-  </div>
-)}
+
+      {horarioId && (
+        <div className="tarjeta p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="titulo-seccion">Alumnos · {fechaCorta(fecha)}</h2>
+            <span className="insignia insignia-acento">
+              {presentes}/{alumnos.length} presentes
+            </span>
+          </div>
+
+          {cargando ? (
+            <SkeletonLista filas={3} />
+          ) : alumnos.length === 0 ? (
+            <p className="py-3 text-sm" style={{ color: 'var(--color-texto-3)' }}>
+              No hay alumnos con reserva en esta clase.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {alumnos.map(a => (
+                <li key={a.id}>
+                  <button
+                    onClick={() => alternar(a)}
+                    aria-pressed={a.asistio}
+                    className="tarjeta tarjeta-interactiva flex w-full items-center justify-between gap-3 p-3 text-left"
+                    style={{
+                      backgroundColor: a.asistio ? 'var(--color-exito-bajo)' : 'var(--color-elevado)',
+                      borderColor: a.asistio ? 'var(--color-exito)' : 'transparent'
+                    }}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">{a.nombre}</span>
+                      <span className="text-xs" style={{ color: 'var(--color-texto-3)' }}>DNI {a.dni}</span>
+                    </span>
+                    <span
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+                      style={{
+                        backgroundColor: a.asistio ? 'var(--color-exito)' : 'transparent',
+                        border: a.asistio ? 'none' : '2px solid var(--color-linea)',
+                        color: '#0d1b22'
+                      }}
+                    >
+                      {a.asistio && <IconoCheck size={15} />}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   )
 }
