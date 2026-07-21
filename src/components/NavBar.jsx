@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, useCallback } from 'react'
-import { io } from 'socket.io-client'
 import { obtenerMisReservas } from '../services/clasesService'
+import { useSocketEventos } from '../hooks/useSocketEventos'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from './Avisos'
 import {
@@ -48,23 +48,19 @@ export default function NavBar({ hayBarraAccion = false }) {
     }
   }, [])
 
-  useEffect(() => {
-    cargarPendientes()
+  useEffect(() => { cargarPendientes() }, [cargarPendientes])
 
-    const socket = io(import.meta.env.VITE_SOCKET_URL)
-
-    socket.on('pago_confirmado', () => {
+  useSocketEventos({
+    pago_confirmado: () => {
       cargarPendientes()
       exito('Tu pago fue confirmado por el gimnasio')
-    })
-    socket.on('reserva_cancelada', () => {
+    },
+    reserva_cancelada: () => {
       cargarPendientes()
       info('Una de tus reservas fue cancelada')
-    })
-    socket.on('actualizacion_horarios', cargarPendientes)
-
-    return () => socket.disconnect()
-  }, [cargarPendientes, exito, info])
+    },
+    actualizacion_horarios: cargarPendientes
+  })
 
   const salir = async () => {
     const confirmado = await confirmar({

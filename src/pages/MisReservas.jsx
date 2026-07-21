@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { io } from 'socket.io-client'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAvisos } from '../components/Avisos'
+import { useSocketEventos } from '../hooks/useSocketEventos'
 import { obtenerMisReservas, cancelarReserva } from '../services/clasesService'
 import NavBar from '../components/NavBar'
 import { SkeletonListaReservas } from '../components/Skeleton'
@@ -37,13 +37,11 @@ export default function MisReservas() {
     }
   }, [location.state, location.pathname, exito, navigate])
 
-  useEffect(() => {
-    const socket = io(import.meta.env.VITE_SOCKET_URL)
-    socket.on('pago_confirmado', cargar)
-    socket.on('reserva_cancelada', cargar)
-    socket.on('actualizacion_horarios', cargar)
-    return () => socket.disconnect()
-  }, [cargar])
+  useSocketEventos({
+    pago_confirmado: () => cargar(),
+    reserva_cancelada: () => cargar(),
+    actualizacion_horarios: () => cargar()
+  })
 
   const cancelar = async (reserva) => {
     const confirmado = await confirmar({

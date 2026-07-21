@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { io } from 'socket.io-client'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from '../components/Avisos'
+import { useSocketEventos } from '../hooks/useSocketEventos'
 import { obtenerHorarios, crearReserva, obtenerHorariosReservados } from '../services/clasesService'
 import NavBar from '../components/NavBar'
 import { SkeletonListaHorarios } from '../components/Skeleton'
@@ -49,13 +49,10 @@ export default function Horarios() {
 
   useEffect(() => { cargarTodo() }, [cargarTodo])
 
-  useEffect(() => {
-    const socket = io(import.meta.env.VITE_SOCKET_URL)
-    const refrescar = () => cargarTodo()
-    socket.on('actualizacion_horarios', refrescar)
-    socket.on('reserva_cancelada', refrescar)
-    return () => socket.disconnect()
-  }, [cargarTodo])
+  useSocketEventos({
+    actualizacion_horarios: () => cargarTodo(),
+    reserva_cancelada: () => cargarTodo()
+  })
 
   const visibles = useMemo(() => horarios.filter(h =>
     (rama === 'todos' || h.rama === rama) &&

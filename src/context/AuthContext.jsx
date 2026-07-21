@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from 'react'
+import socket from '../services/socket'
 
 // Creamos el contexto
 const AuthContext = createContext()
@@ -20,6 +21,9 @@ export function AuthProvider({ children }) {
   const cerrarSesion = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('usuario')
+    // Cortamos la conexión de tiempo real: al salir ya no hace falta,
+    // y así no queda abierta contra el servidor.
+    socket.disconnect()
     setUsuario(null)
   }
 

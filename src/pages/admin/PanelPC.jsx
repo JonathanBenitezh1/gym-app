@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { io } from 'socket.io-client'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useAvisos } from '../../components/Avisos'
+import { useSocketEventos } from '../../hooks/useSocketEventos'
 import {
   obtenerClases, crearClase, editarClase,
   crearHorario, editarHorario, eliminarHorario, obtenerHorariosAdmin,
@@ -61,15 +61,12 @@ export default function PanelPC() {
 
   useEffect(() => { cargarTodo() }, [cargarTodo])
 
-  useEffect(() => {
-    const socket = io(import.meta.env.VITE_SOCKET_URL)
-    const refrescar = () => cargarTodo()
-    socket.on('nueva_reserva', refrescar)
-    socket.on('pago_confirmado', refrescar)
-    socket.on('reserva_cancelada', refrescar)
-    socket.on('nuevo_pago', refrescar)
-    return () => socket.disconnect()
-  }, [cargarTodo])
+  useSocketEventos({
+    nueva_reserva: () => cargarTodo(),
+    pago_confirmado: () => cargarTodo(),
+    reserva_cancelada: () => cargarTodo(),
+    nuevo_pago: () => cargarTodo()
+  })
 
   const salir = async () => {
     if (await confirmar({ titulo: '¿Cerrar sesión?', textoConfirmar: 'Cerrar sesión' })) {
