@@ -16,7 +16,12 @@ const socket = io(import.meta.env.VITE_SOCKET_URL, {
   autoConnect: false,
   reconnection: true,
   reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000
+  reconnectionDelayMax: 5000,
+
+  // El servidor ahora exige el mismo token que la API. Va como funcion para
+  // que se lea de nuevo en cada reconexion: si viniera fijo, despues de
+  // cambiar la contrasena se seguiria mandando el token viejo.
+  auth: (cb) => cb({ token: localStorage.getItem('token') })
 })
 
 export default socket
