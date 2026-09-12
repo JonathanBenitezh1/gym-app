@@ -29,9 +29,14 @@ export default function CambioObligatorio() {
 
     setGuardando(true)
     try {
-      await cambiarPassword({ password_actual: form.actual, password_nueva: form.nueva })
-      // Limpiamos la marca en la sesión guardada para que la app siga normal
-      guardarSesion(localStorage.getItem('token'), { ...usuario, debe_cambiar_password: false })
+      // El backend devuelve un token nuevo, ya sin la marca de cambio
+      // pendiente. Hay que guardar ese: con el viejo, el servidor sigue
+      // contestando 403 y la app queda trabada en esta pantalla.
+      const { token } = await cambiarPassword({
+        password_actual: form.actual,
+        password_nueva: form.nueva
+      })
+      guardarSesion(token || localStorage.getItem('token'), { ...usuario, debe_cambiar_password: false })
       exito('¡Listo! Tu contraseña quedó actualizada')
     } catch (err) {
       avisarError(err.response?.data?.error || 'No pudimos cambiar la contraseña')
