@@ -14,6 +14,7 @@ import {
 } from '../../components/Iconos'
 import { rangoHorario, hoyISO, fechaCorta } from '../../utils/formato'
 import logoDtc from '../img/logo_png.png'
+import { GIMNASIO } from '../../config/gimnasio'
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const SOLAPAS = [
@@ -64,7 +65,7 @@ export default function MisClases() {
       >
         <div className="contenedor-ancho flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
-            <img src={logoDtc} alt="DTC Fight & Fitness" className="h-9 w-auto" />
+            <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto" />
             <div>
               <p className="text-sm font-bold leading-tight">Panel del profesor</p>
               <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>

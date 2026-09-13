@@ -9,6 +9,7 @@ import { SkeletonListaHorarios } from '../components/Skeleton'
 import { IconoReloj, IconoCheck, IconoUsuarios } from '../components/Iconos'
 import { precio, rangoHorario } from '../utils/formato'
 import logoDtc from './img/logo_png.png'
+import { GIMNASIO } from '../config/gimnasio'
 
 const RAMAS = [
   { valor: 'todos',       texto: 'Todas' },
@@ -140,7 +141,7 @@ export default function Horarios() {
         }}
       >
         <div className="contenedor-ancho flex items-center justify-between py-3">
-          <img src={logoDtc} alt="DTC Fight & Fitness" className="h-9 w-auto" />
+          <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto" />
           <div className="text-right">
             <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>Hola,</p>
             <p className="text-sm font-semibold leading-tight">{usuario?.nombre}</p>

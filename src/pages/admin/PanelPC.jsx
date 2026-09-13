@@ -17,6 +17,7 @@ import {
 } from '../../components/Iconos'
 import { precio, rangoHorario, hora } from '../../utils/formato'
 import logoDtc from '../img/logo_png.png'
+import { GIMNASIO } from '../../config/gimnasio'
 
 const RAMAS = ['gimnasio', 'disciplina', 'profesional']
 const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -86,7 +87,7 @@ export default function PanelPC() {
       >
         <div className="contenedor-ancho flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
-            <img src={logoDtc} alt="DTC Fight & Fitness" className="h-9 w-auto" />
+            <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto" />
             <div>
               <p className="flex items-center gap-1.5 text-sm font-bold leading-tight">
                 <IconoPanel size={15} /> Administración

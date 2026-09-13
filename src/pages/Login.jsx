@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { inicioDe } from '../components/RutaProtegida'
 import { IconoOjo, IconoOjoTachado } from '../components/Iconos'
 import logoDtc from './img/logo_png.png'
+import { GIMNASIO } from '../config/gimnasio'
 
 export default function Login() {
   const [email, setEmail]       = useState('')
@@ -48,7 +49,7 @@ export default function Login() {
         <div className="mb-8 text-center">
           <img
             src={logoDtc}
-            alt="DTC Fight & Fitness"
+            alt={GIMNASIO.nombre}
             className="mx-auto mb-4 h-28 w-auto"
             style={{ filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.45))' }}
           />

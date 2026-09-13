@@ -4,6 +4,7 @@ import { useAvisos } from './Avisos'
 import { cambiarPassword } from '../services/perfilService'
 import { IconoOjo, IconoOjoTachado, IconoAlerta } from './Iconos'
 import logoDtc from '../pages/img/logo_png.png'
+import { GIMNASIO } from '../config/gimnasio'
 
 /**
  * Pantalla que aparece cuando el administrador restableció la contraseña.
@@ -23,7 +24,7 @@ export default function CambioObligatorio() {
   const enviar = async (e) => {
     e.preventDefault()
 
-    if (form.nueva.length < 6)        return avisarError('La nueva contraseña debe tener al menos 6 caracteres')
+    if (form.nueva.length < 8)        return avisarError('La nueva contraseña debe tener al menos 8 caracteres')
     if (form.nueva !== form.repetir)  return avisarError('Las contraseñas nuevas no coinciden')
     if (form.nueva === form.actual)   return avisarError('Elegí una contraseña distinta de la temporal')
 
@@ -52,7 +53,7 @@ export default function CambioObligatorio() {
         <div className="mb-6 text-center">
           <img
             src={logoDtc}
-            alt="DTC Fight & Fitness"
+            alt={GIMNASIO.nombre}
             className="mx-auto mb-4 h-20 w-auto"
             style={{ filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.45))' }}
           />
@@ -101,7 +102,7 @@ export default function CambioObligatorio() {
               id="nueva"
               type={ver ? 'text' : 'password'}
               autoComplete="new-password"
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres"
               value={form.nueva}
               onChange={e => setForm(f => ({ ...f, nueva: e.target.value }))}
               className="campo"

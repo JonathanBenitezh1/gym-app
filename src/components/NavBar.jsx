@@ -4,14 +4,15 @@ import { obtenerMisReservas } from '../services/clasesService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from './Avisos'
+import { linkContactoGimnasio } from '../utils/whatsapp'
 import {
   IconoPesa, IconoRutina, IconoPago, IconoPerfil, IconoSalir, IconoWhatsapp
 } from './Iconos'
 
-// Número de contacto del gimnasio. Se puede cambiar sin tocar el código
-// definiendo VITE_WHATSAPP en el archivo de entorno.
-const WHATSAPP_NUMERO  = import.meta.env.VITE_WHATSAPP || '5493512345678'
-const WHATSAPP_MENSAJE = 'Hola! Te contacto desde la app del gimnasio.'
+// Contacto del gimnasio. Sin número cargado queda en null y el botón no se
+// muestra: antes caía en un número de ejemplo, así que un socio podía terminar
+// escribiéndole a un desconocido.
+const LINK_WHATSAPP = linkContactoGimnasio()
 
 const BOTONES = [
   { ruta: '/horarios', Icono: IconoPesa,   texto: 'Clases'  },
@@ -78,22 +79,24 @@ export default function NavBar({ hayBarraAccion = false }) {
     <>
       {/* Contacto por WhatsApp. z-30 lo deja por DEBAJO de las barras de
           acción (z-40), que es lo que evita el bloqueo de toques. */}
-      <a
-        href={`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(WHATSAPP_MENSAJE)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Contactar al gimnasio por WhatsApp"
-        className="fixed right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
-        style={{
-          backgroundColor: '#25a35a',
-          color: '#ffffff',
-          bottom: hayBarraAccion
-            ? 'calc(var(--alto-nav) + 5.5rem)'
-            : 'calc(var(--alto-nav) + 0.75rem)'
-        }}
-      >
-        <IconoWhatsapp size={24} />
-      </a>
+      {LINK_WHATSAPP && (
+        <a
+          href={LINK_WHATSAPP}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Contactar al gimnasio por WhatsApp"
+          className="fixed right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform active:scale-95"
+          style={{
+            backgroundColor: '#25a35a',
+            color: '#ffffff',
+            bottom: hayBarraAccion
+              ? 'calc(var(--alto-nav) + 5.5rem)'
+              : 'calc(var(--alto-nav) + 0.75rem)'
+          }}
+        >
+          <IconoWhatsapp size={24} />
+        </a>
+      )}
 
       <nav
         className="fixed bottom-0 left-0 right-0 z-40"

@@ -291,7 +291,7 @@ function SeccionClave({ alExito, alError }) {
   const [guardando, setGuardando] = useState(false)
 
   const enviar = async () => {
-    if (form.nueva.length < 6) return alError('La nueva contraseña debe tener al menos 6 caracteres')
+    if (form.nueva.length < 8) return alError('La nueva contraseña debe tener al menos 8 caracteres')
     if (form.nueva !== form.repetir) return alError('Las contraseñas nuevas no coinciden')
 
     setGuardando(true)
@@ -330,7 +330,7 @@ function SeccionClave({ alExito, alError }) {
         <label htmlFor="c-nueva" className="etiqueta-campo">Nueva contraseña</label>
         <input
           id="c-nueva" type={ver ? 'text' : 'password'} className="campo"
-          autoComplete="new-password" placeholder="Mínimo 6 caracteres" value={form.nueva}
+          autoComplete="new-password" placeholder="Mínimo 8 caracteres" value={form.nueva}
           onChange={e => setForm(f => ({ ...f, nueva: e.target.value }))}
         />
       </div>

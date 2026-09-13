@@ -4,6 +4,7 @@ import { registrarUsuario } from '../services/authService'
 import { useAuth } from '../context/AuthContext'
 import { IconoOjo, IconoOjoTachado } from '../components/Iconos'
 import logoDtc from './img/logo_png.png'
+import { GIMNASIO } from '../config/gimnasio'
 
 const VACIO = { nombre: '', dni: '', telefono: '', email: '', password: '', confirmar: '' }
 
@@ -54,7 +55,7 @@ export default function Registro() {
     if (!/^\d{7,8}$/.test(datos.dni.trim()))   e.dni       = 'El DNI debe tener 7 u 8 números, sin puntos'
     if (!/^\d{10,15}$/.test(datos.telefono.trim())) e.telefono = 'Ingresá el número con característica, sin 0 ni 15'
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.email.trim())) e.email = 'Revisá el formato del email'
-    if (datos.password.length < 6)             e.password  = 'Mínimo 6 caracteres'
+    if (datos.password.length < 8)             e.password  = 'Mínimo 8 caracteres'
     if (datos.password !== datos.confirmar)    e.confirmar = 'Las contraseñas no coinciden'
     return e
   }
@@ -103,7 +104,7 @@ export default function Registro() {
         <div className="mb-7 text-center">
           <img
             src={logoDtc}
-            alt="DTC Fight & Fitness"
+            alt={GIMNASIO.nombre}
             className="mx-auto mb-4 h-24 w-auto"
             style={{ filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.45))' }}
           />
@@ -126,7 +127,7 @@ export default function Registro() {
                 id="password"
                 type={verClave ? 'text' : 'password'}
                 autoComplete="new-password"
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mínimo 8 caracteres"
                 value={datos.password}
                 onChange={cambiar('password')}
                 className={`campo pr-12 ${errores.password ? 'campo-error' : ''}`}

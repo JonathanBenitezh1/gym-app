@@ -8,6 +8,7 @@ import { SkeletonListaReservas } from '../components/Skeleton'
 import { IconoReloj, IconoCalendario, IconoCheck, IconoAlerta } from '../components/Iconos'
 import { precio, rangoFechas, rangoHorario } from '../utils/formato'
 import logoDtc from './img/logo_png.png'
+import { GIMNASIO } from '../config/gimnasio'
 
 export default function MisReservas() {
   const navigate = useNavigate()
@@ -82,7 +83,7 @@ export default function MisReservas() {
         }}
       >
         <div className="contenedor-ancho flex items-center justify-between py-3">
-          <img src={logoDtc} alt="DTC Fight & Fitness" className="h-9 w-auto" />
+          <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto" />
           <button onClick={() => navigate('/horarios')} className="btn btn-contorno btn-chico">
             Ver clases
           </button>

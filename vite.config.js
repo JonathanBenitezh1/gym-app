@@ -2,20 +2,43 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { GIMNASIO } from './src/config/gimnasio.js'
+
+/**
+ * Completa el index.html con los datos de config/gimnasio.js, el mismo archivo
+ * que usan las pantallas. Se usan llaves dobles y no %NOMBRE% porque Vite ya
+ * reserva esa sintaxis para las variables de entorno.
+ */
+function datosDelGimnasioEnElHtml() {
+  const escapar = (texto) =>
+    String(texto).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;')
+
+  return {
+    name: 'datos-del-gimnasio',
+    transformIndexHtml: {
+      order: 'pre',
+      handler: (html) => html
+        .replaceAll('{{GYM_NOMBRE}}', escapar(GIMNASIO.nombre))
+        .replaceAll('{{GYM_NOMBRE_CORTO}}', escapar(GIMNASIO.nombreCorto))
+        .replaceAll('{{GYM_COLOR_TEMA}}', escapar(GIMNASIO.colorTema))
+    }
+  }
+}
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    datosDelGimnasioEnElHtml(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
-        name: 'DTC Fight & Fitness',
-        short_name: 'DTC Gym',
-        description: 'Reservá tus clases y gestioná tu entrenamiento',
-        theme_color: '#2c4a5a',
-        background_color: '#202123',
+        name: GIMNASIO.nombre,
+        short_name: GIMNASIO.nombreCorto,
+        description: GIMNASIO.descripcion,
+        theme_color: GIMNASIO.colorTema,
+        background_color: GIMNASIO.colorFondo,
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
