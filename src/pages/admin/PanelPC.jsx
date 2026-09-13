@@ -8,12 +8,15 @@ import {
   crearHorario, editarHorario, eliminarHorario, obtenerHorariosAdmin,
   obtenerUsuarios, cambiarRol, restablecerPassword,
   obtenerReservas, confirmarPagoEfectivo,
-  obtenerProfesores, verificarClase
+  obtenerProfesores, verificarClase, cambiarEstadoUsuario
 } from '../../services/adminService'
+import SeccionActividad from './SeccionActividad'
+import BotonPresencia from '../../components/BotonPresencia'
+import { linkWhatsapp, mensajePagoPendiente } from '../../utils/whatsapp'
 import { SkeletonLista } from '../../components/Skeleton'
 import {
   IconoPanel, IconoSalir, IconoLapiz, IconoBasura, IconoReloj,
-  IconoUsuarios, IconoBuscar, IconoCheck, IconoLlave
+  IconoUsuarios, IconoBuscar, IconoCheck, IconoLlave, IconoWhatsapp
 } from '../../components/Iconos'
 import { precio, rangoHorario, hora } from '../../utils/formato'
 import logoDtc from '../img/logo_png.png'
@@ -28,7 +31,8 @@ const SECCIONES = [
   { id: 'clases',   texto: 'Clases' },
   { id: 'horarios', texto: 'Horarios' },
   { id: 'usuarios', texto: 'Usuarios' },
-  { id: 'reservas', texto: 'Reservas' }
+  { id: 'reservas', texto: 'Reservas' },
+  { id: 'actividad', texto: 'Actividad' }
 ]
 
 export default function PanelPC() {
@@ -95,9 +99,12 @@ export default function PanelPC() {
               <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
             </div>
           </div>
-          <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
-            <IconoSalir size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            <BotonPresencia alExito={exito} alError={avisarError} />
+            <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
+              <IconoSalir size={18} />
+            </button>
+          </div>
         </div>
 
         <div className="contenedor-ancho fila-scroll pb-2.5">
@@ -121,6 +128,7 @@ export default function PanelPC() {
             {seccion === 'horarios' && <SeccionHorarios horarios={horarios} clases={clases} {...comunes} />}
             {seccion === 'usuarios' && <SeccionUsuarios usuarios={usuarios} {...comunes} />}
             {seccion === 'reservas' && <SeccionReservas reservas={reservas} {...comunes} />}
+            {seccion === 'actividad' && <SeccionActividad alError={avisarError} />}
           </>
         )}
       </main>
@@ -671,6 +679,32 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
     }
   }
 
+  const cambiarEstado = async (u) => {
+    const darDeBaja = u.activo !== false
+
+    const seguro = await confirmar(darDeBaja
+      ? {
+          titulo: `¿Dar de baja a ${u.nombre}?`,
+          mensaje: 'No va a poder entrar a la app. Sus reservas, pagos y rutinas quedan guardados, y lo podés reactivar cuando quieras.',
+          textoConfirmar: 'Dar de baja',
+          peligroso: true
+        }
+      : {
+          titulo: `¿Reactivar a ${u.nombre}?`,
+          mensaje: 'Va a poder volver a entrar con su contraseña de siempre.',
+          textoConfirmar: 'Reactivar'
+        })
+    if (!seguro) return
+
+    try {
+      await cambiarEstadoUsuario(u.id, !darDeBaja)
+      await alRecargar()
+      alExito(darDeBaja ? `${u.nombre} quedó dado de baja` : `${u.nombre} quedó reactivado`)
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos cambiar el estado del usuario')
+    }
+  }
+
   const visibles = useMemo(() => {
     const texto = busqueda.trim().toLowerCase()
     return usuarios.filter(u => {
@@ -751,6 +785,9 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
                 {u.email}
               </p>
               <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>DNI {u.dni}</p>
+              {u.activo === false && (
+                <span className="insignia insignia-error mt-1">Dado de baja</span>
+              )}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1.5">
               <select
@@ -766,6 +803,13 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
                 className="btn btn-fantasma btn-chico !text-[11px]"
               >
                 <IconoLlave size={13} /> Restablecer clave
+              </button>
+              <button
+                onClick={() => cambiarEstado(u)}
+                className="btn btn-fantasma btn-chico !text-[11px]"
+                style={{ color: u.activo === false ? 'var(--color-exito)' : 'var(--color-error)' }}
+              >
+                {u.activo === false ? 'Reactivar' : 'Dar de baja'}
               </button>
             </div>
           </article>
@@ -838,7 +882,7 @@ function ModalClaveTemporal({ datos, alCerrar, alExito }) {
 
 /* ═══ RESERVAS ═══════════════════════════════════════════ */
 
-function SeccionReservas({ reservas, alExito, alError, alRecargar }) {
+function SeccionReservas({ reservas, alExito, alError, alRecargar, confirmar: pedirConfirmacion }) {
   const [filtro, setFiltro] = useState('activas')
   const [busqueda, setBusqueda] = useState('')
 
@@ -859,9 +903,20 @@ function SeccionReservas({ reservas, alExito, alError, alRecargar }) {
     })
   }, [reservas, filtro, busqueda])
 
-  const confirmar = async (id) => {
+  const confirmar = async (r) => {
+    // Sin pago registrado desde la app, el cobro se confirma solo si la
+    // persona ya pagó en el mostrador: vale una pregunta antes.
+    if (!r.metodo) {
+      const seguro = await pedirConfirmacion({
+        titulo: `¿Confirmar el cobro a ${r.alumno}?`,
+        mensaje: `No registró el pago desde la app. Confirmalo solo si ya te pagó ${precio(r.total)} en el gimnasio.`,
+        textoConfirmar: 'Sí, ya pagó'
+      })
+      if (!seguro) return
+    }
+
     try {
-      await confirmarPagoEfectivo(id)
+      await confirmarPagoEfectivo(r.id)
       await alRecargar()
       alExito('Pago confirmado')
     } catch (err) {
@@ -920,10 +975,27 @@ function SeccionReservas({ reservas, alExito, alError, alRecargar }) {
               </div>
             </div>
 
-            {r.estado === 'pendiente' && r.metodo === 'efectivo' && (
-              <button onClick={() => confirmar(r.id)} className="btn btn-primario btn-chico btn-bloque mt-3">
-                <IconoCheck size={14} /> Confirmar cobro
-              </button>
+            {/* Antes el cobro solo se podía confirmar si el socio lo había
+                registrado desde la app. Ahora también cuando pagó directo en
+                el mostrador, y se le puede recordar el pago por WhatsApp. */}
+            {r.estado === 'pendiente' && (
+              <div className="mt-3 flex gap-2">
+                {r.metodo !== 'mercadopago' && (
+                  <button onClick={() => confirmar(r)} className="btn btn-primario btn-chico flex-1">
+                    <IconoCheck size={14} /> Confirmar cobro
+                  </button>
+                )}
+                {linkWhatsapp(r.telefono, mensajePagoPendiente(r)) && (
+                  <a
+                    href={linkWhatsapp(r.telefono, mensajePagoPendiente(r))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-contorno btn-chico flex-1"
+                  >
+                    <IconoWhatsapp size={14} /> Recordar pago
+                  </a>
+                )}
+              </div>
             )}
           </article>
         ))}

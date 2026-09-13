@@ -89,3 +89,14 @@ export const obtenerProfesores = async () => {
   const res = await axios.get(`${API}/admin/profesores`, config())
   return res.data
 }
+
+// Dar de baja (activo: false) o reactivar (activo: true), sin borrar al usuario.
+export const cambiarEstadoUsuario = async (id, activo) => {
+  const res = await axios.put(`${API}/admin/usuarios/${id}/estado`, { activo }, config())
+  return res.data
+}
+
+export const obtenerActividad = async (limite = 150) => {
+  const res = await axios.get(`${API}/admin/actividad?limite=${limite}`, config())
+  return res.data
+}

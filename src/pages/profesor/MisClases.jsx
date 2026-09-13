@@ -8,6 +8,7 @@ import {
   obtenerAlumnosDeHorario, marcarAsistencia
 } from '../../services/profesorService'
 import { SkeletonLista } from '../../components/Skeleton'
+import BotonPresencia from '../../components/BotonPresencia'
 import {
   IconoReloj, IconoUsuarios, IconoCheck, IconoBuscar,
   IconoMas, IconoCruz, IconoSalir, IconoLapiz
@@ -71,9 +72,12 @@ export default function MisClases() {
               <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
             </div>
           </div>
-          <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
-            <IconoSalir size={18} />
-          </button>
+          <div className="flex items-center gap-2">
+            <BotonPresencia alExito={exito} alError={avisarError} />
+            <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
+              <IconoSalir size={18} />
+            </button>
+          </div>
         </div>
 
         <div className="contenedor-ancho fila-scroll pb-2.5">

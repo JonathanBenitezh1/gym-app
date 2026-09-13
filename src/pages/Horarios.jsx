@@ -5,6 +5,7 @@ import { useAvisos } from '../components/Avisos'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import { obtenerHorarios, crearReserva, obtenerHorariosReservados } from '../services/clasesService'
 import NavBar from '../components/NavBar'
+import ProfesEnSede from '../components/ProfesEnSede'
 import { SkeletonListaHorarios } from '../components/Skeleton'
 import { IconoReloj, IconoCheck, IconoUsuarios } from '../components/Iconos'
 import { precio, rangoHorario } from '../utils/formato'
@@ -155,6 +156,8 @@ export default function Horarios() {
         <p className="mt-0.5 text-sm" style={{ color: 'var(--color-texto-2)' }}>
           Elegí una o varias y confirmá todo junto
         </p>
+
+        <ProfesEnSede className="mt-4" />
 
         {/* Modalidad */}
         <div className="mt-5">
