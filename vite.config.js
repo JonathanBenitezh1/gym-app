@@ -64,19 +64,13 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.*\/api\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 10,
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
+        // Sin caché de la API, a propósito. Antes cada GET a /api se guardaba
+        // con la dirección como única clave, sin importar quién estaba
+        // logueado, y se servía si la red tardaba más de 10 segundos. En un
+        // teléfono compartido un socio podía ver el perfil y las reservas del
+        // anterior, y con el servidor despertando se veían cupos viejos. La
+        // app instalable guarda solo sus propios archivos.
+        cleanupOutdatedCaches: true
       }
     })
   ],

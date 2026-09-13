@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { obtenerActividad } from '../../services/adminService'
+import { useAuth } from '../../context/AuthContext'
 import { SkeletonLista } from '../../components/Skeleton'
 import { IconoBuscar } from '../../components/Iconos'
 import { precio, fechaHora } from '../../utils/formato'
@@ -38,26 +39,58 @@ function detalleLegible(d = {}) {
   return partes.join(' · ')
 }
 
+// Lo último que se cargó, y de quién. Al volver a abrir la sección se muestra
+// al instante mientras se actualiza de fondo: antes cada visita arrancaba con
+// barras de carga que después se achicaban de golpe.
+//
+// Se lee y se escribe a través de estas dos funciones y no directo desde el
+// componente: el compilador de React no puede memorizar una función que
+// reasigna una variable del módulo.
+let ultimaCarga = null
+
+function cargaRecordada(usuarioId) {
+  return ultimaCarga?.usuarioId === usuarioId ? ultimaCarga.movimientos : null
+}
+
+function recordarCarga(usuarioId, movimientos) {
+  ultimaCarga = { usuarioId, movimientos }
+}
+
 /**
  * Quién hizo qué. Sirve para revisar el trabajo del panel y encontrar un
  * movimiento sin tener que adivinar.
  */
 export default function SeccionActividad({ alError }) {
-  const [movimientos, setMovimientos] = useState([])
-  const [cargando, setCargando]       = useState(true)
+  const { usuario } = useAuth()
+  const usuarioId = usuario?.id
+  const guardada = cargaRecordada(usuarioId)
+
+  const [movimientos, setMovimientos] = useState(guardada || [])
+  const [cargando, setCargando]       = useState(guardada === null)
+  const [esperaLarga, setEsperaLarga] = useState(false)
   const [busqueda, setBusqueda]       = useState('')
 
   const cargar = useCallback(async () => {
     try {
-      setMovimientos(await obtenerActividad(150))
+      const datos = await obtenerActividad(150)
+      recordarCarga(usuarioId, datos)
+      setMovimientos(datos)
     } catch {
       alError('No se pudo cargar la actividad')
     } finally {
       setCargando(false)
     }
-  }, [alError])
+  }, [alError, usuarioId])
 
   useEffect(() => { cargar() }, [cargar])
+
+  // El esqueleto aparece solo si la primera carga pasa de 300 ms, así una
+  // respuesta rápida no se ve como un parpadeo.
+  useEffect(() => {
+    if (!cargando) return
+    const temporizador = setTimeout(() => setEsperaLarga(true), 300)
+    return () => clearTimeout(temporizador)
+  }, [cargando])
 
   const texto = busqueda.trim().toLowerCase()
   const visibles = texto
@@ -65,6 +98,52 @@ export default function SeccionActividad({ alError }) {
         m.quien?.toLowerCase().includes(texto) ||
         m.afectado?.toLowerCase().includes(texto))
     : movimientos
+
+  let contenido
+  if (cargando) {
+    // Dos filas y no cinco: si no hay movimientos, el recuadro vacío que viene
+    // después mide parecido y la pantalla no pega el salto.
+    contenido = esperaLarga ? <SkeletonLista filas={2} /> : null
+  } else if (visibles.length === 0) {
+    contenido = (
+      <div className="tarjeta p-8 text-center text-sm" style={{ color: 'var(--color-texto-2)' }}>
+        {texto ? 'Ningún movimiento coincide con el filtro' : 'Todavía no hay movimientos registrados'}
+      </div>
+    )
+  } else {
+    contenido = (
+      <div className="tarjeta divide-y" style={{ borderColor: 'var(--color-linea-sutil)' }}>
+        {visibles.map(m => {
+          const accion = ACCIONES[m.accion] || { texto: m.accion, color: 'var(--color-texto-2)' }
+          const detalle = detalleLegible(m.detalle)
+          // Cuando la persona se afecta a sí misma (canceló su propia
+          // reserva), no se repite el nombre.
+          const mostrarAfectado = m.afectado && m.afectado !== m.quien
+
+          return (
+            <div key={m.id} className="flex items-start justify-between gap-3 p-3">
+              <div className="min-w-0">
+                <p className="text-sm">
+                  <span className="font-semibold">{m.quien || 'Alguien'}</span>
+                  {m.rol_quien && (
+                    <span className="text-xs" style={{ color: 'var(--color-texto-3)' }}> ({m.rol_quien})</span>
+                  )}
+                  <span style={{ color: accion.color }}> {accion.texto} </span>
+                  {mostrarAfectado && <span className="font-semibold">{m.afectado}</span>}
+                </p>
+                {detalle && (
+                  <p className="mt-0.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>{detalle}</p>
+                )}
+              </div>
+              <span className="shrink-0 text-xs tabular-nums" style={{ color: 'var(--color-texto-3)' }}>
+                {fechaHora(m.creado_en)}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -86,42 +165,7 @@ export default function SeccionActividad({ alError }) {
         </p>
       </div>
 
-      {cargando ? <SkeletonLista filas={5} /> : visibles.length === 0 ? (
-        <div className="tarjeta p-8 text-center text-sm" style={{ color: 'var(--color-texto-2)' }}>
-          Todavía no hay movimientos registrados
-        </div>
-      ) : (
-        <div className="tarjeta divide-y" style={{ borderColor: 'var(--color-linea-sutil)' }}>
-          {visibles.map(m => {
-            const accion = ACCIONES[m.accion] || { texto: m.accion, color: 'var(--color-texto-2)' }
-            const detalle = detalleLegible(m.detalle)
-            // Cuando la persona se afecta a sí misma (canceló su propia
-            // reserva), no se repite el nombre.
-            const mostrarAfectado = m.afectado && m.afectado !== m.quien
-
-            return (
-              <div key={m.id} className="flex items-start justify-between gap-3 p-3">
-                <div className="min-w-0">
-                  <p className="text-sm">
-                    <span className="font-semibold">{m.quien || 'Alguien'}</span>
-                    {m.rol_quien && (
-                      <span className="text-xs" style={{ color: 'var(--color-texto-3)' }}> ({m.rol_quien})</span>
-                    )}
-                    <span style={{ color: accion.color }}> {accion.texto} </span>
-                    {mostrarAfectado && <span className="font-semibold">{m.afectado}</span>}
-                  </p>
-                  {detalle && (
-                    <p className="mt-0.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>{detalle}</p>
-                  )}
-                </div>
-                <span className="shrink-0 text-xs tabular-nums" style={{ color: 'var(--color-texto-3)' }}>
-                  {fechaHora(m.creado_en)}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {contenido}
     </div>
   )
 }

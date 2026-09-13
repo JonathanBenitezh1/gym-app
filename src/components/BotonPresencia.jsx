@@ -48,7 +48,15 @@ export default function BotonPresencia({ alExito, alError }) {
     }
   }
 
-  if (!cargado) return null
+  // Mientras carga se reserva el lugar del botón, invisible. Antes no se
+  // dibujaba nada y el encabezado saltaba cuando el botón aparecía.
+  if (!cargado) {
+    return (
+      <span className="btn btn-chico btn-primario" style={{ visibility: 'hidden' }} aria-hidden="true">
+        <IconoCheck size={15} /> Llegué
+      </span>
+    )
+  }
 
   return (
     <button

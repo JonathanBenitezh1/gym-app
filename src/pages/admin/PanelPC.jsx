@@ -48,6 +48,15 @@ export default function PanelPC() {
   const [profesores, setProfesores] = useState([])
   const [cargando, setCargando]   = useState(true)
 
+  // El esqueleto aparece solo si la carga pasa de 300 ms: si la API contesta
+  // rápido, mostrarlo un instante y sacarlo se ve como un parpadeo.
+  const [esperaLarga, setEsperaLarga] = useState(false)
+  useEffect(() => {
+    if (!cargando) return
+    const temporizador = setTimeout(() => setEsperaLarga(true), 300)
+    return () => clearTimeout(temporizador)
+  }, [cargando])
+
   const cargarTodo = useCallback(async () => {
     const [c, h, u, r, p] = await Promise.allSettled([
       obtenerClases(), obtenerHorariosAdmin(), obtenerUsuarios(),
@@ -121,7 +130,7 @@ export default function PanelPC() {
       </header>
 
       <main className="contenedor-ancho pt-5">
-        {cargando ? <SkeletonLista filas={4} /> : (
+        {cargando ? (esperaLarga ? <SkeletonLista filas={4} /> : null) : (
           <>
             {seccion === 'panel'    && <Tablero reservas={reservas} clases={clases} horarios={horarios} usuarios={usuarios} {...comunes} />}
             {seccion === 'clases'   && <SeccionClases clases={clases} profesores={profesores} {...comunes} />}
