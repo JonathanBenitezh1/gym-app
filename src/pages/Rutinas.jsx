@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext'
 import { useAvisos } from '../components/Avisos'
 import { obtenerMisRutinas } from '../services/profesorService'
 import NavBar from '../components/NavBar'
+import Progreso from '../components/Progreso'
+import { obtenerMiProgreso, registrarProgreso, borrarProgreso } from '../services/progresoService'
 import { SkeletonLista } from '../components/Skeleton'
 import { IconoChevron, IconoRutina } from '../components/Iconos'
 import { fechaCorta } from '../utils/formato'
@@ -11,7 +13,7 @@ import { GIMNASIO } from '../config/gimnasio'
 
 export default function Rutinas() {
   const { usuario } = useAuth()
-  const { error: avisarError } = useAvisos()
+  const { error: avisarError, exito, confirmar } = useAvisos()
 
   const [rutinas, setRutinas]   = useState([])
   const [abierta, setAbierta]   = useState({})   // { [rutinaId]: sesionId }
@@ -36,6 +38,38 @@ export default function Rutinas() {
   }, [avisarError])
 
   useEffect(() => { cargar() }, [cargar])
+
+  const [progreso, setProgreso] = useState([])
+  useEffect(() => {
+    obtenerMiProgreso().then(setProgreso).catch(() => avisarError('No pudimos cargar tu progreso'))
+  }, [avisarError])
+
+  const guardarProgreso = async (datos) => {
+    try {
+      const nuevo = await registrarProgreso(datos)
+      setProgreso(actual => [...actual, nuevo].sort((a, b) =>
+        a.medida.localeCompare(b.medida) || a.fecha.localeCompare(b.fecha) || a.id - b.id))
+      exito('Registrado')
+      return true
+    } catch (err) {
+      avisarError(err.response?.data?.error || 'No pudimos guardar el registro')
+      return false
+    }
+  }
+
+  const quitarProgreso = async (registro) => {
+    if (!await confirmar({
+      titulo: '¿Borrar este registro?',
+      mensaje: `${registro.medida}: ${registro.valor} ${registro.unidad}`,
+      textoConfirmar: 'Borrar'
+    })) return
+    try {
+      await borrarProgreso(registro.id)
+      setProgreso(actual => actual.filter(r => r.id !== registro.id))
+    } catch (err) {
+      avisarError(err.response?.data?.error || 'No pudimos borrar el registro')
+    }
+  }
 
   const alternar = (rutinaId, sesionId) => {
     setAbierta(prev => ({
@@ -188,6 +222,16 @@ export default function Rutinas() {
             ))}
           </div>
         )}
+        <section className="mt-8">
+          <h2 className="text-lg font-bold tracking-tight">Mi progreso</h2>
+          <p className="mb-3 mt-0.5 text-sm" style={{ color: 'var(--color-texto-2)' }}>
+            Peso, medidas y marcas personales. Tu profe también lo ve.
+          </p>
+          <Progreso
+            registros={progreso} alGuardar={guardarProgreso} alBorrar={quitarProgreso}
+            vacio="Todavía no registraste nada. Anotá tu peso o una marca para ver cómo avanzás."
+          />
+        </section>
       </main>
 
       <NavBar />

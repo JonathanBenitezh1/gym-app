@@ -12,6 +12,7 @@ import {
 } from '../../services/adminService'
 import SeccionActividad from './SeccionActividad'
 import SeccionEstadisticas from './SeccionEstadisticas'
+import SeccionRutinas from '../../components/SeccionRutinas'
 import BotonPresencia from '../../components/BotonPresencia'
 import { linkWhatsapp, mensajePagoPendiente } from '../../utils/whatsapp'
 import { SkeletonLista } from '../../components/Skeleton'
@@ -35,6 +36,7 @@ const SECCIONES = [
   { id: 'horarios', texto: 'Horarios' },
   { id: 'usuarios', texto: 'Usuarios' },
   { id: 'reservas', texto: 'Reservas' },
+  { id: 'rutinas',  texto: 'Rutinas' },
   { id: 'actividad', texto: 'Actividad' }
 ]
 
@@ -141,6 +143,7 @@ export default function PanelPC() {
             {seccion === 'horarios' && <SeccionHorarios horarios={horarios} clases={clases} {...comunes} />}
             {seccion === 'usuarios' && <SeccionUsuarios usuarios={usuarios} {...comunes} />}
             {seccion === 'reservas' && <SeccionReservas reservas={reservas} {...comunes} />}
+            {seccion === 'rutinas'  && <SeccionRutinas alExito={exito} alError={avisarError} />}
             {seccion === 'actividad' && <SeccionActividad alError={avisarError} />}
           </>
         )}

@@ -21,8 +21,8 @@ export const modificarHorario     = async (id, datos) => {
   return res.data
 }
 
-export const buscarAlumnoPorDni   = async (dni) => {
-  const res = await axios.get(`${API}/profesor/alumnos/${dni}`, config())
+export const buscarAlumnos        = async (q) => {
+  const res = await axios.get(`${API}/profesor/alumnos`, { ...config(), params: { q } })
   return res.data
 }
 
@@ -33,6 +33,21 @@ export const obtenerRutinaDeAlumno = async (alumno_id) => {
 
 export const guardarRutina        = async (datos) => {
   const res = await axios.post(`${API}/profesor/rutinas`, datos, config())
+  return res.data
+}
+
+export const obtenerPlantillas    = async () => {
+  const res = await axios.get(`${API}/profesor/plantillas`, config())
+  return res.data
+}
+
+export const guardarPlantilla     = async (datos) => {
+  const res = await axios.post(`${API}/profesor/plantillas`, datos, config())
+  return res.data
+}
+
+export const borrarPlantilla      = async (id) => {
+  const res = await axios.delete(`${API}/profesor/plantillas/${id}`, config())
   return res.data
 }
 

@@ -4,11 +4,11 @@ import { useAuth } from '../../context/AuthContext'
 import { useAvisos } from '../../components/Avisos'
 import {
   obtenerMisHorarios, modificarHorario,
-  buscarAlumnoPorDni, obtenerRutinaDeAlumno, guardarRutina,
   obtenerAlumnosDeHorario, marcarAsistencia
 } from '../../services/profesorService'
 import { SkeletonLista } from '../../components/Skeleton'
 import BotonPresencia from '../../components/BotonPresencia'
+import SeccionRutinas from '../../components/SeccionRutinas'
 import {
   IconoReloj, IconoUsuarios, IconoCheck, IconoBuscar,
   IconoMas, IconoCruz, IconoSalir, IconoLapiz
@@ -23,11 +23,6 @@ const SOLAPAS = [
   { id: 'rutinas',    texto: 'Rutinas' },
   { id: 'asistencia', texto: 'Asistencia' }
 ]
-
-const sesionVacia = (orden = 1) => ({
-  nombre: '', orden,
-  ejercicios: [{ nombre: '', series: '', repeticiones: '', orden: 1 }]
-})
 
 export default function MisClases() {
   const { usuario, cerrarSesion } = useAuth()
@@ -244,220 +239,6 @@ function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
           )}
         </article>
       ))}
-    </div>
-  )
-}
-
-/* ═══ RUTINAS ════════════════════════════════════════════ */
-
-function SeccionRutinas({ alExito, alError }) {
-  const [dni, setDni]         = useState('')
-  const [alumno, setAlumno]   = useState(null)
-  const [sesiones, setSesiones] = useState([sesionVacia()])
-  const [buscando, setBuscando] = useState(false)
-  const [guardando, setGuardando] = useState(false)
-
-  const buscar = async (e) => {
-    e?.preventDefault()
-    if (!dni.trim()) return
-    setBuscando(true)
-    setAlumno(null)
-    try {
-      const encontrado = await buscarAlumnoPorDni(dni.trim())
-      setAlumno(encontrado)
-
-      const rutina = await obtenerRutinaDeAlumno(encontrado.id)
-      if (rutina?.sesiones?.length > 0) {
-        setSesiones(rutina.sesiones.map(s => ({
-          nombre: s.nombre,
-          orden: s.orden,
-          ejercicios: s.ejercicios?.length
-            ? s.ejercicios
-            : [{ nombre: '', series: '', repeticiones: '', orden: 1 }]
-        })))
-        alExito('Ya tenía una rutina cargada, la abrimos para editar')
-      } else {
-        setSesiones([sesionVacia()])
-      }
-    } catch {
-      alError('No encontramos ningún alumno con ese DNI')
-    } finally {
-      setBuscando(false)
-    }
-  }
-
-  const actualizarSesion = (i, campo, valor) => {
-    setSesiones(prev => prev.map((s, idx) => idx === i ? { ...s, [campo]: valor } : s))
-  }
-
-  const actualizarEjercicio = (si, ei, campo, valor) => {
-    setSesiones(prev => prev.map((s, idx) => idx !== si ? s : {
-      ...s,
-      ejercicios: s.ejercicios.map((ej, j) => j === ei ? { ...ej, [campo]: valor } : ej)
-    }))
-  }
-
-  const agregarSesion = () =>
-    setSesiones(prev => [...prev, sesionVacia(prev.length + 1)])
-
-  const quitarSesion = (i) =>
-    setSesiones(prev => prev.filter((_, idx) => idx !== i))
-
-  const agregarEjercicio = (si) =>
-    setSesiones(prev => prev.map((s, idx) => idx !== si ? s : {
-      ...s,
-      ejercicios: [...s.ejercicios, { nombre: '', series: '', repeticiones: '', orden: s.ejercicios.length + 1 }]
-    }))
-
-  const quitarEjercicio = (si, ei) =>
-    setSesiones(prev => prev.map((s, idx) => idx !== si ? s : {
-      ...s, ejercicios: s.ejercicios.filter((_, j) => j !== ei)
-    }))
-
-  const guardar = async () => {
-    if (sesiones.some(s => !s.nombre.trim())) {
-      return alError('Poné un nombre a cada sesión (por ejemplo: Espalda y bíceps)')
-    }
-    setGuardando(true)
-    try {
-      await guardarRutina({ alumno_id: alumno.id, sesiones })
-      alExito(`Rutina de ${alumno.nombre} guardada`)
-    } catch (err) {
-      alError(err.response?.data?.error || 'No pudimos guardar la rutina')
-    } finally {
-      setGuardando(false)
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-
-      <form onSubmit={buscar} className="tarjeta p-4">
-        <label htmlFor="dni" className="etiqueta-campo">Buscar alumno por DNI</label>
-        <div className="flex gap-2">
-          <input
-            id="dni" className="campo flex-1" inputMode="numeric"
-            placeholder="30123456" value={dni}
-            onChange={e => setDni(e.target.value)}
-          />
-          <button type="submit" disabled={buscando} className="btn btn-primario">
-            <IconoBuscar size={17} />
-            <span className="hidden sm:inline">{buscando ? 'Buscando…' : 'Buscar'}</span>
-          </button>
-        </div>
-
-        {alumno && (
-          <div
-            className="aparecer mt-3 flex items-center gap-3 rounded-xl p-3"
-            style={{ backgroundColor: 'var(--color-acento-bajo)' }}
-          >
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
-              style={{ backgroundColor: 'var(--color-acento)', color: 'var(--color-sobre-acento)' }}
-            >
-              {alumno.nombre.charAt(0).toUpperCase()}
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{alumno.nombre}</p>
-              <p className="truncate text-xs" style={{ color: 'var(--color-texto-2)' }}>
-                DNI {alumno.dni} · {alumno.email}
-              </p>
-            </div>
-          </div>
-        )}
-      </form>
-
-      {alumno && (
-        <>
-          <div className="flex items-center justify-between">
-            <h2 className="titulo-seccion">Sesiones del plan</h2>
-            <button onClick={agregarSesion} className="btn btn-contorno btn-chico">
-              <IconoMas size={15} /> Sesión
-            </button>
-          </div>
-
-          {sesiones.map((sesion, si) => (
-            <article key={si} className="tarjeta overflow-hidden">
-              <div
-                className="flex items-center gap-2 px-3 py-2.5"
-                style={{ backgroundColor: 'var(--color-elevado)' }}
-              >
-                <input
-                  className="campo flex-1 font-semibold uppercase"
-                  placeholder="Ej: Espalda y bíceps"
-                  value={sesion.nombre}
-                  onChange={e => actualizarSesion(si, 'nombre', e.target.value)}
-                />
-                {sesiones.length > 1 && (
-                  <button
-                    onClick={() => quitarSesion(si)}
-                    className="btn btn-peligro btn-chico shrink-0"
-                    aria-label="Quitar sesión"
-                  >
-                    <IconoCruz size={15} />
-                  </button>
-                )}
-              </div>
-
-              <div className="flex flex-col gap-2.5 p-3">
-                {sesion.ejercicios.map((ej, ei) => (
-                  <div key={ei} className="rounded-xl p-3" style={{ backgroundColor: 'var(--color-fondo)' }}>
-                    <div className="mb-2 flex items-center gap-2">
-                      <span
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold"
-                        style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
-                      >
-                        {ei + 1}
-                      </span>
-                      <input
-                        className="campo flex-1"
-                        placeholder="Nombre del ejercicio"
-                        value={ej.nombre}
-                        onChange={e => actualizarEjercicio(si, ei, 'nombre', e.target.value)}
-                      />
-                      {sesion.ejercicios.length > 1 && (
-                        <button
-                          onClick={() => quitarEjercicio(si, ei)}
-                          className="btn btn-fantasma btn-chico shrink-0"
-                          aria-label="Quitar ejercicio"
-                        >
-                          <IconoCruz size={14} />
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex gap-2 pl-8">
-                      <div className="flex-1">
-                        <label className="etiqueta-campo">Series</label>
-                        <input
-                          type="number" min="1" className="campo" placeholder="3"
-                          value={ej.series}
-                          onChange={e => actualizarEjercicio(si, ei, 'series', e.target.value)}
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <label className="etiqueta-campo">Repeticiones</label>
-                        <input
-                          className="campo" placeholder="10-12"
-                          value={ej.repeticiones}
-                          onChange={e => actualizarEjercicio(si, ei, 'repeticiones', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                <button onClick={() => agregarEjercicio(si)} className="btn btn-contorno btn-chico btn-bloque">
-                  <IconoMas size={15} /> Agregar ejercicio
-                </button>
-              </div>
-            </article>
-          ))}
-
-          <button onClick={guardar} disabled={guardando} className="btn btn-primario btn-bloque">
-            {guardando ? 'Guardando…' : `Guardar rutina de ${alumno.nombre.split(' ')[0]}`}
-          </button>
-        </>
-      )}
     </div>
   )
 }
