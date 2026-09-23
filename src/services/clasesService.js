@@ -31,3 +31,20 @@ export const obtenerHorariosReservados = async () => {
   const res = await axios.get(`${API}/reservas/reservados`, config())
   return res.data
 }
+
+// ─── Lista de espera ──────────────────────────────────────
+
+export const obtenerMiEspera = async () => {
+  const res = await axios.get(`${API}/espera`, config())
+  return res.data
+}
+
+export const anotarEnEspera = async (horario_id) => {
+  const res = await axios.post(`${API}/espera/${horario_id}`, {}, config())
+  return res.data
+}
+
+export const salirDeEspera = async (horario_id) => {
+  const res = await axios.delete(`${API}/espera/${horario_id}`, config())
+  return res.data
+}

@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from '../components/Avisos'
 import { useSocketEventos } from '../hooks/useSocketEventos'
-import { obtenerHorarios, crearReserva, obtenerHorariosReservados } from '../services/clasesService'
+import {
+  obtenerHorarios, crearReserva, obtenerHorariosReservados,
+  obtenerMiEspera, anotarEnEspera, salirDeEspera
+} from '../services/clasesService'
 import NavBar from '../components/NavBar'
 import ProfesEnSede from '../components/ProfesEnSede'
 import { SkeletonListaHorarios } from '../components/Skeleton'
@@ -33,15 +36,19 @@ export default function Horarios() {
   const [tipo, setTipo]             = useState('semanal')
   const [cargando, setCargando]     = useState(true)
   const [reservando, setReservando] = useState(false)
+  const [espera, setEspera]         = useState([])
 
   const cargarTodo = useCallback(async () => {
     try {
-      const [listaHorarios, listaReservados] = await Promise.all([
+      const [listaHorarios, listaReservados, listaEspera] = await Promise.all([
         obtenerHorarios(),
-        obtenerHorariosReservados()
+        obtenerHorariosReservados(),
+        // La lista de espera es secundaria: si falla, la pantalla igual carga.
+        obtenerMiEspera().catch(() => [])
       ])
       setHorarios(listaHorarios)
       setReservados(listaReservados)
+      setEspera(listaEspera.map(e => e.horario_id))
     } catch {
       avisarError('No pudimos cargar los horarios. Revisá tu conexión.')
     } finally {
@@ -53,8 +60,33 @@ export default function Horarios() {
 
   useSocketEventos({
     actualizacion_horarios: () => cargarTodo(),
-    reserva_cancelada: () => cargarTodo()
+    reserva_cancelada: () => cargarTodo(),
+    cupo_liberado: () => cargarTodo()
   })
+
+  const alternarEspera = async (horario) => {
+    const anotado = espera.includes(horario.id)
+    try {
+      if (anotado) {
+        await salirDeEspera(horario.id)
+        setEspera(actual => actual.filter(id => id !== horario.id))
+        exito('Saliste de la lista de espera')
+      } else {
+        await anotarEnEspera(horario.id)
+        setEspera(actual => [...actual, horario.id])
+        exito('Te avisamos acá si se libera un lugar')
+      }
+    } catch (err) {
+      avisarError(err.response?.data?.error || 'No pudimos actualizar la lista de espera')
+      cargarTodo()
+    }
+  }
+
+  // Horarios que el socio esperaba y ahora tienen lugar.
+  const liberados = useMemo(
+    () => horarios.filter(h => espera.includes(h.id) && h.cupos_disponibles > 0 && !reservados.includes(h.id)),
+    [horarios, espera, reservados]
+  )
 
   const visibles = useMemo(() => horarios.filter(h =>
     (rama === 'todos' || h.rama === rama) &&
@@ -158,6 +190,20 @@ export default function Horarios() {
         </p>
 
         <ProfesEnSede className="mt-4" />
+        {liberados.length > 0 && (
+          <div
+            className="aparecer tarjeta mt-4 p-3.5"
+            style={{ borderColor: 'var(--color-exito)', backgroundColor: 'var(--color-exito-bajo)' }}
+          >
+            <p className="text-sm font-semibold" style={{ color: 'var(--color-exito)' }}>
+              ¡Se liberó un lugar!
+            </p>
+            <p className="mt-0.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>
+              {liberados.map(h => `${h.clase} ${h.dia_semana} ${rangoHorario(h.hora_inicio, h.hora_fin)}`).join(' · ')}.
+              {' '}Es del primero que reserva.
+            </p>
+          </div>
+        )}
 
         {/* Modalidad */}
         <div className="mt-5">
@@ -245,7 +291,9 @@ export default function Horarios() {
                         horario={h}
                         reservado={estaReservado(h.id)}
                         seleccionado={estaSeleccionado(h.id)}
+                        enEspera={espera.includes(h.id)}
                         alElegir={() => alternar(h)}
+                        alAlternarEspera={() => alternarEspera(h)}
                       />
                     ))}
                   </div>
@@ -295,75 +343,88 @@ export default function Horarios() {
 
 /* ─── Tarjeta de un horario ────────────────────────────── */
 
-function TarjetaHorario({ horario, reservado, seleccionado, alElegir }) {
-  const sinCupos = horario.cupos_disponibles === 0
+function TarjetaHorario({ horario, reservado, seleccionado, enEspera, alElegir, alAlternarEspera }) {
+  const sinCupos = horario.cupos_disponibles <= 0
   const bloqueada = reservado || sinCupos
   const pocosCupos = !sinCupos && horario.cupos_disponibles <= 3
+  const liberado = enEspera && !sinCupos && !reservado
 
   return (
-    <button
-      type="button"
-      onClick={() => !bloqueada && alElegir()}
-      disabled={bloqueada}
-      aria-pressed={seleccionado}
-      className="tarjeta tarjeta-interactiva w-full p-3.5 text-left disabled:cursor-not-allowed"
-      style={{
-        borderColor: seleccionado ? 'var(--color-acento)' : undefined,
-        backgroundColor: seleccionado ? 'var(--color-acento-bajo)' : undefined,
-        opacity: bloqueada ? 0.55 : 1
-      }}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-            <span className="insignia insignia-neutra capitalize">{horario.rama}</span>
-            {reservado && (
-              <span className="insignia insignia-exito">
-                <IconoCheck size={11} /> Ya reservada
-              </span>
-            )}
-            {sinCupos && !reservado && (
-              <span className="insignia insignia-error">Sin cupos</span>
-            )}
-            {pocosCupos && !reservado && (
-              <span className="insignia insignia-alerta">
-                Quedan {horario.cupos_disponibles}
-              </span>
+    <div className="flex flex-col gap-1.5">
+      <button
+        type="button"
+        onClick={() => !bloqueada && alElegir()}
+        disabled={bloqueada}
+        aria-pressed={seleccionado}
+        className="tarjeta tarjeta-interactiva w-full p-3.5 text-left disabled:cursor-not-allowed"
+        style={{
+          borderColor: seleccionado ? 'var(--color-acento)' : undefined,
+          backgroundColor: seleccionado ? 'var(--color-acento-bajo)' : undefined,
+          opacity: bloqueada ? 0.55 : 1
+        }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+              <span className="insignia insignia-neutra capitalize">{horario.rama}</span>
+              {reservado && (
+                <span className="insignia insignia-exito">
+                  <IconoCheck size={11} /> Ya reservada
+                </span>
+              )}
+              {sinCupos && !reservado && (
+                <span className="insignia insignia-error">Sin cupos</span>
+              )}
+              {liberado && (
+                <span className="insignia insignia-exito">Se liberó un lugar</span>
+              )}
+              {pocosCupos && !reservado && (
+                <span className="insignia insignia-alerta">
+                  Quedan {horario.cupos_disponibles}
+                </span>
+              )}
+            </div>
+
+            <p className="truncate font-semibold">{horario.clase}</p>
+
+            <p className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>
+              <IconoReloj size={13} />
+              {rangoHorario(horario.hora_inicio, horario.hora_fin)}
+            </p>
+
+            {horario.profesor && (
+              <p className="mt-0.5 truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>
+                Prof. {horario.profesor}
+              </p>
             )}
           </div>
 
-          <p className="truncate font-semibold">{horario.clase}</p>
-
-          <p className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>
-            <IconoReloj size={13} />
-            {rangoHorario(horario.hora_inicio, horario.hora_fin)}
-          </p>
-
-          {horario.profesor && (
-            <p className="mt-0.5 truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>
-              Prof. {horario.profesor}
+          <div className="shrink-0 text-right">
+            <p className="font-bold" style={{ color: seleccionado ? 'var(--color-acento)' : 'var(--color-texto)' }}>
+              {precio(horario.precio)}
             </p>
-          )}
+            <p className="mt-1 flex items-center justify-end gap-1 text-[11px]" style={{ color: 'var(--color-texto-3)' }}>
+              <IconoUsuarios size={12} />
+              {horario.cupos_disponibles}/{horario.cupos_totales}
+            </p>
+            {seleccionado && (
+              <span
+                className="mt-2 inline-flex h-5 w-5 items-center justify-center rounded-full"
+                style={{ backgroundColor: 'var(--color-acento)', color: 'var(--color-sobre-acento)' }}
+              >
+                <IconoCheck size={13} />
+              </span>
+            )}
+          </div>
         </div>
+      </button>
 
-        <div className="shrink-0 text-right">
-          <p className="font-bold" style={{ color: seleccionado ? 'var(--color-acento)' : 'var(--color-texto)' }}>
-            {precio(horario.precio)}
-          </p>
-          <p className="mt-1 flex items-center justify-end gap-1 text-[11px]" style={{ color: 'var(--color-texto-3)' }}>
-            <IconoUsuarios size={12} />
-            {horario.cupos_disponibles}/{horario.cupos_totales}
-          </p>
-          {seleccionado && (
-            <span
-              className="mt-2 inline-flex h-5 w-5 items-center justify-center rounded-full"
-              style={{ backgroundColor: 'var(--color-acento)', color: 'var(--color-sobre-acento)' }}
-            >
-              <IconoCheck size={13} />
-            </span>
-          )}
-        </div>
-      </div>
-    </button>
+      {/* Fuera del botón de la tarjeta: un botón no puede ir dentro de otro. */}
+      {sinCupos && !reservado && (
+        <button type="button" onClick={alAlternarEspera} className="btn btn-contorno btn-chico btn-bloque">
+          {enEspera ? 'En lista de espera · Salir' : 'Avisarme si se libera un lugar'}
+        </button>
+      )}
+    </div>
   )
 }
