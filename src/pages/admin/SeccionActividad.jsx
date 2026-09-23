@@ -20,6 +20,7 @@ const ACCIONES = {
   'usuario.rol':                  { texto: 'cambió el rol de',               color: 'var(--color-acento)' },
   'usuario.baja':                 { texto: 'dio de baja a',                  color: 'var(--color-error)' },
   'usuario.reactivar':            { texto: 'reactivó a',                     color: 'var(--color-exito)' },
+  'usuario.apto':                 { texto: 'actualizó el apto médico de',    color: 'var(--color-acento)' },
   'usuario.restablecer_password': { texto: 'restableció la clave de',        color: 'var(--color-alerta)' },
   'turno.llegada':                { texto: 'llegó al gimnasio',              color: 'var(--color-exito)' },
   'turno.salida':                 { texto: 'se fue del gimnasio',            color: 'var(--color-texto-2)' }

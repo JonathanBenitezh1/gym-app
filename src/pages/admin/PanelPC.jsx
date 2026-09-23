@@ -8,7 +8,7 @@ import {
   crearHorario, editarHorario, eliminarHorario, obtenerHorariosAdmin,
   obtenerUsuarios, cambiarRol, restablecerPassword,
   obtenerReservas, confirmarPagoEfectivo,
-  obtenerProfesores, verificarClase, cambiarEstadoUsuario
+  obtenerProfesores, verificarClase, cambiarEstadoUsuario, cambiarApto
 } from '../../services/adminService'
 import SeccionActividad from './SeccionActividad'
 import BotonPresencia from '../../components/BotonPresencia'
@@ -21,6 +21,7 @@ import {
 import { precio, rangoHorario, hora } from '../../utils/formato'
 import logoDtc from '../img/logo_png.png'
 import { GIMNASIO } from '../../config/gimnasio'
+import { estadoApto } from '../../utils/apto'
 
 const RAMAS = ['gimnasio', 'disciplina', 'profesional']
 const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
@@ -670,6 +671,18 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
   const [busqueda, setBusqueda] = useState('')
   const [filtroRol, setFiltroRol] = useState('todos')
   const [restablecida, setRestablecida] = useState(null)
+  const [editandoApto, setEditandoApto] = useState(null) // { id, vence }
+
+  const guardarApto = async (u, vence) => {
+    try {
+      await cambiarApto(u.id, vence)
+      setEditandoApto(null)
+      await alRecargar()
+      alExito(vence ? `Apto de ${u.nombre} cargado` : `Apto de ${u.nombre} borrado`)
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos guardar el apto médico')
+    }
+  }
 
   const restablecer = async (u) => {
     const seguro = await confirmar({
@@ -721,7 +734,11 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
         u.nombre?.toLowerCase().includes(texto) ||
         u.email?.toLowerCase().includes(texto) ||
         String(u.dni).includes(texto)
-      return coincide && (filtroRol === 'todos' || u.rol === filtroRol)
+      // "sin apto" junta a los socios activos a los que hay que pedirle el certificado.
+      const pasaFiltro = filtroRol === 'sin apto'
+        ? u.rol === 'alumno' && u.activo !== false && ['falta', 'vencido'].includes(estadoApto(u.apto_vence).tipo)
+        : filtroRol === 'todos' || u.rol === filtroRol
+      return coincide && pasaFiltro
     })
   }, [usuarios, busqueda, filtroRol])
 
@@ -765,7 +782,7 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
           />
         </div>
         <div className="fila-scroll">
-          {['todos', ...ROLES].map(r => (
+          {['todos', ...ROLES, 'sin apto'].map(r => (
             <button
               key={r}
               onClick={() => setFiltroRol(r)}
@@ -797,6 +814,37 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
               {u.activo === false && (
                 <span className="insignia insignia-error mt-1">Dado de baja</span>
               )}
+              {u.rol === 'alumno' && (editandoApto?.id === u.id ? (
+                <form
+                  className="mt-1.5 flex flex-wrap items-center gap-1.5"
+                  onSubmit={e => { e.preventDefault(); if (editandoApto.vence) guardarApto(u, editandoApto.vence) }}
+                >
+                  <input
+                    type="date" required aria-label={`Vencimiento del apto de ${u.nombre}`}
+                    className="campo w-auto !min-h-9 !py-1 text-xs"
+                    value={editandoApto.vence}
+                    onChange={e => setEditandoApto({ id: u.id, vence: e.target.value })}
+                  />
+                  <button type="submit" className="btn btn-primario btn-chico !text-[11px]">Guardar</button>
+                  {u.apto_vence && (
+                    <button type="button" onClick={() => guardarApto(u, null)} className="btn btn-fantasma btn-chico !text-[11px]">
+                      Borrar
+                    </button>
+                  )}
+                  <button type="button" onClick={() => setEditandoApto(null)} className="btn btn-fantasma btn-chico !text-[11px]">
+                    Cancelar
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditandoApto({ id: u.id, vence: u.apto_vence || '' })}
+                  className={`insignia ${estadoApto(u.apto_vence).insignia} mt-1`}
+                  title="Cargar o cambiar el vencimiento del apto médico"
+                >
+                  {estadoApto(u.apto_vence).texto}
+                </button>
+              ))}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1.5">
               <select

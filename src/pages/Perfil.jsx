@@ -8,6 +8,7 @@ import NavBar from '../components/NavBar'
 import { SkeletonPerfil } from '../components/Skeleton'
 import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado } from '../components/Iconos'
 import { precio, fechaCorta, rangoFechas, hora, fechaHora } from '../utils/formato'
+import { estadoApto } from '../utils/apto'
 
 export default function Perfil() {
   const { guardarSesion } = useAuth()
@@ -67,6 +68,11 @@ export default function Perfil() {
               <span>DNI {perfil?.dni}</span>
               {perfil?.created_at && <span>· Desde {fechaCorta(perfil.created_at)}</span>}
             </p>
+            {perfil?.rol === 'alumno' && (
+              <span className={`insignia ${estadoApto(perfil.apto_vence).insignia} mt-2`}>
+                {estadoApto(perfil.apto_vence).texto}
+              </span>
+            )}
           </div>
         </div>
       </header>

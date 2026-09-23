@@ -100,3 +100,8 @@ export const obtenerActividad = async (limite = 150) => {
   const res = await axios.get(`${API}/admin/actividad?limite=${limite}`, config())
   return res.data
 }
+// vence: "AAAA-MM-DD", o null para borrarlo
+export const cambiarApto = async (id, vence) => {
+  const res = await axios.put(`${API}/admin/usuarios/${id}/apto`, { vence }, config())
+  return res.data
+}
