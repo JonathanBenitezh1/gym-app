@@ -11,6 +11,7 @@ import {
   obtenerProfesores, verificarClase, cambiarEstadoUsuario, cambiarApto
 } from '../../services/adminService'
 import SeccionActividad from './SeccionActividad'
+import SeccionEstadisticas from './SeccionEstadisticas'
 import BotonPresencia from '../../components/BotonPresencia'
 import { linkWhatsapp, mensajePagoPendiente } from '../../utils/whatsapp'
 import { SkeletonLista } from '../../components/Skeleton'
@@ -29,6 +30,7 @@ const ROLES = ['alumno', 'profesor', 'profesional', 'admin']
 
 const SECCIONES = [
   { id: 'panel',    texto: 'Panel' },
+  { id: 'numeros',  texto: 'Estadísticas' },
   { id: 'clases',   texto: 'Clases' },
   { id: 'horarios', texto: 'Horarios' },
   { id: 'usuarios', texto: 'Usuarios' },
@@ -134,6 +136,7 @@ export default function PanelPC() {
         {cargando ? (esperaLarga ? <SkeletonLista filas={4} /> : null) : (
           <>
             {seccion === 'panel'    && <Tablero reservas={reservas} clases={clases} horarios={horarios} usuarios={usuarios} {...comunes} />}
+            {seccion === 'numeros'  && <SeccionEstadisticas alError={avisarError} />}
             {seccion === 'clases'   && <SeccionClases clases={clases} profesores={profesores} {...comunes} />}
             {seccion === 'horarios' && <SeccionHorarios horarios={horarios} clases={clases} {...comunes} />}
             {seccion === 'usuarios' && <SeccionUsuarios usuarios={usuarios} {...comunes} />}

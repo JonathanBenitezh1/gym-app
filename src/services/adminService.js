@@ -105,3 +105,8 @@ export const cambiarApto = async (id, vence) => {
   const res = await axios.put(`${API}/admin/usuarios/${id}/apto`, { vence }, config())
   return res.data
 }
+
+export const obtenerEstadisticas = async () => {
+  const res = await axios.get(`${API}/admin/estadisticas`, config())
+  return res.data
+}
