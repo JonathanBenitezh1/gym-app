@@ -123,14 +123,18 @@ function PilaDeAvisos({ avisos, alCerrar }) {
 /* ─── Diálogo de confirmación ──────────────────────────── */
 
 function DialogoConfirmar({ titulo, mensaje, textoConfirmar, textoCancelar, peligroso, alResponder }) {
-  const botonRef = useRef(null)
+  const confirmarRef = useRef(null)
+  const cancelarRef = useRef(null)
 
+  // Si la acción es peligrosa, el foco arranca en "cancelar": un Enter
+  // distraído (o el que manda el lector de DNI en la puerta) no la ejecuta.
   useEffect(() => {
-    botonRef.current?.focus()
+    const inicial = peligroso ? cancelarRef : confirmarRef
+    inicial.current?.focus()
     const alTecla = (e) => { if (e.key === 'Escape') alResponder(false) }
     window.addEventListener('keydown', alTecla)
     return () => window.removeEventListener('keydown', alTecla)
-  }, [alResponder])
+  }, [alResponder, peligroso])
 
   return (
     <div
@@ -153,11 +157,11 @@ function DialogoConfirmar({ titulo, mensaje, textoConfirmar, textoCancelar, peli
           </p>
         )}
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button className="btn btn-contorno" onClick={() => alResponder(false)}>
+          <button ref={cancelarRef} className="btn btn-contorno" onClick={() => alResponder(false)}>
             {textoCancelar}
           </button>
           <button
-            ref={botonRef}
+            ref={confirmarRef}
             className={`btn ${peligroso ? 'btn-peligro' : 'btn-primario'}`}
             onClick={() => alResponder(true)}
           >

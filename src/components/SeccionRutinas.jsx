@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   buscarAlumnos, obtenerRutinaDeAlumno, guardarRutina,
   obtenerPlantillas, guardarPlantilla, borrarPlantilla
@@ -102,6 +102,7 @@ export default function SeccionRutinas({ alExito, alError }) {
     if (dni.trim().length < 2) return alError('Escribí al menos 2 letras o números')
     setBuscando(true)
     setAlumno(null)
+    abierto.current = null
     try {
       const lista = await buscarAlumnos(dni.trim())
       // Con un solo resultado se abre directo, sin paso extra.
@@ -116,21 +117,32 @@ export default function SeccionRutinas({ alExito, alError }) {
 
   const [progreso, setProgreso] = useState([])
 
+  // El alumno que está abierto ahora. Si la rutina de uno anterior llega
+  // tarde (el servidor despertando), se descarta: antes caía en el editor
+  // del alumno nuevo y al guardar se le pisaba la rutina con la de otro.
+  const abierto = useRef(null)
+
   const elegir = async (encontrado) => {
+    abierto.current = encontrado.id
+    const sigueAbierto = () => abierto.current === encontrado.id
     setResultados(null)
     setAlumno(encontrado)
     setProgreso([])
-    obtenerProgresoDeAlumno(encontrado.id).then(setProgreso).catch(() => {})
+    // El editor arranca vacío mientras carga: si la carga falla, no queda la
+    // rutina del alumno anterior a nombre de este.
+    setSesiones([sesionVacia()])
+    obtenerProgresoDeAlumno(encontrado.id)
+      .then(p => { if (sigueAbierto()) setProgreso(p) })
+      .catch(() => {})
     try {
       const rutina = await obtenerRutinaDeAlumno(encontrado.id)
+      if (!sigueAbierto()) return
       if (rutina?.sesiones?.length > 0) {
         setSesiones(aEditor(rutina.sesiones))
         alExito('Ya tenía una rutina cargada, la abrimos para editar')
-      } else {
-        setSesiones([sesionVacia()])
       }
     } catch {
-      alError('No pudimos abrir la rutina de este alumno')
+      if (sigueAbierto()) alError('No pudimos abrir la rutina de este alumno')
     }
   }
 

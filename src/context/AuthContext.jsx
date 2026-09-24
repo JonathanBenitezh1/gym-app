@@ -14,15 +14,33 @@ function borrarCacheApiVieja() {
 
 borrarCacheApiVieja()
 
+/**
+ * El usuario guardado de una sesión anterior, o null.
+ *
+ * Si lo guardado está roto (por ejemplo el texto "undefined"), JSON.parse
+ * tiraba un error al abrir la app y la pantalla quedaba en blanco, sin forma
+ * de salir salvo borrar los datos del sitio. Ahora se descarta la sesión y se
+ * muestra el login.
+ */
+function usuarioGuardado() {
+  try {
+    const guardado = JSON.parse(localStorage.getItem('usuario'))
+    if (guardado && typeof guardado === 'object' && guardado.rol) return guardado
+  } catch {
+    // Roto: se limpia abajo.
+  }
+  localStorage.removeItem('usuario')
+  localStorage.removeItem('token')
+  return null
+}
+
 // Creamos el contexto
 const AuthContext = createContext()
 
 // Este componente envuelve toda la app y provee el estado de auth
 export function AuthProvider({ children }) {
-  const [usuario, setUsuario] = useState(
-    // Si ya había un usuario guardado en localStorage, lo recuperamos
-    JSON.parse(localStorage.getItem('usuario')) || null
-  )
+  // Si ya había un usuario guardado en localStorage, lo recuperamos
+  const [usuario, setUsuario] = useState(usuarioGuardado)
 
   const guardarSesion = (token, nuevo) => {
     const tokenCambio = localStorage.getItem('token') !== token

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { registrarUsuario } from '../services/authService'
 import { useAuth } from '../context/AuthContext'
+import { inicioDe } from '../components/RutaProtegida'
 import { IconoOjo, IconoOjoTachado } from '../components/Iconos'
 import logoDtc from './img/logo_png.png'
 import { GIMNASIO } from '../config/gimnasio'
@@ -40,7 +41,11 @@ export default function Registro() {
   const [cargando, setCargando] = useState(false)
 
   const navigate = useNavigate()
-  const { guardarSesion } = useAuth()
+  const { usuario, guardarSesion } = useAuth()
+
+  // Con la sesión abierta, a su pantalla de inicio (igual que el login).
+  const destino = usuario && inicioDe(usuario.rol)
+  if (destino) return <Navigate to={destino} replace />
 
   const cambiar = (campo) => (e) => {
     setDatos(d => ({ ...d, [campo]: e.target.value }))

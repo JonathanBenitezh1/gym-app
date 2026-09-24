@@ -920,17 +920,17 @@ function ModalClaveTemporal({ datos, alCerrar, alExito }) {
   }
 
   return (
+    // Sin cerrar al tocar afuera: la clave se ve una sola vez, y un toque de
+    // más la perdía y había que restablecerla de nuevo.
     <div
       className="fixed inset-0 z-[70] flex items-end justify-center p-4 sm:items-center"
       style={{ backgroundColor: 'rgba(0,0,0,.6)' }}
-      onClick={alCerrar}
       role="dialog"
       aria-modal="true"
     >
       <div
         className="tarjeta aparecer w-full max-w-sm p-5"
         style={{ backgroundColor: 'var(--color-elevado)' }}
-        onClick={e => e.stopPropagation()}
       >
         <h2 className="text-base font-bold">Contraseña temporal de {datos.nombre}</h2>
         <p className="mt-2 text-sm" style={{ color: 'var(--color-texto-2)' }}>

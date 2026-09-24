@@ -269,7 +269,9 @@ export default function Puerta() {
     const aviso = porMandar > 0
       ? `Hay ${porMandar} ingresos anotados sin conexión que todavía no se mandaron. Quedan guardados y se mandan cuando alguien vuelva a entrar en esta PC.`
       : undefined
-    if (await confirmar({ titulo: '¿Cerrar sesión?', mensaje: aviso, textoConfirmar: 'Cerrar sesión' })) {
+    // Peligroso: borra la lista guardada para seguir sin internet, y así el
+    // foco arranca en "Cancelar" y un DNI leído justo ahora no la confirma.
+    if (await confirmar({ titulo: '¿Cerrar sesión?', mensaje: aviso, textoConfirmar: 'Cerrar sesión', peligroso: true })) {
       // cerrarSesion borra la lista de socios y las fotos de esta PC.
       cerrarSesion()
       navigate('/')

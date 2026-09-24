@@ -5,7 +5,7 @@ import {
 } from '../../services/adminService'
 import { SkeletonLista } from '../../components/Skeleton'
 import { IconoBuscar, IconoWhatsapp, IconoCheck } from '../../components/Iconos'
-import { precio, fechaCorta, fechaHora } from '../../utils/formato'
+import { precio, fechaCorta, fechaHora, leerMonto } from '../../utils/formato'
 import { linkWhatsapp, mensajeCuota } from '../../utils/whatsapp'
 
 const ESTADOS = {
@@ -77,7 +77,7 @@ export default function SeccionCuotas({ alExito, alError, confirmar }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <ConfigCuota config={datos.config} alGuardar={async (nueva) => {
+      <ConfigCuota config={datos.config} alError={alError} alGuardar={async (nueva) => {
         try {
           await guardarConfigCuota(nueva)
           await cargar()
@@ -152,7 +152,7 @@ export default function SeccionCuotas({ alExito, alError, confirmar }) {
 
                 {abierto?.id === s.id && abierto.modo === 'cobrar' && (
                   <FormCobro
-                    socio={s} config={datos.config} confirmar={confirmar}
+                    socio={s} config={datos.config} confirmar={confirmar} alError={alError}
                     alCancelar={() => setAbierto(null)}
                     alCobrar={async (pago) => {
                       try {
@@ -202,7 +202,7 @@ function Cifra({ valor, texto, color }) {
   )
 }
 
-function FormCobro({ socio, config, confirmar, alCobrar, alCancelar }) {
+function FormCobro({ socio, config, confirmar, alCobrar, alCancelar, alError }) {
   const [meses, setMeses]   = useState(1)
   const [monto, setMonto]   = useState(String(config.precio || ''))
   const [metodo, setMetodo] = useState('efectivo')
@@ -216,8 +216,8 @@ function FormCobro({ socio, config, confirmar, alCobrar, alCancelar }) {
 
   const enviar = async (e) => {
     e.preventDefault()
-    const valor = Number(String(monto).replace(/\./g, '').replace(',', '.'))
-    if (!Number.isFinite(valor) || valor < 0) return
+    const valor = leerMonto(monto)
+    if (!Number.isFinite(valor)) return alError('Revisá el monto: solo números, por ejemplo 15.000')
     const ok = await confirmar({
       titulo: `¿Cobrar ${meses === 1 ? '1 mes' : `${meses} meses`} a ${socio.nombre}?`,
       mensaje: `${precio(valor)} en ${METODOS.find(m => m.id === metodo).texto.toLowerCase()}.`,
@@ -299,7 +299,7 @@ function Historial({ usuarioId, alError }) {
   )
 }
 
-function ConfigCuota({ config, alGuardar }) {
+function ConfigCuota({ config, alGuardar, alError }) {
   const [abierta, setAbierta] = useState(false)
   const [form, setForm] = useState(config)
   const [guardando, setGuardando] = useState(false)
@@ -324,12 +324,16 @@ function ConfigCuota({ config, alGuardar }) {
 
   const enviar = async (e) => {
     e.preventDefault()
+    // Un precio que no se entiende viajaba como null y el servidor lo
+    // guardaba como 0: la cuota quedaba gratis sin ningún aviso.
+    const valor = leerMonto(form.precio)
+    if (!Number.isFinite(valor)) return alError('Revisá el precio: solo números, por ejemplo 15.000')
     setGuardando(true)
     const ok = await alGuardar({
       ...form,
       dia_vencimiento: Number(form.dia_vencimiento),
       dias_gracia: Number(form.dias_gracia),
-      precio: Number(String(form.precio).replace(/\./g, '').replace(',', '.'))
+      precio: valor
     })
     setGuardando(false)
     if (ok) setAbierta(false)

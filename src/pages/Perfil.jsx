@@ -225,6 +225,13 @@ function SeccionDatos({ perfil, alGuardar, alError }) {
   })
   const [guardando, setGuardando] = useState(false)
 
+  // Al cancelar se vuelve a lo guardado: antes, al abrir de nuevo el
+  // formulario seguía lo que se había descartado, como si se hubiera guardado.
+  const cancelar = () => {
+    setForm({ nombre: perfil?.nombre || '', email: perfil?.email || '', telefono: perfil?.telefono || '' })
+    setEditando(false)
+  }
+
   const guardar = async () => {
     setGuardando(true)
     try {
@@ -274,7 +281,7 @@ function SeccionDatos({ perfil, alGuardar, alError }) {
         <button onClick={guardar} disabled={guardando} className="btn btn-primario flex-1">
           {guardando ? 'Guardando…' : 'Guardar'}
         </button>
-        <button onClick={() => setEditando(false)} className="btn btn-contorno">
+        <button onClick={cancelar} className="btn btn-contorno">
           Cancelar
         </button>
       </div>

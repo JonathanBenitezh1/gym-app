@@ -70,6 +70,24 @@ export function precio(valor) {
   })
 }
 
+/**
+ * Monto escrito a mano → número, o NaN si no se entiende.
+ *
+ * Acepta como se escribe acá ("15.000", "15.000,50", "15000,5") y también el
+ * punto decimal con que la API devuelve los precios ("15000.5"). Antes todos
+ * los puntos se tomaban como de miles: un precio de 12500.5 guardado sin
+ * tocar volvía como 125005.
+ *
+ * El punto es decimal solo si es el único y lo siguen uno o dos dígitos: con
+ * tres ("15.000") es de miles.
+ */
+export function leerMonto(texto) {
+  const limpio = String(texto ?? '').replace(/[\s$]/g, '')
+  if (/^\d+\.\d{1,2}$/.test(limpio)) return Number(limpio)
+  const normal = limpio.replace(/\./g, '').replace(',', '.')
+  return /^\d+(\.\d+)?$/.test(normal) ? Number(normal) : NaN
+}
+
 /** Fecha de un pago o registro, con hora: "20/07/2026, 14:30" */
 export function fechaHora(valor) {
   if (!valor) return ''

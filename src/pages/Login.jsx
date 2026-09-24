@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { loginUsuario } from '../services/authService'
 import { useAuth } from '../context/AuthContext'
 import { inicioDe } from '../components/RutaProtegida'
@@ -15,7 +15,12 @@ export default function Login() {
   const [cargando, setCargando] = useState(false)
 
   const navigate = useNavigate()
-  const { guardarSesion } = useAuth()
+  const { usuario, guardarSesion } = useAuth()
+
+  // Con la sesión abierta no hay nada que completar. La app instalada abre
+  // siempre en "/", así que antes pedía email y contraseña cada vez.
+  const destino = usuario && inicioDe(usuario.rol)
+  if (destino) return <Navigate to={destino} replace />
 
   const enviar = async (e) => {
     e.preventDefault()

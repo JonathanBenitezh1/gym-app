@@ -10,7 +10,12 @@ axios.interceptors.response.use(
     // 401 es token ausente, vencido o invalido: no hay sesion que sostener.
     // La lista de socios de la puerta se borra antes de salir, igual que al
     // cerrar sesion a mano.
-    if (estado === 401) {
+    //
+    // Solo cuenta si el pedido llevaba token. El login con una clave mala
+    // tambien da 401, y antes eso recargaba la pagina: el mensaje de "email
+    // o contraseña incorrectos" no se llegaba a ver.
+    const conSesion = Boolean(error.config?.headers?.Authorization)
+    if (estado === 401 && conSesion) {
       localStorage.removeItem('token')
       localStorage.removeItem('usuario')
       await borrarDatosDeLaPuerta()
