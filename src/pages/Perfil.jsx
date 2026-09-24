@@ -2,13 +2,41 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from '../components/Avisos'
-import { obtenerPerfil, editarPerfil, cambiarPassword, obtenerHistorialPagos } from '../services/perfilService'
+import {
+  obtenerPerfil, editarPerfil, cambiarPassword, obtenerHistorialPagos,
+  obtenerMiCuota, obtenerMisPagosCuota
+} from '../services/perfilService'
 import { obtenerMisReservas } from '../services/clasesService'
+import { useSocketEventos } from '../hooks/useSocketEventos'
 import NavBar from '../components/NavBar'
 import { SkeletonPerfil } from '../components/Skeleton'
-import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave } from '../components/Iconos'
+import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave, IconoReloj } from '../components/Iconos'
 import { precio, fechaCorta, rangoFechas, hora, fechaHora } from '../utils/formato'
 import { estadoApto } from '../utils/apto'
+
+const METODOS_CUOTA = {
+  efectivo: 'Efectivo', transferencia: 'Transferencia', mercadopago: 'Mercado Pago', otro: 'Otro'
+}
+
+/** Insignia y explicación de la cuota, con las palabras del socio. */
+function estadoCuota(c) {
+  switch (c.estado) {
+    case 'al_dia':
+      return { insignia: 'insignia-exito', corto: `Cuota al día hasta ${fechaCorta(c.cuota_vence)}`,
+               detalle: `Vence el ${fechaCorta(c.cuota_vence)}.` }
+    case 'gracia': {
+      const quedan = c.dias_restantes === 1 ? 'queda 1 día' : `quedan ${c.dias_restantes} días`
+      return { insignia: 'insignia-alerta', corto: `Cuota vencida · ${quedan}`,
+               detalle: `Venció el ${fechaCorta(c.cuota_vence)}. Te ${quedan} para pagarla y seguir entrando.` }
+    }
+    case 'vencida':
+      return { insignia: 'insignia-error', corto: 'Cuota vencida',
+               detalle: `Venció el ${fechaCorta(c.cuota_vence)}. Acercate a la administración para regularizarla.` }
+    default:
+      return { insignia: 'insignia-neutra', corto: 'Cuota sin registrar',
+               detalle: 'Todavía no registramos ningún pago de tu cuota.' }
+  }
+}
 
 export default function Perfil() {
   const { guardarSesion } = useAuth()
@@ -18,23 +46,36 @@ export default function Perfil() {
   const [perfil, setPerfil]     = useState(null)
   const [reservas, setReservas] = useState([])
   const [pagos, setPagos]       = useState([])
+  const [cuota, setCuota]       = useState(null)
+  const [pagosCuota, setPagosCuota] = useState([])
   const [cargando, setCargando] = useState(true)
   const [seccion, setSeccion]   = useState('datos')
+
+  // La cuota es secundaria: si falla, la sección no aparece.
+  const cargarCuota = useCallback(async () => {
+    const [c, pc] = await Promise.allSettled([obtenerMiCuota(), obtenerMisPagosCuota()])
+    setCuota(c.status === 'fulfilled' && c.value.estado !== 'personal' ? c.value : null)
+    setPagosCuota(pc.status === 'fulfilled' ? pc.value : [])
+  }, [])
 
   const cargar = useCallback(async () => {
     const [p, r, pg] = await Promise.allSettled([
       obtenerPerfil(),
       obtenerMisReservas(),
-      obtenerHistorialPagos()
+      obtenerHistorialPagos(),
+      cargarCuota()
     ])
     if (p.status === 'fulfilled') setPerfil(p.value)
     else avisarError('No pudimos cargar tus datos')
     setReservas(r.status === 'fulfilled' ? r.value : [])
     setPagos(pg.status === 'fulfilled' ? pg.value : [])
     setCargando(false)
-  }, [avisarError])
+  }, [avisarError, cargarCuota])
 
   useEffect(() => { cargar() }, [cargar])
+  useSocketEventos({ cuota_actualizada: cargarCuota })
+
+  const infoCuota = cuota && estadoCuota(cuota)
 
   const alternar = (nombre) => setSeccion(s => (s === nombre ? null : nombre))
 
@@ -68,10 +109,15 @@ export default function Perfil() {
               <span>DNI {perfil?.dni}</span>
               {perfil?.created_at && <span>· Desde {fechaCorta(perfil.created_at)}</span>}
             </p>
-            {perfil?.rol === 'alumno' && (
-              <span className={`insignia ${estadoApto(perfil.apto_vence).insignia} mt-2`}>
-                {estadoApto(perfil.apto_vence).texto}
-              </span>
+            {(perfil?.rol === 'alumno' || infoCuota) && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {perfil?.rol === 'alumno' && (
+                  <span className={`insignia ${estadoApto(perfil.apto_vence).insignia}`}>
+                    {estadoApto(perfil.apto_vence).texto}
+                  </span>
+                )}
+                {infoCuota && <span className={`insignia ${infoCuota.insignia}`}>{infoCuota.corto}</span>}
+              </div>
             )}
           </div>
         </div>
@@ -136,9 +182,44 @@ export default function Perfil() {
           </button>
         </Acordeon>
 
+        {infoCuota && (
+          <Acordeon
+            nombre="cuota" abierta={seccion} alAlternar={alternar}
+            Icono={IconoReloj} titulo="Mi cuota"
+            insignia={{ gracia: 'En gracia', vencida: 'Vencida' }[cuota.estado]}
+          >
+            <p className="text-sm">{infoCuota.detalle}</p>
+            {cuota.precio > 0 && (
+              <p className="mt-1 text-xs" style={{ color: 'var(--color-texto-3)' }}>
+                Cuota mensual: {precio(cuota.precio)}
+              </p>
+            )}
+            {pagosCuota.length === 0 ? (
+              <Vacio texto="Todavía no hay pagos de cuota registrados" />
+            ) : (
+              <ul className="mt-2 flex flex-col">
+                {pagosCuota.map(p => (
+                  <li key={p.id} className="flex items-start justify-between gap-3 py-3"
+                      style={{ borderBottom: '1px solid var(--color-linea-sutil)' }}>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">
+                        {p.meses === 1 ? '1 mes' : `${p.meses} meses`} · hasta {fechaCorta(p.vence_nuevo)}
+                      </p>
+                      <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
+                        {METODOS_CUOTA[p.metodo] || p.metodo} · {fechaHora(p.created_at)}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-sm font-bold">{precio(p.monto)}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Acordeon>
+        )}
+
         <Acordeon
           nombre="pagos" abierta={seccion} alAlternar={alternar}
-          Icono={IconoPago} titulo="Historial de pagos"
+          Icono={IconoPago} titulo="Pagos de reservas"
         >
           {pagos.length === 0 ? (
             <Vacio texto="Todavía no registraste pagos" />

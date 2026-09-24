@@ -28,3 +28,8 @@ export const obtenerMiCuota = async () => {
   const res = await axios.get(`${API}/cuota/mia`, config())
   return res.data
 }
+
+export const obtenerMisPagosCuota = async () => {
+  const res = await axios.get(`${API}/cuota/mia/pagos`, config())
+  return res.data
+}
