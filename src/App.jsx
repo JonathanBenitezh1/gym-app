@@ -10,6 +10,7 @@ import Rutinas from './pages/Rutinas'
 import PanelPC from './pages/admin/PanelPC'
 import MisClases from './pages/profesor/MisClases'
 import Perfil from './pages/Perfil'
+import Puerta from './pages/Puerta'
 
 // Los profesionales (nutrición, kinesiología, entrenamiento personal)
 // gestionan sus clases igual que los profesores.
@@ -49,6 +50,11 @@ function App() {
         {/* Administración */}
         <Route path="/panel-gym" element={
           <RutaProtegida roles={['admin']}><PanelPC /></RutaProtegida>
+        } />
+
+        {/* Pantalla de ingreso: el empleado de la puerta, y el admin */}
+        <Route path="/puerta" element={
+          <RutaProtegida roles={['recepcion', 'admin']}><Puerta /></RutaProtegida>
         } />
 
         {/* Cualquier otra dirección */}

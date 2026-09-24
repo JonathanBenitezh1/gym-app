@@ -138,3 +138,16 @@ export const obtenerPagosCuota = async (usuario_id) => {
   const res = await axios.get(`${API}/admin/cuotas/${usuario_id}/pagos`, config())
   return res.data
 }
+
+// ─── FOTOS ────────────────────────────────────────────
+
+// imagen: data URL JPG ya comprimida
+export const guardarFotoSocio = async (id, imagen) => {
+  const res = await axios.put(`${API}/admin/usuarios/${id}/foto`, { imagen }, config())
+  return res.data
+}
+
+export const borrarFotoSocio = async (id) => {
+  const res = await axios.delete(`${API}/admin/usuarios/${id}/foto`, config())
+  return res.data
+}

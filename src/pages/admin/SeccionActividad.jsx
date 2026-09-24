@@ -23,6 +23,8 @@ const ACCIONES = {
   'cuota.pago':                   { texto: 'cobró la cuota a',               color: 'var(--color-exito)' },
   'cuota.corregir':               { texto: 'corrigió el vencimiento de',     color: 'var(--color-alerta)' },
   'cuota.config':                 { texto: 'cambió la configuración de la cuota', color: 'var(--color-acento)' },
+  'usuario.foto':                 { texto: 'cargó la foto de',               color: 'var(--color-acento)' },
+  'usuario.foto_borrar':          { texto: 'borró la foto de',               color: 'var(--color-texto-2)' },
   'usuario.apto':                 { texto: 'actualizó el apto médico de',    color: 'var(--color-acento)' },
   'usuario.restablecer_password': { texto: 'restableció la clave de',        color: 'var(--color-alerta)' },
   'turno.llegada':                { texto: 'llegó al gimnasio',              color: 'var(--color-exito)' },

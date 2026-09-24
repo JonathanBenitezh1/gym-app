@@ -13,6 +13,7 @@ import {
 import SeccionActividad from './SeccionActividad'
 import SeccionEstadisticas from './SeccionEstadisticas'
 import SeccionCuotas from './SeccionCuotas'
+import FotoSocio from '../../components/FotoSocio'
 import SeccionRutinas from '../../components/SeccionRutinas'
 import BotonPresencia from '../../components/BotonPresencia'
 import { linkWhatsapp, mensajePagoPendiente } from '../../utils/whatsapp'
@@ -28,7 +29,7 @@ import { estadoApto } from '../../utils/apto'
 
 const RAMAS = ['gimnasio', 'disciplina', 'profesional']
 const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-const ROLES = ['alumno', 'profesor', 'profesional', 'admin']
+const ROLES = ['alumno', 'profesor', 'profesional', 'recepcion', 'admin']
 
 const SECCIONES = [
   { id: 'panel',    texto: 'Panel' },
@@ -116,6 +117,7 @@ export default function PanelPC() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => navigate('/puerta')} className="btn btn-contorno btn-chico">Puerta</button>
             <BotonPresencia alExito={exito} alError={avisarError} />
             <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
               <IconoSalir size={18} />
@@ -681,6 +683,7 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
   const [filtroRol, setFiltroRol] = useState('todos')
   const [restablecida, setRestablecida] = useState(null)
   const [editandoApto, setEditandoApto] = useState(null) // { id, vence }
+  const [fotoDe, setFotoDe] = useState(null)
 
   const guardarApto = async (u, vence) => {
     try {
@@ -864,6 +867,11 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
               >
                 {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
+              {u.rol === 'alumno' && (
+                <button onClick={() => setFotoDe(u)} className="btn btn-fantasma btn-chico !text-[11px]">
+                  {u.tiene_foto ? 'Ver foto' : 'Sacar foto'}
+                </button>
+              )}
               <button
                 onClick={() => restablecer(u)}
                 className="btn btn-fantasma btn-chico !text-[11px]"
@@ -881,6 +889,13 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
           </article>
         ))}
       </div>
+
+      {fotoDe && (
+        <FotoSocio
+          socio={fotoDe} alExito={alExito} alError={alError}
+          alCerrar={(cambio) => { setFotoDe(null); if (cambio) alRecargar() }}
+        />
+      )}
 
       {restablecida && (
         <ModalClaveTemporal

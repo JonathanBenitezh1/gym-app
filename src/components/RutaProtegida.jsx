@@ -7,7 +7,8 @@ export const INICIO_POR_ROL = {
   alumno:      '/horarios',
   profesor:    '/mis-clases',
   profesional: '/mis-clases',
-  admin:       '/panel-gym'
+  admin:       '/panel-gym',
+  recepcion:   '/puerta'
 }
 
 export function inicioDe(rol) {
