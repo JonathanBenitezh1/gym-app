@@ -67,7 +67,7 @@ export default function SeccionEstadisticas({ alError }) {
 
       <section className="tarjeta p-4">
         <h2 className="titulo-seccion">Ocupación por horario</h2>
-        <p className="mb-3 text-xs" style={{ color: 'var(--color-texto-3)' }}>Lugares tomados hoy sobre el total</p>
+        <p className="mb-3 text-xs" style={{ color: 'var(--color-texto-3)' }}>Lugares tomados esta semana sobre el total</p>
         {ocupacion.length === 0 ? <Vacio texto="No hay horarios activos." /> : (
           <ul className="flex flex-col gap-2.5">
             {ocupacion.map(h => (

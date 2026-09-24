@@ -18,6 +18,12 @@ import logoDtc from '../img/logo_png.png'
 import { GIMNASIO } from '../../config/gimnasio'
 
 const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+
+// Los disponibles ya no se editan: se cuentan con las reservas de cada semana.
+// Se sigue mandando el que vino, acotado al total, solo para que el backend
+// anterior no lo pise con null mientras se publica el cambio.
+const conDisponiblesViejos = (form) =>
+  ({ ...form, cupos_disponibles: Math.min(Number(form.cupos_disponibles), Number(form.cupos_totales)) })
 const SOLAPAS = [
   { id: 'horarios',   texto: 'Mis horarios' },
   { id: 'rutinas',    texto: 'Rutinas' },
@@ -129,12 +135,9 @@ function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
   }
 
   const guardar = async (id) => {
-    if (Number(form.cupos_disponibles) > Number(form.cupos_totales)) {
-      return alError('Los cupos disponibles no pueden superar el total')
-    }
     setGuardando(true)
     try {
-      await modificarHorario(id, form)
+      await modificarHorario(id, conDisponiblesViejos(form))
       setEditando(null)
       await alRecargar()
       alExito('Horario actualizado')
@@ -193,13 +196,8 @@ function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label className="etiqueta-campo">Cupos totales</label>
-                  <input type="number" min="0" className="campo" value={form.cupos_totales}
+                  <input type="number" min="1" className="campo" value={form.cupos_totales}
                          onChange={e => setForm(f => ({ ...f, cupos_totales: e.target.value }))} />
-                </div>
-                <div className="flex-1">
-                  <label className="etiqueta-campo">Disponibles</label>
-                  <input type="number" min="0" className="campo" value={form.cupos_disponibles}
-                         onChange={e => setForm(f => ({ ...f, cupos_disponibles: e.target.value }))} />
                 </div>
               </div>
 
@@ -226,7 +224,7 @@ function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
                 </p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>
                   <IconoUsuarios size={13} />
-                  {h.cupos_disponibles} libres de {h.cupos_totales}
+                  {h.cupos_disponibles} libres de {h.cupos_totales} la semana que viene
                 </p>
                 <span className={`insignia mt-2 ${h.activo ? 'insignia-exito' : 'insignia-error'}`}>
                   {h.activo ? 'Activa' : 'Inactiva'}

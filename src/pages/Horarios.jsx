@@ -14,6 +14,7 @@ import AvisoCuota from '../components/AvisoCuota'
 import { SkeletonListaHorarios } from '../components/Skeleton'
 import { IconoReloj, IconoCheck, IconoUsuarios } from '../components/Iconos'
 import { precio, rangoHorario } from '../utils/formato'
+import { periodoDeReserva, textoPeriodo } from '../utils/periodo'
 import logoDtc from './img/logo_png.png'
 import { GIMNASIO } from '../config/gimnasio'
 
@@ -40,23 +41,33 @@ export default function Horarios() {
   const [reservando, setReservando] = useState(false)
   const [espera, setEspera]         = useState([])
 
+  // Los lugares libres y "Ya reservada" son de la semana (o las dos) que se
+  // está por reservar: cambian con la modalidad.
+  const periodo = useMemo(() => periodoDeReserva(tipo), [tipo])
+
   const cargarTodo = useCallback(async () => {
     try {
       const [listaHorarios, listaReservados, listaEspera] = await Promise.all([
-        obtenerHorarios(),
-        obtenerHorariosReservados(),
+        obtenerHorarios(periodo),
+        obtenerHorariosReservados(periodo),
         // La lista de espera es secundaria: si falla, la pantalla igual carga.
         obtenerMiEspera().catch(() => [])
       ])
       setHorarios(listaHorarios)
       setReservados(listaReservados)
       setEspera(listaEspera.map(e => e.horario_id))
+      // Lo elegido se actualiza, y sale lo que ya no se puede reservar en
+      // este período (por ejemplo, al pasar a quincenal con la segunda
+      // semana llena).
+      setSeleccion(actual => actual
+        .map(s => listaHorarios.find(h => h.id === s.id))
+        .filter(h => h && h.cupos_disponibles > 0 && !listaReservados.includes(h.id)))
     } catch {
       avisarError('No pudimos cargar los horarios. Revisá tu conexión.')
     } finally {
       setCargando(false)
     }
-  }, [avisarError])
+  }, [avisarError, periodo])
 
   useEffect(() => { cargarTodo() }, [cargarTodo])
 
@@ -122,32 +133,19 @@ export default function Horarios() {
     return tipo === 'quincenal' ? suma * 2 : suma
   }, [seleccion, tipo])
 
-  /** Calcula el período desde el próximo lunes. */
-  const calcularFechas = () => {
-    const hoy = new Date()
-    const diaSemana = hoy.getDay() // 0 = domingo
-    const faltan = diaSemana === 0 ? 1 : 8 - diaSemana
-    const inicio = new Date(hoy)
-    inicio.setDate(hoy.getDate() + faltan)
-    const fin = new Date(inicio)
-    fin.setDate(inicio.getDate() + (tipo === 'quincenal' ? 14 : 7))
-    const iso = (f) => `${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}-${String(f.getDate()).padStart(2, '0')}`
-    return { fecha_inicio: iso(inicio), fecha_fin: iso(fin) }
-  }
-
   const reservar = async () => {
     if (seleccion.length === 0) return
 
     const confirmado = await confirmar({
       titulo: `Confirmar ${seleccion.length === 1 ? 'la reserva' : 'las reservas'}`,
-      mensaje: `Vas a reservar ${seleccion.length} ${seleccion.length === 1 ? 'clase' : 'clases'} en modalidad ${tipo}, por un total de ${precio(total)}. Después vas a poder elegir cómo pagar.`,
+      mensaje: `Vas a reservar ${seleccion.length} ${seleccion.length === 1 ? 'clase' : 'clases'} en modalidad ${tipo}, ${textoPeriodo(periodo)}, por un total de ${precio(total)}. Después vas a poder elegir cómo pagar.`,
       textoConfirmar: 'Reservar'
     })
     if (!confirmado) return
 
     setReservando(true)
     try {
-      const { fecha_inicio, fecha_fin } = calcularFechas()
+      const { fecha_inicio, fecha_fin } = periodo
       await crearReserva({
         horarios_ids: seleccion.map(s => s.id),
         tipo, fecha_inicio, fecha_fin
@@ -233,6 +231,9 @@ export default function Horarios() {
               </button>
             ))}
           </div>
+          <p className="mt-2 text-xs" style={{ color: 'var(--color-texto-2)' }}>
+            Reservás {textoPeriodo(periodo)}. Los lugares libres son de esas fechas.
+          </p>
         </div>
 
         {/* Filtros */}

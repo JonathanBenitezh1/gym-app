@@ -466,6 +466,12 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
 
 /* ═══ HORARIOS ═══════════════════════════════════════════ */
 
+// Los disponibles ya no se editan: se cuentan con las reservas de cada semana.
+// Se sigue mandando el que vino, acotado al total, solo para que el backend
+// anterior no lo pise con null mientras se publica el cambio.
+const conDisponiblesViejos = (form) =>
+  ({ ...form, cupos_disponibles: Math.min(Number(form.cupos_disponibles), Number(form.cupos_totales)) })
+
 const HORARIO_VACIO = {
   clase_id: '', dia_semana: 'Lunes', hora_inicio: '', hora_fin: '',
   cupos_totales: '', precio: ''
@@ -501,7 +507,7 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
     }
     setGuardando(true)
     try {
-      await editarHorario(id, formEdit)
+      await editarHorario(id, conDisponiblesViejos(formEdit))
       setEditando(null)
       await alRecargar()
       alExito('Horario actualizado')
@@ -609,13 +615,8 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <label className="etiqueta-campo">Cupos totales</label>
-                    <input type="number" min="0" className="campo" value={formEdit.cupos_totales}
+                    <input type="number" min="1" className="campo" value={formEdit.cupos_totales}
                            onChange={e => setFormEdit(f => ({ ...f, cupos_totales: e.target.value }))} />
-                  </div>
-                  <div className="flex-1">
-                    <label className="etiqueta-campo">Disponibles</label>
-                    <input type="number" min="0" className="campo" value={formEdit.cupos_disponibles}
-                           onChange={e => setFormEdit(f => ({ ...f, cupos_disponibles: e.target.value }))} />
                   </div>
                   <div className="flex-1">
                     <label className="etiqueta-campo">Precio</label>
@@ -645,7 +646,7 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
                   </p>
                   <p className="mt-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>
                     <IconoUsuarios size={13} />
-                    {h.cupos_disponibles}/{h.cupos_totales} · {precio(h.precio)}
+                    {h.cupos_disponibles} de {h.cupos_totales} libres la semana que viene · {precio(h.precio)}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <span className={`insignia ${h.activo ? 'insignia-exito' : 'insignia-error'}`}>

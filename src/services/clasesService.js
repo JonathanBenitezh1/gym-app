@@ -8,8 +8,13 @@ const config = () => ({
   }
 })
 
-export const obtenerHorarios = async () => {
-  const res = await axios.get(`${API}/horarios`)
+// Los lugares libres y "ya reservada" son de un período: el que se está por
+// reservar ({ fecha_inicio, fecha_fin }).
+const delPeriodo = (periodo) =>
+  periodo ? { params: { desde: periodo.fecha_inicio, hasta: periodo.fecha_fin } } : {}
+
+export const obtenerHorarios = async (periodo) => {
+  const res = await axios.get(`${API}/horarios`, delPeriodo(periodo))
   return res.data
 }
 
@@ -27,8 +32,8 @@ export const cancelarReserva = async (id) => {
   const res = await axios.put(`${API}/reservas/${id}/cancelar`, {}, config())
   return res.data
 }
-export const obtenerHorariosReservados = async () => {
-  const res = await axios.get(`${API}/reservas/reservados`, config())
+export const obtenerHorariosReservados = async (periodo) => {
+  const res = await axios.get(`${API}/reservas/reservados`, { ...config(), ...delPeriodo(periodo) })
   return res.data
 }
 
