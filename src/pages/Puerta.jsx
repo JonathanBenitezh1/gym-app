@@ -2,7 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from '../components/Avisos'
-import { registrarIngreso, obtenerUltimosIngresos, obtenerFotoUrl } from '../services/puertaService'
+import { registrarIngreso, obtenerUltimosIngresos, obtenerFotoBlob, obtenerPadron, mandarLote } from '../services/puertaService'
+import {
+  guardarPadron, leerPadron, decidirSinConexion, versionFoto,
+  pendientes, encolar, quitarPendientes, idLocal,
+  fotoGuardada, guardarFoto, borrarDatosDeLaPuerta
+} from '../utils/puertaLocal'
 import { leerDni } from '../utils/dni'
 import { IconoSalir, IconoAlerta } from '../components/Iconos'
 import logoDtc from './img/logo_png.png'
@@ -10,6 +15,11 @@ import { GIMNASIO } from '../config/gimnasio'
 
 // Cuánto queda el resultado en pantalla antes de volver a "esperando".
 const SEGUNDOS_EN_PANTALLA = 10
+// Cada cuánto se baja la lista de socios y se mandan los ingresos pendientes.
+const MINUTOS_PADRON = 5
+const SEGUNDOS_SINCRONIZAR = 30
+// Igual que en el servidor: un segundo ingreso dentro de este lapso se marca.
+const MINUTOS_REINGRESO = 120
 
 const COLOR = {
   verde:    { fuerte: 'var(--color-exito)',  bajo: 'var(--color-exito-bajo)' },
@@ -89,11 +99,74 @@ export default function Puerta() {
   const [ultimos, setUltimos]   = useState([])
   const [enviando, setEnviando] = useState(false)
   const campo = useRef(null)
+  const formulario = useRef(null)
+  const espera = useRef(null)
   const temporizador = useRef(null)
+  const [enLinea, setEnLinea]         = useState(true)
+  const [porMandar, setPorMandar]     = useState(() => pendientes().length)
+  const [padronDesde, setPadronDesde] = useState(() => leerPadron()?.generado ?? null)
 
   useEffect(() => {
     obtenerUltimosIngresos(8).then(setUltimos).catch(() => {})
   }, [])
+
+  // La lista de socios se mantiene al día para poder seguir sin internet.
+  const actualizarPadron = useCallback(async () => {
+    try {
+      const padron = await obtenerPadron()
+      guardarPadron(padron)
+      setPadronDesde(padron.generado)
+      setEnLinea(true)
+    } catch (err) {
+      if (!err.response) setEnLinea(false)
+    }
+  }, [])
+
+  // Manda lo anotado sin conexión, de a 500.
+  const sincronizar = useCallback(async () => {
+    let lista = pendientes()
+    while (lista.length > 0) {
+      const tanda = lista.slice(0, 500)
+      try {
+        await mandarLote(tanda)
+        quitarPendientes(tanda.map(i => i.id_local))
+        setEnLinea(true)
+      } catch (err) {
+        if (!err.response) setEnLinea(false)
+        break
+      }
+      lista = pendientes()
+    }
+    setPorMandar(pendientes().length)
+  }, [])
+
+  useEffect(() => {
+    actualizarPadron()
+    sincronizar()
+    const padron = setInterval(actualizarPadron, MINUTOS_PADRON * 60 * 1000)
+    const envio = setInterval(sincronizar, SEGUNDOS_SINCRONIZAR * 1000)
+    const volvio = () => { actualizarPadron(); sincronizar() }
+    window.addEventListener('online', volvio)
+    return () => { clearInterval(padron); clearInterval(envio); window.removeEventListener('online', volvio) }
+  }, [actualizarPadron, sincronizar])
+
+  /** Foto guardada en la PC si la versión coincide; si no, la baja y la guarda. */
+  const traerFoto = async (respuesta, conConexion) => {
+    if (!respuesta.tiene_foto) return null
+    const version = versionFoto(respuesta.usuario_id, leerPadron())
+    if (version) {
+      const guardada = await fotoGuardada(respuesta.usuario_id, version)
+      if (guardada) return guardada
+    }
+    if (!conConexion) return null
+    try {
+      const blob = await obtenerFotoBlob(respuesta.usuario_id)
+      if (version) guardarFoto(respuesta.usuario_id, version, blob)
+      return URL.createObjectURL(blob)
+    } catch {
+      return null
+    }
+  }
 
   // La foto anterior se libera al cambiar de socio.
   useEffect(() => () => { if (actual?.foto) URL.revokeObjectURL(actual.foto) }, [actual])
@@ -102,8 +175,23 @@ export default function Puerta() {
   const enfocar = useCallback(() => campo.current?.focus(), [])
   useEffect(() => { enfocar() }, [enfocar])
 
+  // Algunos lectores no mandan Enter al terminar. Cuando llega un código de
+  // DNI completo y el lector deja de escribir, se procesa solo.
+  const cambiarLectura = (valor) => {
+    setLectura(valor)
+    clearTimeout(espera.current)
+    const separadores = (valor.match(/[@"]/g) || []).length
+    if (separadores >= 4) espera.current = setTimeout(() => formulario.current?.requestSubmit(), 300)
+  }
+
+  // Lecturas que llegan mientras se atiende otra. Antes se descartaban: sin
+  // internet la consulta tarda unos segundos y el siguiente DNI se perdía.
+  const cola = useRef([])
+  const atendiendo = useRef(false)
+
   const procesar = async (e) => {
     e.preventDefault()
+    clearTimeout(espera.current)
     const leido = leerDni(lectura)
     setLectura('')
     if (!leido) {
@@ -111,28 +199,60 @@ export default function Puerta() {
       avisarError('No se pudo leer el DNI. Probá de nuevo o escribí el número.')
       return
     }
-    if (enviando) return
+    cola.current.push(leido)
+    if (atendiendo.current) return
+    atendiendo.current = true
     setEnviando(true)
+    while (cola.current.length > 0) await atender(cola.current.shift())
+    atendiendo.current = false
+    setEnviando(false)
+    enfocar()
+  }
+
+  const atender = async (leido) => {
     try {
-      const respuesta = await registrarIngreso(leido.dni)
-      let foto = null
-      if (respuesta.tiene_foto) foto = await obtenerFotoUrl(respuesta.usuario_id).catch(() => null)
-      setActual({ respuesta, sexo: leido.sexo, foto })
+      let respuesta
+      let sinConexion = false
+      try {
+        respuesta = await registrarIngreso(leido.dni)
+        setEnLinea(true)
+      } catch (err) {
+        // Con respuesta del servidor es un error de verdad; sin respuesta, se
+        // cortó internet y se decide con la lista guardada.
+        if (err.response) throw err
+        const padron = leerPadron()
+        if (!padron) throw new Error('Sin conexión y todavía no hay una lista de socios guardada en esta PC.')
+        setEnLinea(false)
+        sinConexion = true
+        const ahora = new Date().toISOString()
+        respuesta = { ...decidirSinConexion(leido.dni, padron), id: idLocal(), created_at: ahora }
+        const previo = [...pendientes().map(i => ({ ...i, created_at: i.fecha })), ...ultimos]
+          .filter(i => i.dni === leido.dni && PASA.includes(i.resultado))
+          .map(i => (Date.now() - Date.parse(i.created_at)) / 60000)
+          .filter(min => min < MINUTOS_REINGRESO)
+          .sort((a, b) => a - b)[0]
+        if (previo !== undefined && PASA.includes(respuesta.resultado)) respuesta.minutos_desde_ultimo = Math.floor(previo)
+        encolar({ id_local: respuesta.id, dni: leido.dni, resultado: respuesta.resultado, fecha: ahora })
+        setPorMandar(pendientes().length)
+      }
+      const foto = await traerFoto(respuesta, !sinConexion)
+      setActual({ respuesta, sexo: leido.sexo, foto, sinConexion })
       sonar(PASA.includes(respuesta.resultado))
       setUltimos(prev => [{ ...respuesta, nombre: respuesta.nombre ?? null }, ...prev].slice(0, 8))
       clearTimeout(temporizador.current)
       temporizador.current = setTimeout(() => setActual(null), SEGUNDOS_EN_PANTALLA * 1000)
     } catch (err) {
       sonar(false)
-      avisarError(err.response?.data?.error || 'No se pudo consultar. Revisá la conexión.')
-    } finally {
-      setEnviando(false)
-      enfocar()
+      avisarError(err.response?.data?.error || err.message || 'No se pudo consultar. Revisá la conexión.')
     }
   }
 
   const salir = async () => {
-    if (await confirmar({ titulo: '¿Cerrar sesión?', textoConfirmar: 'Cerrar sesión' })) {
+    const aviso = porMandar > 0
+      ? `Hay ${porMandar} ingresos anotados sin conexión que todavía no se mandaron. Quedan guardados y se mandan cuando alguien vuelva a entrar en esta PC.`
+      : undefined
+    if (await confirmar({ titulo: '¿Cerrar sesión?', mensaje: aviso, textoConfirmar: 'Cerrar sesión' })) {
+      await borrarDatosDeLaPuerta()
       cerrarSesion()
       navigate('/')
     } else {
@@ -155,6 +275,7 @@ export default function Puerta() {
             <p className="text-sm font-bold leading-tight">Ingreso</p>
             <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
           </div>
+          <EstadoConexion enLinea={enLinea} porMandar={porMandar} padronDesde={padronDesde} />
         </div>
         <div className="flex items-center gap-2">
           {usuario?.rol === 'admin' && (
@@ -166,11 +287,11 @@ export default function Puerta() {
 
       <div className="grid flex-1 gap-4 p-4 lg:grid-cols-[1fr_300px]">
         <main className="flex flex-col gap-4">
-          <form onSubmit={procesar} className="tarjeta p-4">
-            <label htmlFor="lectura-dni" className="etiqueta-campo">Pasá el DNI por el lector o escribí el número</label>
+          <form ref={formulario} onSubmit={procesar} className="tarjeta p-4">
+            <label htmlFor="lectura-dni" className="etiqueta-campo">Pasá el DNI por el lector, o escribí el número y apretá Enter{enviando && ' · consultando…'}</label>
             <input
               id="lectura-dni" ref={campo} className="campo text-lg" autoComplete="off" spellCheck="false"
-              placeholder="Esperando DNI…" value={lectura} onChange={e => setLectura(e.target.value)}
+              placeholder="Esperando DNI…" value={lectura} onChange={e => cambiarLectura(e.target.value)}
               onBlur={() => setTimeout(() => {
                 // Vuelve al campo salvo que el foco haya ido a un botón o a un diálogo.
                 if (!document.activeElement || document.activeElement === document.body) enfocar()
@@ -180,9 +301,10 @@ export default function Puerta() {
 
           {!m ? (
             <div className="tarjeta flex flex-1 flex-col items-center justify-center gap-2 p-10 text-center">
-              <p className="text-2xl font-bold">Esperando DNI</p>
-              <p className="text-sm" style={{ color: 'var(--color-texto-3)' }}>
-                Acá aparecen la foto, el nombre y el estado de la cuota. Compará la cara con la foto antes de dejar pasar.
+              <p className="text-2xl font-bold">Apoyá tu DNI en el lector</p>
+              <p className="text-lg" style={{ color: 'var(--color-texto-2)' }}>o escribí tu número en el teclado y apretá Enter</p>
+              <p className="mt-4 text-sm" style={{ color: 'var(--color-texto-3)' }}>
+                Recepción: compará la cara con la foto antes de dejar pasar.
               </p>
             </div>
           ) : (
@@ -191,8 +313,9 @@ export default function Puerta() {
               className="aparecer flex flex-1 flex-col overflow-hidden rounded-2xl"
               style={{ border: `2px solid ${c.fuerte}`, backgroundColor: c.bajo }}
             >
-              <div className="px-5 py-3 text-lg font-bold uppercase tracking-wide" style={{ backgroundColor: c.fuerte, color: 'var(--color-fondo)' }}>
-                {m.franja}
+              <div className="flex items-center justify-between gap-3 px-5 py-3 text-lg font-bold uppercase tracking-wide" style={{ backgroundColor: c.fuerte, color: 'var(--color-fondo)' }}>
+                <span>{m.franja}</span>
+                {actual.sinConexion && <span className="text-xs normal-case">Sin conexión · con la última lista guardada</span>}
               </div>
               <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
                 {actual.respuesta.usuario_id && (
@@ -252,5 +375,26 @@ export default function Puerta() {
         </aside>
       </div>
     </div>
+  )
+}
+
+/** Pastilla del encabezado: si hay internet, y si quedó algo por mandar. */
+function EstadoConexion({ enLinea, porMandar, padronDesde }) {
+  // La antigüedad de la lista se recalcula sola cada medio minuto.
+  const [ahora, setAhora] = useState(() => Date.now())
+  useEffect(() => {
+    const reloj = setInterval(() => setAhora(Date.now()), 30000)
+    return () => clearInterval(reloj)
+  }, [])
+  const minutos = padronDesde ? Math.max(0, Math.round((ahora - Date.parse(padronDesde)) / 60000)) : null
+  if (enLinea && porMandar === 0) {
+    return <span className="insignia insignia-exito">En línea</span>
+  }
+  return (
+    <span className="insignia insignia-alerta" title="La puerta sigue funcionando con la última lista de socios">
+      {enLinea ? 'En línea' : 'Sin conexión'}
+      {!enLinea && minutos !== null && ` · lista de hace ${minutos} min`}
+      {porMandar > 0 && ` · ${porMandar} por mandar`}
+    </span>
   )
 }

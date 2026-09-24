@@ -23,7 +23,7 @@ export default function SeccionEstadisticas({ alError }) {
   if (datos === null) return <SkeletonLista filas={4} />
   if (datos === false) return null
 
-  const { ingresos, socios, ocupacion, asistencia, pendientes } = datos
+  const { ingresos, socios, ocupacion, asistencia, pendientes, puerta } = datos
   const actual   = ingresos.at(-1)
   const anterior = ingresos.at(-2)
   const variacion = anterior?.total > 0
@@ -50,6 +50,20 @@ export default function SeccionEstadisticas({ alError }) {
         <p className="mb-4 text-xs" style={{ color: 'var(--color-texto-3)' }}>Pagos confirmados, últimos 6 meses</p>
         <BarrasMensuales ingresos={ingresos} />
       </section>
+
+      {puerta && (
+        <section className="tarjeta p-4">
+          <h2 className="titulo-seccion">Ingresos por la puerta</h2>
+          <p className="mb-3 text-xs" style={{ color: 'var(--color-texto-3)' }}>
+            Hoy entraron <b style={{ color: 'var(--color-texto)' }}>{puerta.entraron}</b>
+            {puerta.rechazados > 0 && <> y se rechazaron <b style={{ color: 'var(--color-error)' }}>{puerta.rechazados}</b></>}.
+            {' '}Abajo, el promedio por hora de los últimos 30 días.
+          </p>
+          {puerta.por_hora.length === 0
+            ? <Vacio texto="Todavía no hay ingresos registrados por la puerta." />
+            : <BarrasPorHora datos={puerta.por_hora} />}
+        </section>
+      )}
 
       <section className="tarjeta p-4">
         <h2 className="titulo-seccion">Ocupación por horario</h2>
@@ -147,6 +161,60 @@ function BarrasMensuales({ ingresos }) {
             style={{ color: i === activo ? 'var(--color-texto)' : 'var(--color-texto-3)' }}
           >
             {nombreMes(m.mes)}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Promedio de ingresos por hora. Se completan las horas sin datos entre la primera y la última. */
+function BarrasPorHora({ datos }) {
+  const [activa, setActiva] = useState(null)
+  const mapa = new Map(datos.map(d => [d.hora, d.promedio]))
+  const desde = Math.min(...datos.map(d => d.hora))
+  const hasta = Math.max(...datos.map(d => d.hora))
+  const horas = Array.from({ length: hasta - desde + 1 }, (_, i) => desde + i)
+  const maximo = Math.max(...datos.map(d => d.promedio), 1)
+  const pico = datos.reduce((a, b) => (b.promedio > a.promedio ? b : a))
+  const mostrada = activa ?? pico.hora
+
+  return (
+    <div>
+      <p className="mb-2 text-sm">
+        <span className="font-bold">{(mapa.get(mostrada) ?? 0).toLocaleString('es-AR')}</span>
+        <span className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
+          {' '}por día entre las {mostrada} y las {mostrada + 1}{activa === null ? ' · la hora pico' : ''}
+        </span>
+      </p>
+      <div className="flex h-28 items-end gap-1" style={{ borderBottom: '1px solid var(--color-linea)' }}>
+        {horas.map(h => {
+          const v = mapa.get(h) ?? 0
+          return (
+            <button
+              key={h} type="button"
+              onMouseEnter={() => setActiva(h)} onFocus={() => setActiva(h)} onClick={() => setActiva(h)}
+              onMouseLeave={() => setActiva(null)}
+              aria-label={`${h} h: ${v} por día`}
+              className="flex h-full flex-1 items-end"
+            >
+              <span
+                className="block w-full rounded-t"
+                style={{
+                  height: `${v / maximo * 100}%`, minHeight: v > 0 ? 3 : 0,
+                  backgroundColor: 'var(--color-acento)',
+                  opacity: h === mostrada ? 1 : 0.45
+                }}
+              />
+            </button>
+          )
+        })}
+      </div>
+      <div className="mt-1.5 flex gap-1">
+        {horas.map(h => (
+          <span key={h} className="flex-1 text-center text-[10px] tabular-nums"
+                style={{ color: h === mostrada ? 'var(--color-texto)' : 'var(--color-texto-3)' }}>
+            {h}
           </span>
         ))}
       </div>
