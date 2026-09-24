@@ -154,7 +154,7 @@ function Grupo({ titulo, cantidad, reservas, alPagar, alCancelar, atenuado }) {
   return (
     <section style={atenuado ? { opacity: 0.6 } : undefined}>
       <h2 className="titulo-seccion mb-2">{titulo} ({cantidad})</h2>
-      <div className="grid gap-2.5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {reservas.map(r => (
           <TarjetaReserva
             key={r.id}

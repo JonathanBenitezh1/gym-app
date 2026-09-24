@@ -40,7 +40,7 @@ export function SkeletonListaHorarios() {
       {[0, 1].map(grupo => (
         <div key={grupo}>
           <Bloque className="mb-2 h-3 w-24" />
-          <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             <TarjetaHorario />
             <TarjetaHorario />
           </div>

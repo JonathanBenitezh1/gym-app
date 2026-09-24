@@ -62,11 +62,13 @@ export default function BotonPresencia({ alExito, alError }) {
     <button
       onClick={alternar}
       disabled={enviando}
-      className={`btn btn-chico ${turno ? 'btn-contorno' : 'btn-primario'}`}
+      className={`btn btn-chico whitespace-nowrap ${turno ? 'btn-contorno' : 'btn-primario'}`}
       title={turno ? `En el gimnasio desde las ${hora(turno.inicio)}` : 'Avisar a los socios que llegaste'}
     >
       {turno ? <IconoSalir size={15} /> : <IconoCheck size={15} />}
-      {turno ? `Me voy · ${hora(turno.inicio)}` : 'Llegué'}
+      {turno
+        ? <>Me voy<span className="hidden sm:inline"> · {hora(turno.inicio)}</span></>
+        : 'Llegué'}
     </button>
   )
 }

@@ -123,7 +123,7 @@ export default function SeccionCuotas({ alExito, alError, confirmar }) {
           {datos.socios.length === 0 ? 'Todavía no hay socios activos.' : 'Ningún socio con ese filtro.'}
         </p>
       ) : (
-        <div className="grid gap-2.5 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
           {visibles.map(s => {
             const whatsapp = ['gracia', 'vencida'].includes(s.estado) && linkWhatsapp(s.telefono, mensajeCuota(s))
             return (
@@ -342,7 +342,7 @@ function ConfigCuota({ config, alGuardar, alError }) {
   return (
     <form onSubmit={enviar} className="tarjeta aparecer flex flex-col gap-3 p-4">
       <h2 className="titulo-seccion">Configuración de la cuota</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor="cuota-precio" className="etiqueta-campo">Precio por mes</label>
           <input id="cuota-precio" className="campo" inputMode="decimal" value={form.precio}

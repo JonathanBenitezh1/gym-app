@@ -289,7 +289,7 @@ export default function Horarios() {
               {porDia.map(([nombreDia, clases]) => (
                 <section key={nombreDia}>
                   <h2 className="titulo-seccion mb-2">{nombreDia}</h2>
-                  <div className="grid gap-2.5 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                     {clases.map(h => (
                       <TarjetaHorario
                         key={h.id}

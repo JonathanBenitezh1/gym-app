@@ -6,7 +6,7 @@ import { obtenerPerfil, editarPerfil, cambiarPassword, obtenerHistorialPagos } f
 import { obtenerMisReservas } from '../services/clasesService'
 import NavBar from '../components/NavBar'
 import { SkeletonPerfil } from '../components/Skeleton'
-import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado } from '../components/Iconos'
+import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave } from '../components/Iconos'
 import { precio, fechaCorta, rangoFechas, hora, fechaHora } from '../utils/formato'
 import { estadoApto } from '../utils/apto'
 
@@ -97,7 +97,7 @@ export default function Perfil() {
 
         <Acordeon
           nombre="clave" abierta={seccion} alAlternar={alternar}
-          Icono={IconoPerfil} titulo="Cambiar contraseña"
+          Icono={IconoLlave} titulo="Cambiar contraseña"
         >
           <SeccionClave alExito={exito} alError={avisarError} />
         </Acordeon>

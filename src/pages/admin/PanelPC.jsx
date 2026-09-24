@@ -30,6 +30,10 @@ import { estadoApto } from '../../utils/apto'
 const RAMAS = ['gimnasio', 'disciplina', 'profesional']
 const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const ROLES = ['alumno', 'profesor', 'profesional', 'recepcion', 'admin']
+const NOMBRE_ROL = {
+  alumno: 'Alumno', profesor: 'Profesor', profesional: 'Profesional',
+  recepcion: 'Recepción', admin: 'Admin', todos: 'Todos', 'sin apto': 'Sin apto'
+}
 
 const SECCIONES = [
   { id: 'panel',    texto: 'Panel' },
@@ -106,17 +110,22 @@ export default function PanelPC() {
         className="sticky top-0 z-20"
         style={{ backgroundColor: 'var(--color-superficie)', borderBottom: '1px solid var(--color-linea-sutil)' }}
       >
-        <div className="contenedor-ancho flex items-center justify-between py-3">
-          <div className="flex items-center gap-3">
-            <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto" />
-            <div>
+        {/* En un celular no entraba: el título pisaba "Puerta" y el botón de
+            salir quedaba fuera de la pantalla. El texto se achica y los
+            botones no. */}
+        <div className="contenedor-ancho flex items-center justify-between gap-2 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto shrink-0" />
+            <div className="min-w-0">
               <p className="flex items-center gap-1.5 text-sm font-bold leading-tight">
-                <IconoPanel size={15} /> Administración
+                <span className="hidden sm:inline-flex"><IconoPanel size={15} /></span>
+                <span className="sm:hidden">Admin</span>
+                <span className="hidden sm:inline">Administración</span>
               </p>
-              <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
+              <p className="truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <button onClick={() => navigate('/puerta')} className="btn btn-contorno btn-chico">Puerta</button>
             <BotonPresencia alExito={exito} alError={avisarError} />
             <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
@@ -336,7 +345,7 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_1fr]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
 
       <form onSubmit={crear} className="tarjeta flex h-fit flex-col gap-3 p-4">
         <h2 className="titulo-seccion">Nueva clase</h2>
@@ -523,7 +532,7 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
   const activas = clases.filter(c => c.activo)
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_1fr]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
 
       <form onSubmit={crear} className="tarjeta flex h-fit flex-col gap-3 p-4">
         <h2 className="titulo-seccion">Nuevo horario</h2>
@@ -772,7 +781,7 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
     try {
       await cambiarRol(u.id, nuevoRol)
       await alRecargar()
-      alExito(`${u.nombre} ahora es ${nuevoRol}`)
+      alExito(`${u.nombre} ahora es ${NOMBRE_ROL[nuevoRol].toLowerCase()}`)
     } catch (err) {
       alError(err.response?.data?.error || 'No pudimos cambiar el rol')
       await alRecargar()
@@ -798,9 +807,9 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
             <button
               key={r}
               onClick={() => setFiltroRol(r)}
-              className={`pildora capitalize ${filtroRol === r ? 'pildora-activa' : ''}`}
+              className={`pildora ${filtroRol === r ? 'pildora-activa' : ''}`}
             >
-              {r}
+              {NOMBRE_ROL[r]}
             </button>
           ))}
         </div>
@@ -808,9 +817,11 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
 
       <p className="titulo-seccion">{visibles.length} de {usuarios.length} usuarios</p>
 
-      <div className="grid gap-2.5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {visibles.map(u => (
-          <article key={u.id} className="tarjeta flex items-center gap-3 p-3.5">
+          // Hasta pantallas grandes las acciones van en una fila abajo: al costado le
+          // dejaban al nombre y al email unos pocos caracteres.
+          <article key={u.id} className="tarjeta flex flex-wrap items-center gap-3 p-3.5 lg:flex-nowrap">
             <span
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold"
               style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-acento)' }}
@@ -858,14 +869,14 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
                 </button>
               ))}
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <div className="flex w-full flex-wrap items-center justify-end gap-1.5 lg:w-auto lg:shrink-0 lg:flex-col lg:items-end">
               <select
-                className="campo w-auto !min-h-9 !py-1.5 text-xs capitalize"
+                className="campo w-auto !min-h-9 !py-1.5 text-xs"
                 value={u.rol}
                 onChange={e => cambiar(u, e.target.value)}
                 aria-label={`Rol de ${u.nombre}`}
               >
-                {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                {ROLES.map(r => <option key={r} value={r}>{NOMBRE_ROL[r]}</option>)}
               </select>
               {u.rol === 'alumno' && (
                 <button onClick={() => setFotoDe(u)} className="btn btn-fantasma btn-chico !text-[11px]">
@@ -1034,7 +1045,7 @@ function SeccionReservas({ reservas, alExito, alError, alRecargar, confirmar: pe
 
       <p className="titulo-seccion">{visibles.length} reservas</p>
 
-      <div className="grid gap-2.5 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {visibles.map(r => (
           <article key={r.id} className="tarjeta p-4">
             <div className="flex items-start justify-between gap-3">

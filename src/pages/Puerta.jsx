@@ -312,7 +312,7 @@ export default function Puerta() {
         </div>
       </header>
 
-      <div className="grid flex-1 gap-4 p-4 lg:grid-cols-[1fr_300px]">
+      <div className="grid flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_300px]">
         <main className="flex flex-col gap-4">
           <form ref={formulario} onSubmit={procesar} className="tarjeta p-4">
             <label htmlFor="lectura-dni" className="etiqueta-campo">Pasá el DNI por el lector, o escribí el número y apretá Enter{enviando && ' · consultando…'}</label>

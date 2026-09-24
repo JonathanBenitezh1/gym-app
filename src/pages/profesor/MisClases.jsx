@@ -59,15 +59,15 @@ export default function MisClases() {
         className="sticky top-0 z-20"
         style={{ backgroundColor: 'var(--color-superficie)', borderBottom: '1px solid var(--color-linea-sutil)' }}
       >
-        <div className="contenedor-ancho flex items-center justify-between py-3">
-          <div className="flex items-center gap-3">
-            <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto" />
-            <div>
+        <div className="contenedor-ancho flex items-center justify-between gap-2 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto shrink-0" />
+            <div className="min-w-0">
               <p className="text-sm font-bold leading-tight">Panel del profesor</p>
-              <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
+              <p className="truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <BotonPresencia alExito={exito} alError={avisarError} />
             <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
               <IconoSalir size={18} />
@@ -159,7 +159,7 @@ function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
   }
 
   return (
-    <div className="grid gap-2.5 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
       {horarios.map(h => (
         <article key={h.id} className="tarjeta p-4">
           {editando === h.id ? (

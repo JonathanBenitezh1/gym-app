@@ -122,7 +122,7 @@ export default function SeccionActividad({ alError }) {
     )
   } else {
     contenido = (
-      <div className="tarjeta divide-y" style={{ borderColor: 'var(--color-linea-sutil)' }}>
+      <div className="tarjeta divide-y divide-linea-sutil">
         {visibles.map(m => {
           const accion = ACCIONES[m.accion] || { texto: m.accion, color: 'var(--color-texto-2)' }
           const detalle = detalleLegible(m.detalle)
