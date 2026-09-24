@@ -6,7 +6,7 @@ import { registrarIngreso, obtenerUltimosIngresos, obtenerFotoBlob, obtenerPadro
 import {
   guardarPadron, leerPadron, decidirSinConexion, versionFoto,
   pendientes, encolar, quitarPendientes, idLocal,
-  fotoGuardada, guardarFoto, borrarDatosDeLaPuerta
+  fotoGuardada, guardarFoto
 } from '../utils/puertaLocal'
 import { leerDni } from '../utils/dni'
 import { IconoSalir, IconoAlerta } from '../components/Iconos'
@@ -270,7 +270,7 @@ export default function Puerta() {
       ? `Hay ${porMandar} ingresos anotados sin conexión que todavía no se mandaron. Quedan guardados y se mandan cuando alguien vuelva a entrar en esta PC.`
       : undefined
     if (await confirmar({ titulo: '¿Cerrar sesión?', mensaje: aviso, textoConfirmar: 'Cerrar sesión' })) {
-      await borrarDatosDeLaPuerta()
+      // cerrarSesion borra la lista de socios y las fotos de esta PC.
       cerrarSesion()
       navigate('/')
     } else {

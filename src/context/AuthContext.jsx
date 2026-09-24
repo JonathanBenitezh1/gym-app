@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react'
 import socket from '../services/socket'
+import { borrarDatosDeLaPuerta } from '../utils/puertaLocal'
 
 // La versión anterior de la app instalable guardaba las respuestas de la API
 // en esta caché, y lo guardado queda en el teléfono aunque la versión nueva ya
@@ -23,17 +24,29 @@ export function AuthProvider({ children }) {
     JSON.parse(localStorage.getItem('usuario')) || null
   )
 
-  const guardarSesion = (token, usuario) => {
+  const guardarSesion = (token, nuevo) => {
+    const tokenCambio = localStorage.getItem('token') !== token
     // Guardamos en localStorage para que persista al recargar
     localStorage.setItem('token', token)
-    localStorage.setItem('usuario', JSON.stringify(usuario))
-    setUsuario(usuario)
+    localStorage.setItem('usuario', JSON.stringify(nuevo))
+    // Al cambiar la contraseña el servidor corta el tiempo real de ese
+    // usuario y el token viejo deja de valer: la conexión se rehace con el
+    // nuevo, que el socket lee de localStorage.
+    if (tokenCambio && usuario) {
+      socket.disconnect()
+      socket.connect()
+    }
+    setUsuario(nuevo)
   }
 
   const cerrarSesion = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('usuario')
     borrarCacheApiVieja()
+    // La lista de socios y las fotos de la puerta se borran salga desde donde
+    // salga: antes solo desde el botón de la puerta, y un admin que la usaba
+    // y cerraba sesión desde el panel dejaba DNI, nombres y fotos guardados.
+    borrarDatosDeLaPuerta()
     // Cortamos la conexión de tiempo real: al salir ya no hace falta,
     // y así no queda abierta contra el servidor.
     socket.disconnect()

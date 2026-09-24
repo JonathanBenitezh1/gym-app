@@ -292,6 +292,7 @@ function Dato({ etiqueta, valor }) {
 }
 
 function SeccionClave({ alExito, alError }) {
+  const { usuario, guardarSesion } = useAuth()
   const [form, setForm] = useState({ actual: '', nueva: '', repetir: '' })
   const [ver, setVer] = useState(false)
   const [guardando, setGuardando] = useState(false)
@@ -302,7 +303,11 @@ function SeccionClave({ alExito, alError }) {
 
     setGuardando(true)
     try {
-      await cambiarPassword({ password_actual: form.actual, password_nueva: form.nueva })
+      // El cambio cierra las demás sesiones y deja viejo el token actual: hay
+      // que quedarse con el que devuelve la API, o el próximo pedido saca a
+      // la persona de la app.
+      const { token } = await cambiarPassword({ password_actual: form.actual, password_nueva: form.nueva })
+      if (token) guardarSesion(token, usuario)
       setForm({ actual: '', nueva: '', repetir: '' })
       alExito('Contraseña actualizada')
     } catch (err) {

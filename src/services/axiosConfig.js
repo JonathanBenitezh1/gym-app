@@ -1,15 +1,19 @@
 import axios from 'axios'
+import { borrarDatosDeLaPuerta } from '../utils/puertaLocal'
 
 axios.interceptors.response.use(
   response => response,
-  error => {
+  async error => {
     const estado = error.response?.status
     const codigo = error.response?.data?.codigo
 
     // 401 es token ausente, vencido o invalido: no hay sesion que sostener.
+    // La lista de socios de la puerta se borra antes de salir, igual que al
+    // cerrar sesion a mano.
     if (estado === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('usuario')
+      await borrarDatosDeLaPuerta()
       window.location.href = '/'
       return Promise.reject(error)
     }
