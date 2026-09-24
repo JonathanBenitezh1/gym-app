@@ -181,8 +181,19 @@ export default function Puerta() {
     setLectura(valor)
     clearTimeout(espera.current)
     const separadores = (valor.match(/[@"]/g) || []).length
-    if (separadores >= 4) espera.current = setTimeout(() => formulario.current?.requestSubmit(), 300)
+    if (separadores >= 4) {
+      espera.current = setTimeout(() => {
+        sinEnter.current = true
+        formulario.current?.requestSubmit()
+      }, 300)
+    }
   }
+
+  // Modo para configurar un lector nuevo: muestra lo que manda y lo que
+  // entiende la app, sin registrar ingresos ni consultar al servidor.
+  const [prueba, setPrueba] = useState(false)
+  const [diagnostico, setDiagnostico] = useState(null)
+  const sinEnter = useRef(false)
 
   // Lecturas que llegan mientras se atiende otra. Antes se descartaban: sin
   // internet la consulta tarda unos segundos y el siguiente DNI se perdía.
@@ -194,6 +205,13 @@ export default function Puerta() {
     clearTimeout(espera.current)
     const leido = leerDni(lectura)
     setLectura('')
+    const llegoSinEnter = sinEnter.current
+    sinEnter.current = false
+    if (prueba) {
+      setDiagnostico({ crudo: lectura, leido, llegoSinEnter })
+      sonar(Boolean(leido))
+      return
+    }
     if (!leido) {
       sonar(false)
       avisarError('No se pudo leer el DNI. Probá de nuevo o escribí el número.')
@@ -278,6 +296,13 @@ export default function Puerta() {
           <EstadoConexion enLinea={enLinea} porMandar={porMandar} padronDesde={padronDesde} />
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => { setPrueba(v => !v); setDiagnostico(null); setActual(null) }}
+            className={`btn btn-chico ${prueba ? 'btn-primario' : 'btn-fantasma'}`}
+            aria-pressed={prueba}
+          >
+            {prueba ? 'Salir de la prueba' : 'Probar lector'}
+          </button>
           {usuario?.rol === 'admin' && (
             <button onClick={() => navigate('/panel-gym')} className="btn btn-contorno btn-chico">Volver al panel</button>
           )}
@@ -299,7 +324,9 @@ export default function Puerta() {
             />
           </form>
 
-          {!m ? (
+          {prueba ? (
+            <PruebaLector diagnostico={diagnostico} />
+          ) : !m ? (
             <div className="tarjeta flex flex-1 flex-col items-center justify-center gap-2 p-10 text-center">
               <p className="text-2xl font-bold">Apoyá tu DNI en el lector</p>
               <p className="text-lg" style={{ color: 'var(--color-texto-2)' }}>o escribí tu número en el teclado y apretá Enter</p>
@@ -396,5 +423,51 @@ function EstadoConexion({ enLinea, porMandar, padronDesde }) {
       {!enLinea && minutos !== null && ` · lista de hace ${minutos} min`}
       {porMandar > 0 && ` · ${porMandar} por mandar`}
     </span>
+  )
+}
+
+/**
+ * Lo que muestra el modo de prueba. Nada sale de la PC: sirve para configurar
+ * el lector sin tener que mandarle a nadie los datos de un DNI.
+ */
+function PruebaLector({ diagnostico }) {
+  if (!diagnostico) {
+    return (
+      <div className="tarjeta flex flex-1 flex-col gap-3 p-6">
+        <p className="text-xl font-bold">Modo prueba del lector</p>
+        <p style={{ color: 'var(--color-texto-2)' }}>
+          Pasá un DNI por el lector. Acá se ve lo que manda y el DNI que entiende la app.
+          No se registra ningún ingreso y no se consulta al servidor.
+        </p>
+      </div>
+    )
+  }
+  const { crudo, leido, llegoSinEnter } = diagnostico
+  const conComillas = crudo.includes('"') && !crudo.includes('@')
+  const consejos = []
+  if (!leido) {
+    consejos.push('No se reconoció un DNI. Revisá que el lector esté en modo teclado USB (a veces dice HID o "keyboard") y que lea códigos PDF417.')
+    if (/[^\x20-\x7EÁÉÍÓÚÑáéíóúñ@"]/.test(crudo)) consejos.push('Llegaron caracteres raros: puede ser la distribución de teclado del lector. Probá configurarlo en "Latin America" o "Spanish" con los códigos del manual.')
+  }
+  if (conComillas) consejos.push('El lector escribe comillas en lugar de @ por la distribución de teclado. La app lo entiende igual: no hace falta cambiarlo.')
+  if (llegoSinEnter) consejos.push('El lector no mandó Enter al terminar. La app lo procesa sola, pero tarda un poco más: si el manual tiene la opción "sufijo Enter" o "CR", conviene activarla.')
+
+  return (
+    <div className="tarjeta flex flex-1 flex-col gap-4 p-6">
+      <div className="flex items-center gap-3">
+        <span className={`insignia ${leido ? 'insignia-exito' : 'insignia-error'}`}>{leido ? 'DNI reconocido' : 'No se reconoció'}</span>
+        {leido && <span className="text-2xl font-bold tabular-nums">DNI {leido.dni}</span>}
+        {leido?.sexo && <span className="text-sm" style={{ color: 'var(--color-texto-2)' }}>Sexo: {leido.sexo}</span>}
+      </div>
+      <div>
+        <p className="etiqueta-campo">Lo que mandó el lector ({crudo.length} caracteres{llegoSinEnter ? ', sin Enter' : ', con Enter'})</p>
+        <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-xl p-3 text-sm" style={{ backgroundColor: 'var(--color-elevado)' }}>{crudo || '(vacío)'}</pre>
+      </div>
+      {consejos.length > 0 && (
+        <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm" style={{ color: 'var(--color-texto-2)' }}>
+          {consejos.map(c => <li key={c}>{c}</li>)}
+        </ul>
+      )}
+    </div>
   )
 }
