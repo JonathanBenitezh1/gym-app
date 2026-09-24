@@ -151,3 +151,15 @@ export const borrarFotoSocio = async (id) => {
   const res = await axios.delete(`${API}/admin/usuarios/${id}/foto`, config())
   return res.data
 }
+
+// ─── CUENTA DE LA PUERTA Y SESIONES ───────────────────
+
+export const crearCuentaPuerta = async (datos) => {
+  const res = await axios.post(`${API}/admin/cuentas-puerta`, datos, config())
+  return res.data
+}
+
+export const cerrarSesionesUsuario = async (id) => {
+  const res = await axios.put(`${API}/admin/usuarios/${id}/cerrar-sesiones`, {}, config())
+  return res.data
+}

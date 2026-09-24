@@ -14,7 +14,7 @@ import logoDtc from './img/logo_png.png'
 import { GIMNASIO } from '../config/gimnasio'
 
 // Cuánto queda el resultado en pantalla antes de volver a "esperando".
-const SEGUNDOS_EN_PANTALLA = 10
+const SEGUNDOS_EN_PANTALLA = 5
 // Cada cuánto se baja la lista de socios y se mandan los ingresos pendientes.
 const MINUTOS_PADRON = 5
 const SEGUNDOS_SINCRONIZAR = 30

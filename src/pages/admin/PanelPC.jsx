@@ -8,7 +8,8 @@ import {
   crearHorario, editarHorario, eliminarHorario, obtenerHorariosAdmin,
   obtenerUsuarios, cambiarRol, restablecerPassword,
   obtenerReservas, confirmarPagoEfectivo,
-  obtenerProfesores, verificarClase, cambiarEstadoUsuario, cambiarApto
+  obtenerProfesores, verificarClase, cambiarEstadoUsuario, cambiarApto,
+  crearCuentaPuerta, cerrarSesionesUsuario
 } from '../../services/adminService'
 import SeccionActividad from './SeccionActividad'
 import SeccionEstadisticas from './SeccionEstadisticas'
@@ -694,6 +695,25 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
   const [restablecida, setRestablecida] = useState(null)
   const [editandoApto, setEditandoApto] = useState(null) // { id, vence }
   const [fotoDe, setFotoDe] = useState(null)
+  const [creandoPuerta, setCreandoPuerta] = useState(false)
+
+  const cerrarSesiones = async (u) => {
+    const seguro = await confirmar({
+      titulo: `¿Cerrar las sesiones de ${u.nombre}?`,
+      mensaje: u.cuenta_puerta
+        ? 'La PC de la puerta sale al instante y hay que volver a entrar con la contraseña de la cuenta. Sirve si se cambió la PC o si alguien más la conoce.'
+        : 'Sale de la app en todos sus dispositivos, sin cambiar su contraseña. Sirve si perdió el teléfono.',
+      textoConfirmar: 'Cerrar sesiones',
+      peligroso: true
+    })
+    if (!seguro) return
+    try {
+      const r = await cerrarSesionesUsuario(u.id)
+      alExito(r.mensaje)
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos cerrar las sesiones')
+    }
+  }
 
   const guardarApto = async (u, vence) => {
     try {
@@ -755,7 +775,7 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
       const coincide = !texto ||
         u.nombre?.toLowerCase().includes(texto) ||
         u.email?.toLowerCase().includes(texto) ||
-        String(u.dni).includes(texto)
+        String(u.dni ?? '').includes(texto)
       // "sin apto" junta a los socios activos a los que hay que pedirle el certificado.
       const pasaFiltro = filtroRol === 'sin apto'
         ? u.rol === 'alumno' && u.activo !== false && ['falta', 'vencido'].includes(estadoApto(u.apto_vence).tipo)
@@ -816,6 +836,26 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
         </div>
       </div>
 
+      {creandoPuerta ? (
+        <FormCuentaPuerta
+          alCancelar={() => setCreandoPuerta(false)}
+          alCrear={async (datos) => {
+            try {
+              await crearCuentaPuerta(datos)
+              setCreandoPuerta(false)
+              await alRecargar()
+              alExito(`Cuenta de la puerta creada. Entrá con ${datos.email} en la PC de la entrada.`)
+            } catch (err) {
+              alError(err.response?.data?.error || 'No pudimos crear la cuenta')
+            }
+          }}
+        />
+      ) : (
+        <button onClick={() => setCreandoPuerta(true)} className="btn btn-contorno btn-chico self-start">
+          Crear cuenta de puerta
+        </button>
+      )}
+
       <p className="titulo-seccion">{visibles.length} de {usuarios.length} usuarios</p>
 
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -834,7 +874,9 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
               <p className="truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>
                 {u.email}
               </p>
-              <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>DNI {u.dni}</p>
+              {u.cuenta_puerta
+                ? <span className="insignia insignia-acento mt-1">Cuenta de la puerta</span>
+                : <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>DNI {u.dni}</p>}
               {u.activo === false && (
                 <span className="insignia insignia-error mt-1">Dado de baja</span>
               )}
@@ -871,14 +913,20 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
               ))}
             </div>
             <div className="flex w-full flex-wrap items-center justify-end gap-1.5 lg:w-auto lg:shrink-0 lg:flex-col lg:items-end">
-              <select
-                className="campo w-auto !min-h-9 !py-1.5 text-xs"
-                value={u.rol}
-                onChange={e => cambiar(u, e.target.value)}
-                aria-label={`Rol de ${u.nombre}`}
-              >
-                {ROLES.map(r => <option key={r} value={r}>{NOMBRE_ROL[r]}</option>)}
-              </select>
+              {u.cuenta_puerta ? (
+                <button onClick={() => cerrarSesiones(u)} className="btn btn-contorno btn-chico !text-[11px]">
+                  Cerrar sesión de la puerta
+                </button>
+              ) : (
+                <select
+                  className="campo w-auto !min-h-9 !py-1.5 text-xs"
+                  value={u.rol}
+                  onChange={e => cambiar(u, e.target.value)}
+                  aria-label={`Rol de ${u.nombre}`}
+                >
+                  {ROLES.map(r => <option key={r} value={r}>{NOMBRE_ROL[r]}</option>)}
+                </select>
+              )}
               {u.rol === 'alumno' && (
                 <button onClick={() => setFotoDe(u)} className="btn btn-fantasma btn-chico !text-[11px]">
                   {u.tiene_foto ? 'Ver foto' : 'Sacar foto'}
@@ -897,6 +945,11 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
               >
                 {u.activo === false ? 'Reactivar' : 'Dar de baja'}
               </button>
+              {!u.cuenta_puerta && (
+                <button onClick={() => cerrarSesiones(u)} className="btn btn-fantasma btn-chico !text-[11px]">
+                  Cerrar sesiones
+                </button>
+              )}
             </div>
           </article>
         ))}
@@ -1094,5 +1147,66 @@ function SeccionReservas({ reservas, alExito, alError, alRecargar, confirmar: pe
         ))}
       </div>
     </div>
+  )
+}
+
+/**
+ * Alta de la cuenta fija de la PC de la entrada: no es de ninguna persona, así
+ * que no pide DNI ni teléfono. Queda como recepción y solo ve la puerta.
+ */
+function FormCuentaPuerta({ alCrear, alCancelar }) {
+  const [nombre, setNombre]     = useState('Puerta')
+  const [email, setEmail]       = useState('')
+  const [password, setPassword] = useState('')
+  const [repetida, setRepetida] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const distintas = repetida !== '' && password !== repetida
+
+  const enviar = async (e) => {
+    e.preventDefault()
+    if (distintas) return
+    setEnviando(true)
+    await alCrear({ nombre: nombre.trim(), email: email.trim(), password })
+    setEnviando(false)
+  }
+
+  return (
+    <form onSubmit={enviar} className="tarjeta aparecer flex flex-col gap-3 p-4">
+      <div>
+        <h2 className="titulo-seccion">Cuenta de la puerta</h2>
+        <p className="mt-1 text-xs" style={{ color: 'var(--color-texto-3)' }}>
+          Para dejar la PC de la entrada fija en la pantalla de ingreso. Entra directo a la puerta, no ve el panel
+          y la sesión dura 6 meses. Usá una contraseña difícil: esta cuenta baja la lista de socios con DNI y foto.
+        </p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label htmlFor="puerta-nombre" className="etiqueta-campo">Nombre</label>
+          <input id="puerta-nombre" className="campo" required value={nombre} onChange={e => setNombre(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="puerta-email" className="etiqueta-campo">Email para entrar</label>
+          <input id="puerta-email" type="email" className="campo" required autoComplete="off"
+                 placeholder="puerta@tugimnasio.com" value={email} onChange={e => setEmail(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="puerta-clave" className="etiqueta-campo">Contraseña (mínimo 8)</label>
+          <input id="puerta-clave" type="password" className="campo" required minLength={8} autoComplete="new-password"
+                 value={password} onChange={e => setPassword(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="puerta-clave-2" className="etiqueta-campo">Repetir contraseña</label>
+          <input id="puerta-clave-2" type="password" className="campo" required autoComplete="new-password"
+                 value={repetida} onChange={e => setRepetida(e.target.value)} />
+          {distintas && <p className="mt-1 text-xs" style={{ color: 'var(--color-error)' }}>No coinciden</p>}
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={alCancelar} className="btn btn-fantasma flex-1">Cancelar</button>
+        <button type="submit" disabled={enviando || distintas} className="btn btn-primario flex-1">
+          {enviando ? 'Creando…' : 'Crear cuenta'}
+        </button>
+      </div>
+    </form>
   )
 }

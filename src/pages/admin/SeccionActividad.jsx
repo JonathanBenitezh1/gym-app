@@ -25,6 +25,8 @@ const ACCIONES = {
   'cuota.config':                 { texto: 'cambió la configuración de la cuota', color: 'var(--color-acento)' },
   'usuario.foto':                 { texto: 'cargó la foto de',               color: 'var(--color-acento)' },
   'usuario.foto_borrar':          { texto: 'borró la foto de',               color: 'var(--color-texto-2)' },
+  'puerta.crear':                 { texto: 'creó la cuenta de la puerta',    color: 'var(--color-acento)' },
+  'usuario.cerrar_sesiones':      { texto: 'cerró las sesiones de',          color: 'var(--color-alerta)' },
   'usuario.apto':                 { texto: 'actualizó el apto médico de',    color: 'var(--color-acento)' },
   'usuario.restablecer_password': { texto: 'restableció la clave de',        color: 'var(--color-alerta)' },
   'turno.llegada':                { texto: 'llegó al gimnasio',              color: 'var(--color-exito)' },
