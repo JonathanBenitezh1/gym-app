@@ -110,3 +110,31 @@ export const obtenerEstadisticas = async () => {
   const res = await axios.get(`${API}/admin/estadisticas`, config())
   return res.data
 }
+
+// ─── CUOTAS ───────────────────────────────────────────
+
+export const obtenerCuotas = async () => {
+  const res = await axios.get(`${API}/admin/cuotas`, config())
+  return res.data
+}
+
+export const guardarConfigCuota = async (datos) => {
+  const res = await axios.put(`${API}/admin/cuotas/config`, datos, config())
+  return res.data
+}
+
+export const registrarPagoCuota = async (usuario_id, datos) => {
+  const res = await axios.post(`${API}/admin/cuotas/${usuario_id}/pago`, datos, config())
+  return res.data
+}
+
+// vence: "AAAA-MM-DD", o null para dejarlo sin cuota
+export const corregirVenceCuota = async (usuario_id, vence) => {
+  const res = await axios.put(`${API}/admin/cuotas/${usuario_id}/vence`, { vence }, config())
+  return res.data
+}
+
+export const obtenerPagosCuota = async (usuario_id) => {
+  const res = await axios.get(`${API}/admin/cuotas/${usuario_id}/pagos`, config())
+  return res.data
+}

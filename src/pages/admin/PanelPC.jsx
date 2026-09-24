@@ -12,6 +12,7 @@ import {
 } from '../../services/adminService'
 import SeccionActividad from './SeccionActividad'
 import SeccionEstadisticas from './SeccionEstadisticas'
+import SeccionCuotas from './SeccionCuotas'
 import SeccionRutinas from '../../components/SeccionRutinas'
 import BotonPresencia from '../../components/BotonPresencia'
 import { linkWhatsapp, mensajePagoPendiente } from '../../utils/whatsapp'
@@ -34,6 +35,7 @@ const SECCIONES = [
   { id: 'numeros',  texto: 'Estadísticas' },
   { id: 'clases',   texto: 'Clases' },
   { id: 'horarios', texto: 'Horarios' },
+  { id: 'cuotas',   texto: 'Cuotas' },
   { id: 'usuarios', texto: 'Usuarios' },
   { id: 'reservas', texto: 'Reservas' },
   { id: 'rutinas',  texto: 'Rutinas' },
@@ -141,6 +143,7 @@ export default function PanelPC() {
             {seccion === 'numeros'  && <SeccionEstadisticas alError={avisarError} />}
             {seccion === 'clases'   && <SeccionClases clases={clases} profesores={profesores} {...comunes} />}
             {seccion === 'horarios' && <SeccionHorarios horarios={horarios} clases={clases} {...comunes} />}
+            {seccion === 'cuotas'   && <SeccionCuotas alExito={exito} alError={avisarError} confirmar={confirmar} />}
             {seccion === 'usuarios' && <SeccionUsuarios usuarios={usuarios} {...comunes} />}
             {seccion === 'reservas' && <SeccionReservas reservas={reservas} {...comunes} />}
             {seccion === 'rutinas'  && <SeccionRutinas alExito={exito} alError={avisarError} />}

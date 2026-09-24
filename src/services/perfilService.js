@@ -24,3 +24,7 @@ export const cambiarPassword = async (datos) => {
   const res = await axios.put(`${API}/perfil/cambiar-password`, datos, config())
   return res.data
 }
+export const obtenerMiCuota = async () => {
+  const res = await axios.get(`${API}/cuota/mia`, config())
+  return res.data
+}

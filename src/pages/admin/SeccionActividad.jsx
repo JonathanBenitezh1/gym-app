@@ -3,7 +3,7 @@ import { obtenerActividad } from '../../services/adminService'
 import { useAuth } from '../../context/AuthContext'
 import { SkeletonLista } from '../../components/Skeleton'
 import { IconoBuscar } from '../../components/Iconos'
-import { precio, fechaHora } from '../../utils/formato'
+import { precio, fechaHora, fechaCorta } from '../../utils/formato'
 
 /** Cómo se lee cada acción y de qué color se pinta. */
 const ACCIONES = {
@@ -20,6 +20,9 @@ const ACCIONES = {
   'usuario.rol':                  { texto: 'cambió el rol de',               color: 'var(--color-acento)' },
   'usuario.baja':                 { texto: 'dio de baja a',                  color: 'var(--color-error)' },
   'usuario.reactivar':            { texto: 'reactivó a',                     color: 'var(--color-exito)' },
+  'cuota.pago':                   { texto: 'cobró la cuota a',               color: 'var(--color-exito)' },
+  'cuota.corregir':               { texto: 'corrigió el vencimiento de',     color: 'var(--color-alerta)' },
+  'cuota.config':                 { texto: 'cambió la configuración de la cuota', color: 'var(--color-acento)' },
   'usuario.apto':                 { texto: 'actualizó el apto médico de',    color: 'var(--color-acento)' },
   'usuario.restablecer_password': { texto: 'restableció la clave de',        color: 'var(--color-alerta)' },
   'turno.llegada':                { texto: 'llegó al gimnasio',              color: 'var(--color-exito)' },
@@ -37,6 +40,10 @@ function detalleLegible(d = {}) {
   if (d.antes && d.despues)              partes.push(`de ${d.antes} a ${d.despues}`)
   if (d.reservas_canceladas)             partes.push(`${d.reservas_canceladas} reservas canceladas`)
   if (d.sin_aviso_previo)                partes.push('sin aviso previo del socio')
+  if (d.meses)                           partes.push(d.meses === 1 ? '1 mes' : `${d.meses} meses`)
+  if (d.vence_nuevo)                     partes.push(`hasta el ${fechaCorta(d.vence_nuevo)}`)
+  if ('anterior' in d && 'vence' in d)   partes.push(`de ${d.anterior ? fechaCorta(d.anterior) : 'sin fecha'} a ${d.vence ? fechaCorta(d.vence) : 'sin fecha'}`)
+  if (d.dias_gracia !== undefined)       partes.push(`${d.dias_gracia} días de gracia`)
   return partes.join(' · ')
 }
 

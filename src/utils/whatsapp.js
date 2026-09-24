@@ -42,3 +42,14 @@ export function mensajePagoPendiente(reserva) {
     `Podés abonarlo en el gimnasio. ¡Te esperamos!`
   )
 }
+
+/** Recordatorio de cuota, en gracia o vencida. */
+export function mensajeCuota(socio) {
+  const saludo = `Hola ${primerNombre(socio.nombre)}! Te escribimos de ${GIMNASIO.nombreCorto}. `
+  if (socio.estado === 'gracia') {
+    return saludo +
+      `Tu cuota venció y te ${socio.dias_restantes === 1 ? 'queda 1 día' : `quedan ${socio.dias_restantes} días`} ` +
+      `para ponerte al día sin que se te corte el ingreso. ¡Te esperamos!`
+  }
+  return saludo + 'Tu cuota está vencida. Acercate a la administración para regularizarla. ¡Te esperamos!'
+}

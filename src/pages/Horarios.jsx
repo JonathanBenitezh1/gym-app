@@ -10,6 +10,7 @@ import {
 import NavBar from '../components/NavBar'
 import ProfesEnSede from '../components/ProfesEnSede'
 import AvisoApto from '../components/AvisoApto'
+import AvisoCuota from '../components/AvisoCuota'
 import { SkeletonListaHorarios } from '../components/Skeleton'
 import { IconoReloj, IconoCheck, IconoUsuarios } from '../components/Iconos'
 import { precio, rangoHorario } from '../utils/formato'
@@ -191,6 +192,7 @@ export default function Horarios() {
         </p>
 
         <ProfesEnSede className="mt-4" />
+        <AvisoCuota className="mt-4" />
         <AvisoApto className="mt-4" />
 
         {liberados.length > 0 && (
