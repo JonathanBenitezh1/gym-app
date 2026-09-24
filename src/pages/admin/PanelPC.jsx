@@ -371,7 +371,7 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
         </div>
         <div>
           <label className="etiqueta-campo">Duración (minutos)</label>
-          <input type="number" min="15" className="campo" value={form.duracion}
+          <input type="number" min="15" max="300" step="1" className="campo" value={form.duracion}
                  onChange={e => setForm(f => ({ ...f, duracion: e.target.value }))} />
         </div>
         <div>
@@ -401,7 +401,7 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
                           onChange={e => setFormEdit(f => ({ ...f, rama: e.target.value }))}>
                     {RAMAS.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
-                  <input type="number" className="campo w-28" value={formEdit.duracion}
+                  <input type="number" min="15" max="300" step="1" className="campo w-28" value={formEdit.duracion}
                          onChange={e => setFormEdit(f => ({ ...f, duracion: e.target.value }))} />
                 </div>
                 <select className="campo" value={formEdit.profesor_id || ''}
