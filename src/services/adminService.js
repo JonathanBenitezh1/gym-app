@@ -139,6 +139,35 @@ export const obtenerPagosCuota = async (usuario_id) => {
   return res.data
 }
 
+// plan_id: el plan que queda, o null para sacárselo. No cobra.
+export const asignarPlanSocio = async (usuario_id, plan_id) => {
+  const res = await axios.put(`${API}/admin/cuotas/${usuario_id}/plan`, { plan_id }, config())
+  return res.data
+}
+
+// ─── PLANES ───────────────────────────────────────────
+
+export const obtenerPlanesAdmin = async () => {
+  const res = await axios.get(`${API}/admin/planes`, config())
+  return res.data
+}
+
+export const crearPlan = async (datos) => {
+  const res = await axios.post(`${API}/admin/planes`, datos, config())
+  return res.data
+}
+
+// datos: el plan entero, o solo { activo } para el interruptor
+export const editarPlan = async (id, datos) => {
+  const res = await axios.put(`${API}/admin/planes/${id}`, datos, config())
+  return res.data
+}
+
+export const eliminarPlan = async (id) => {
+  const res = await axios.delete(`${API}/admin/planes/${id}`, config())
+  return res.data
+}
+
 // ─── FOTOS ────────────────────────────────────────────
 
 // imagen: data URL JPG ya comprimida

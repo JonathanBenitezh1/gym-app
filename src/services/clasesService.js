@@ -37,6 +37,38 @@ export const obtenerHorariosReservados = async (periodo) => {
   return res.data
 }
 
+// ─── Planes y lugares fijos ───────────────────────────────
+
+export const obtenerPlanes = async () => {
+  const res = await axios.get(`${API}/planes`)
+  return res.data
+}
+
+export const pedirPlan = async (plan_id) => {
+  const res = await axios.post(`${API}/planes/${plan_id}/pedir`, {}, config())
+  return res.data
+}
+
+export const cancelarPedidoPlan = async () => {
+  const res = await axios.delete(`${API}/planes/pedido`, config())
+  return res.data
+}
+
+export const obtenerMisFijos = async () => {
+  const res = await axios.get(`${API}/reservas/fijos`, config())
+  return res.data
+}
+
+export const tomarFijos = async (horarios_ids) => {
+  const res = await axios.post(`${API}/reservas/fijos`, { horarios_ids }, config())
+  return res.data
+}
+
+export const dejarFijo = async (horario_id) => {
+  const res = await axios.delete(`${API}/reservas/fijos/${horario_id}`, config())
+  return res.data
+}
+
 // ─── Lista de espera ──────────────────────────────────────
 
 export const obtenerMiEspera = async () => {

@@ -55,6 +55,25 @@ export function hora(valor) {
   return String(valor).slice(0, 5)
 }
 
+const NOMBRES_DIA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+/** Para elegir días: 1 = lunes … 7 = domingo, igual que el backend. */
+export const DIAS_SEMANA = NOMBRES_DIA.map((nombre, i) => ({ numero: i + 1, nombre, corto: nombre.slice(0, 3) }))
+
+/** [1, 3, 5] → "Lunes, miércoles y viernes" */
+export function textoDias(dias = []) {
+  const nombres = [...dias].sort((a, b) => a - b).map(d => NOMBRES_DIA[d - 1]).filter(Boolean)
+    .map((n, i) => i === 0 ? n : n.toLowerCase())
+  return nombres.length <= 1
+    ? (nombres[0] ?? '')
+    : `${nombres.slice(0, -1).join(', ')} y ${nombres.at(-1)}`
+}
+
+/** [1, 3, 5] → "Lun · Mié · Vie" */
+export function diasCortos(dias = []) {
+  return [...dias].sort((a, b) => a - b).map(d => NOMBRES_DIA[d - 1]?.slice(0, 3)).filter(Boolean).join(' · ')
+}
+
 /** Rango horario: "10:00 - 11:30" */
 export function rangoHorario(inicio, fin) {
   if (!inicio || !fin) return ''

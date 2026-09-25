@@ -9,6 +9,7 @@ import {
   fotoGuardada, guardarFoto
 } from '../utils/puertaLocal'
 import { leerDni } from '../utils/dni'
+import { ahoraEnArgentina } from '../utils/ingreso'
 import { IconoSalir, IconoAlerta } from '../components/Iconos'
 import logoDtc from './img/logo_png.png'
 import { GIMNASIO } from '../config/gimnasio'
@@ -32,25 +33,48 @@ const primerNombre = (nombre = '') => {
   return n.charAt(0).toUpperCase() + n.slice(1)
 }
 
+const DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
+
+/** "hoy a las 17:00", "mañana a las 17:00", "el viernes a las 17:00" */
+function cuandoEs(proxima) {
+  const hoy = ahoraEnArgentina()
+  const manana = new Date(Date.parse(`${hoy.dia}T00:00:00Z`) + 86400000).toISOString().slice(0, 10)
+  const dia = proxima.dia === hoy.dia ? 'hoy' : proxima.dia === manana ? 'mañana' : `el ${DIAS[proxima.isodow - 1]}`
+  return `${dia} a las ${proxima.hora_inicio}`
+}
+
 /** Lo que dice la pantalla para cada resultado. `sexo` sale del DNI escaneado. */
 function mensajeDe(r, sexo) {
   const nombre = primerNombre(r.nombre)
   const saludo = sexo === 'F' ? `¡Bienvenida, ${nombre}!` : sexo === 'M' ? `¡Bienvenido, ${nombre}!` : `¡Hola, ${nombre}!`
   switch (r.resultado) {
     case 'al_dia':
-      return { color: 'verde', franja: 'Cuota al día', titulo: saludo, texto: 'Que tengas un buen entrenamiento.' }
+      return { color: 'verde', franja: r.clase ? `Clase: ${r.clase}` : 'Al día', titulo: saludo, texto: 'Que tengas un buen entrenamiento.', chip: r.plan && `Plan ${r.plan}` }
     case 'gracia':
       return {
-        color: 'amarillo', franja: 'Período de gracia', titulo: saludo,
-        texto: 'Que tengas un buen entrenamiento. Recordá ponerte al día con tu cuota.',
+        color: 'amarillo', franja: r.clase ? `Clase: ${r.clase} · plan en gracia` : 'Plan en gracia', titulo: saludo,
+        texto: 'Que tengas un buen entrenamiento. Recordá ponerte al día con tu plan.',
         chip: r.dias_restantes === 1 ? 'Te queda 1 día' : `Te quedan ${r.dias_restantes} días`
+      }
+    case 'pago_pendiente':
+      return {
+        color: 'amarillo', franja: r.clase ? `Clase: ${r.clase} · sin pagar` : 'Semana sin pagar', titulo: saludo,
+        texto: 'Tenés la semana reservada pero todavía no la pagaste. Pasá por la administración.'
+      }
+    case 'fuera_horario':
+      return {
+        color: 'rojo', franja: 'Fuera de horario', titulo: r.nombre,
+        texto: r.proxima
+          ? `Ahora no tenés clase. Tu próxima es ${r.proxima.clase}, ${cuandoEs(r.proxima)}.`
+          : 'No tenés horarios reservados. Elegilos en la app, en Clases.',
+        chip: r.plan && `Plan ${r.plan}`
       }
     case 'personal':
       return { color: 'verde', franja: 'Personal del gimnasio', titulo: saludo, texto: 'Que tengas un buen día.' }
     case 'vencida':
-      return { color: 'rojo', franja: 'Cuota vencida', titulo: r.nombre, texto: 'Tu cuota está vencida. Acercate a la administración para regularizarla.' }
+      return { color: 'rojo', franja: 'Plan vencido', titulo: r.nombre, texto: `Tu plan${r.plan ? ` ${r.plan}` : ''} está vencido. Acercate a la administración para renovarlo.` }
     case 'sin_cuota':
-      return { color: 'rojo', franja: 'Sin cuota', titulo: r.nombre, texto: 'No tenés una cuota registrada. Acercate a la administración.' }
+      return { color: 'rojo', franja: 'Sin plan', titulo: r.nombre, texto: 'No tenés un plan ni clases pagas. Acercate a la administración.' }
     case 'baja':
       return { color: 'rojo', franja: 'Dado de baja', titulo: r.nombre, texto: 'Tu usuario está dado de baja. Acercate a la administración.' }
     default:
@@ -58,7 +82,8 @@ function mensajeDe(r, sexo) {
   }
 }
 
-const PASA = ['al_dia', 'gracia', 'personal']
+const PASA = ['al_dia', 'gracia', 'personal', 'pago_pendiente']
+const AMARILLOS = ['gracia', 'pago_pendiente']
 
 /**
  * Tono corto para que el empleado sepa el resultado sin mirar: dos notas
@@ -250,7 +275,7 @@ export default function Puerta() {
           .filter(min => min < MINUTOS_REINGRESO)
           .sort((a, b) => a - b)[0]
         if (previo !== undefined && PASA.includes(respuesta.resultado)) respuesta.minutos_desde_ultimo = Math.floor(previo)
-        encolar({ id_local: respuesta.id, dni: leido.dni, resultado: respuesta.resultado, fecha: ahora })
+        encolar({ id_local: respuesta.id, dni: leido.dni, resultado: respuesta.resultado, fecha: ahora, clase: respuesta.clase })
         setPorMandar(pendientes().length)
       }
       const foto = await traerFoto(respuesta, !sinConexion)
@@ -392,7 +417,7 @@ export default function Puerta() {
                       style={{ borderBottom: '1px solid var(--color-linea-sutil)' }}>
                     <span className="flex min-w-0 items-center gap-2">
                       <span className="h-2 w-2 shrink-0 rounded-full"
-                            style={{ backgroundColor: i.resultado === 'gracia' ? 'var(--color-alerta)' : pasa ? 'var(--color-exito)' : 'var(--color-error)' }} />
+                            style={{ backgroundColor: AMARILLOS.includes(i.resultado) ? 'var(--color-alerta)' : pasa ? 'var(--color-exito)' : 'var(--color-error)' }} />
                       <span className="truncate">{i.nombre || `DNI ${i.dni}`}</span>
                     </span>
                     <span className="shrink-0 text-xs" style={{ color: 'var(--color-texto-3)' }}>{hora(i.created_at)}</span>

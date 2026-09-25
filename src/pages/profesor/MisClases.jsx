@@ -9,21 +9,16 @@ import {
 import { SkeletonLista } from '../../components/Skeleton'
 import BotonPresencia from '../../components/BotonPresencia'
 import SeccionRutinas from '../../components/SeccionRutinas'
+import Interruptor from '../../components/Interruptor'
+import SelectorDias from '../../components/SelectorDias'
 import {
   IconoReloj, IconoUsuarios, IconoCheck, IconoBuscar,
   IconoMas, IconoCruz, IconoSalir, IconoLapiz
 } from '../../components/Iconos'
-import { rangoHorario, hoyISO, fechaCorta } from '../../utils/formato'
+import { rangoHorario, hoyISO, fechaCorta, textoDias, diasCortos } from '../../utils/formato'
 import logoDtc from '../img/logo_png.png'
 import { GIMNASIO } from '../../config/gimnasio'
 
-const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-
-// Los disponibles ya no se editan: se cuentan con las reservas de cada semana.
-// Se sigue mandando el que vino, acotado al total, solo para que el backend
-// anterior no lo pise con null mientras se publica el cambio.
-const conDisponiblesViejos = (form) =>
-  ({ ...form, cupos_disponibles: Math.min(Number(form.cupos_disponibles), Number(form.cupos_totales)) })
 const SOLAPAS = [
   { id: 'horarios',   texto: 'Mis horarios' },
   { id: 'rutinas',    texto: 'Rutinas' },
@@ -121,23 +116,25 @@ function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
   const [editando, setEditando] = useState(null)
   const [form, setForm]         = useState({})
   const [guardando, setGuardando] = useState(false)
+  const [cambiando, setCambiando] = useState(null)
 
+  // Los disponibles no se editan: se cuentan con las reservas de cada semana.
   const empezar = (h) => {
     setEditando(h.id)
     setForm({
-      dia_semana: h.dia_semana,
+      dias: h.dias,
       hora_inicio: h.hora_inicio.slice(0, 5),
       hora_fin: h.hora_fin.slice(0, 5),
-      cupos_totales: h.cupos_totales,
-      cupos_disponibles: h.cupos_disponibles,
-      activo: h.activo
+      cupos_totales: h.cupos_totales
     })
   }
 
   const guardar = async (id) => {
+    if (form.dias.length === 0) return alError('Elegí al menos un día')
+    if (form.hora_fin <= form.hora_inicio) return alError('La hora de fin tiene que ser posterior a la de inicio')
     setGuardando(true)
     try {
-      await modificarHorario(id, conDisponiblesViejos(form))
+      await modificarHorario(id, form)
       setEditando(null)
       await alRecargar()
       alExito('Horario actualizado')
@@ -145,6 +142,20 @@ function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
       alError(err.response?.data?.error || 'No pudimos guardar el horario')
     } finally {
       setGuardando(false)
+    }
+  }
+
+  // Afuera del editor: un toque activa o desactiva.
+  const alternarActivo = async (h, activo) => {
+    setCambiando(h.id)
+    try {
+      await modificarHorario(h.id, { activo })
+      await alRecargar()
+      alExito(activo ? 'Horario activado' : 'Horario desactivado')
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos cambiar el horario')
+    } finally {
+      setCambiando(null)
     }
   }
 
@@ -170,14 +181,8 @@ function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
               <p className="text-sm font-semibold">{h.clase}</p>
 
               <div>
-                <label className="etiqueta-campo">Día</label>
-                <select
-                  className="campo"
-                  value={form.dia_semana}
-                  onChange={e => setForm(f => ({ ...f, dia_semana: e.target.value }))}
-                >
-                  {DIAS.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+                <label className="etiqueta-campo">Días</label>
+                <SelectorDias dias={form.dias} alCambiar={dias => setForm(f => ({ ...f, dias }))} />
               </div>
 
               <div className="flex gap-2">
@@ -201,12 +206,6 @@ function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
                 </div>
               </div>
 
-              <label className="flex cursor-pointer items-center gap-2.5 text-sm">
-                <input type="checkbox" checked={Boolean(form.activo)} className="h-4 w-4 accent-sky-300"
-                       onChange={e => setForm(f => ({ ...f, activo: e.target.checked }))} />
-                Clase activa
-              </label>
-
               <div className="flex gap-2">
                 <button onClick={() => guardar(h.id)} disabled={guardando} className="btn btn-primario flex-1">
                   {guardando ? 'Guardando…' : 'Guardar'}
@@ -220,15 +219,21 @@ function SeccionHorarios({ horarios, cargando, alRecargar, alExito, alError }) {
                 <p className="truncate font-semibold">{h.clase}</p>
                 <p className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>
                   <IconoReloj size={13} />
-                  {h.dia_semana} · {rangoHorario(h.hora_inicio, h.hora_fin)}
+                  {textoDias(h.dias)} · {rangoHorario(h.hora_inicio, h.hora_fin)}
                 </p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>
                   <IconoUsuarios size={13} />
                   {h.cupos_disponibles} libres de {h.cupos_totales} la semana que viene
+                  {h.fijos > 0 && ` · ${h.fijos} fijo${h.fijos === 1 ? '' : 's'}`}
                 </p>
-                <span className={`insignia mt-2 ${h.activo ? 'insignia-exito' : 'insignia-error'}`}>
-                  {h.activo ? 'Activa' : 'Inactiva'}
-                </span>
+                <div className="mt-2.5">
+                  <Interruptor
+                    activo={h.activo}
+                    etiqueta={`${h.clase} ${textoDias(h.dias)} activo`}
+                    disabled={cambiando === h.id}
+                    alCambiar={activo => alternarActivo(h, activo)}
+                  />
+                </div>
               </div>
               <button onClick={() => empezar(h)} className="btn btn-contorno btn-chico shrink-0">
                 <IconoLapiz size={15} /> Editar
@@ -292,7 +297,7 @@ function SeccionAsistencia({ horarios, alError }) {
             <option value="">Elegí una clase</option>
             {horarios.map(h => (
               <option key={h.id} value={h.id}>
-                {h.clase} — {h.dia_semana} {h.hora_inicio.slice(0, 5)}
+                {h.clase} — {diasCortos(h.dias)} {h.hora_inicio.slice(0, 5)}
               </option>
             ))}
           </select>
@@ -333,7 +338,9 @@ function SeccionAsistencia({ horarios, alError }) {
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-medium">{a.nombre}</span>
-                      <span className="text-xs" style={{ color: 'var(--color-texto-3)' }}>DNI {a.dni}</span>
+                      <span className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
+                        DNI {a.dni}{a.tipo && ` · ${a.tipo === 'fijo' ? 'plan' : 'semanal'}`}
+                      </span>
                     </span>
                     <span
                       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"

@@ -1,37 +1,25 @@
+import { ahoraEnArgentina, decidirIngreso } from './ingreso'
+
 /**
  * Lo que la pantalla de la puerta guarda en la PC para seguir andando si se
  * corta internet: la última lista de socios, los ingresos por mandar y las
  * fotos que ya mostró.
  *
  * Es la PC de recepción, no un celular compartido: igual se guarda lo mínimo
- * (DNI, nombre, rol, vencimiento), y al cerrar sesión se borra la lista y las
- * fotos. Los ingresos por mandar se conservan para que no se pierdan.
+ * (DNI, nombre, rol, vencimiento, plan y horarios reservados), y al cerrar
+ * sesión se borra la lista y las fotos. Los ingresos por mandar se conservan
+ * para que no se pierdan.
  */
 
 const CLAVE_PADRON = 'puerta.padron'
 const CLAVE_PENDIENTES = 'puerta.pendientes'
 const CACHE_FOTOS = 'puerta-fotos'
-const ZONA = 'America/Argentina/Buenos_Aires'
-const UN_DIA = 24 * 60 * 60 * 1000
 
 const leer = (clave, porDefecto) => {
   try { return JSON.parse(localStorage.getItem(clave)) ?? porDefecto } catch { return porDefecto }
 }
 const escribir = (clave, valor) => {
   try { localStorage.setItem(clave, JSON.stringify(valor)) } catch { /* sin espacio: se sigue sin guardar */ }
-}
-
-// ─── Estado de la cuota (la misma cuenta que el servidor) ─────────
-
-export const hoyEnArgentina = () =>
-  new Intl.DateTimeFormat('en-CA', { timeZone: ZONA, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
-
-export function estadoCuota(vence, diasGracia, hoy = hoyEnArgentina()) {
-  if (!vence) return { estado: 'sin_cuota', dias_restantes: 0 }
-  const atraso = (Date.parse(`${hoy}T00:00:00Z`) - Date.parse(`${vence}T00:00:00Z`)) / UN_DIA
-  if (atraso <= 0) return { estado: 'al_dia', dias_restantes: 0 }
-  if (atraso <= diasGracia) return { estado: 'gracia', dias_restantes: diasGracia - atraso + 1 }
-  return { estado: 'vencida', dias_restantes: 0 }
 }
 
 // ─── Lista de socios ──────────────────────────────────
@@ -41,20 +29,23 @@ export const leerPadron = () => leer(CLAVE_PADRON, null)
 
 const PERSONAL = ['profesor', 'profesional', 'admin', 'recepcion']
 
-/** La misma respuesta que da el servidor, armada con la lista guardada. */
-export function decidirSinConexion(dni, padron) {
+/**
+ * La misma respuesta que da el servidor, armada con la lista guardada: plan,
+ * vencimiento y horarios reservados de cada socio (utils/ingreso.js).
+ */
+export function decidirSinConexion(dni, padron, momento = new Date()) {
   const s = padron?.socios.find(x => x.dni === dni)
   if (!s) return { resultado: 'no_registrado', dni }
-  let resultado
-  let extra = {}
-  if (!s.activo) resultado = 'baja'
-  else if (PERSONAL.includes(s.rol)) resultado = 'personal'
+  let decision
+  if (!s.activo) decision = { resultado: 'baja' }
+  else if (PERSONAL.includes(s.rol)) decision = { resultado: 'personal' }
   else {
-    const e = estadoCuota(s.cuota_vence, padron.dias_gracia)
-    resultado = e.estado
-    extra = { dias_restantes: e.dias_restantes, cuota_vence: s.cuota_vence }
+    decision = decidirIngreso(
+      { cuota_vence: s.cuota_vence, plan: s.plan, clases: s.clases ?? [] },
+      { ahora: ahoraEnArgentina(momento), diasGracia: padron.dias_gracia, margen: padron.margen_ingreso_min ?? 30 }
+    )
   }
-  return { resultado, dni, usuario_id: s.usuario_id, nombre: s.nombre.trim(), tiene_foto: Boolean(s.foto_version), ...extra }
+  return { ...decision, dni, usuario_id: s.usuario_id, nombre: s.nombre.trim(), tiene_foto: Boolean(s.foto_version) }
 }
 
 export const versionFoto = (usuario_id, padron) =>

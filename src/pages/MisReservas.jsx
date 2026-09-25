@@ -6,7 +6,7 @@ import { obtenerMisReservas, cancelarReserva } from '../services/clasesService'
 import NavBar from '../components/NavBar'
 import { SkeletonListaReservas } from '../components/Skeleton'
 import { IconoReloj, IconoCalendario, IconoCheck, IconoAlerta } from '../components/Iconos'
-import { precio, rangoFechas, rangoHorario } from '../utils/formato'
+import { precio, rangoFechas, rangoHorario, textoDias } from '../utils/formato'
 import logoDtc from './img/logo_png.png'
 import { GIMNASIO } from '../config/gimnasio'
 
@@ -47,7 +47,7 @@ export default function MisReservas() {
   const cancelar = async (reserva) => {
     const confirmado = await confirmar({
       titulo: '¿Cancelar esta reserva?',
-      mensaje: `Se va a liberar tu lugar en ${reserva.clase} (${reserva.dia_semana}). Esta acción no se puede deshacer.`,
+      mensaje: `Se va a liberar tu lugar en ${reserva.clase} (${textoDias(reserva.dias).toLowerCase()}). Esta acción no se puede deshacer.`,
       textoConfirmar: 'Sí, cancelar',
       textoCancelar: 'No, volver',
       peligroso: true
@@ -187,7 +187,7 @@ function TarjetaReserva({ reserva, alPagar, alCancelar }) {
           <p className="truncate font-semibold">{reserva.clase}</p>
           <p className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>
             <IconoReloj size={13} />
-            {reserva.dia_semana} · {rangoHorario(reserva.hora_inicio, reserva.hora_fin)}
+            {textoDias(reserva.dias)} · {rangoHorario(reserva.hora_inicio, reserva.hora_fin)}
           </p>
           <p className="mt-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>
             <IconoCalendario size={13} />

@@ -65,7 +65,7 @@ export default function NavBar({ hayBarraAccion = false }) {
     // Llega a quien está en la lista de espera. El lugar es del primero que
     // reserva, así que el aviso dura más que los demás.
     cupo_liberado: (d) => {
-      exito(`Se liberó un lugar en ${d.clase}, ${d.dia_semana} ${hora(d.hora_inicio)}. ¡Reservalo antes que otro!`, 10000)
+      exito(`Se liberó un lugar en ${d.clase}, ${d.dia_semana} ${hora(d.hora_inicio)}. ¡Tomalo antes que otro!`, 10000)
     }
   })
 

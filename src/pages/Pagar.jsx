@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Navigate } from 'react-router-dom'
 import axios from 'axios'
 import { useAvisos } from '../components/Avisos'
 import { IconoFlecha, IconoCheck, IconoInfo } from '../components/Iconos'
-import { precio, rangoFechas, hora } from '../utils/formato'
+import { precio, rangoFechas, hora, textoDias } from '../utils/formato'
 
 const API = import.meta.env.VITE_API_URL + '/api'
 
@@ -92,7 +92,7 @@ export default function Pagar() {
           <h2 className="titulo-seccion mb-3">Resumen</h2>
           <dl className="flex flex-col gap-2.5 text-sm">
             <Fila etiqueta="Clase" valor={reserva.clase} />
-            <Fila etiqueta="Día y hora" valor={`${reserva.dia_semana} ${hora(reserva.hora_inicio)}`} />
+            <Fila etiqueta="Días y hora" valor={`${textoDias(reserva.dias)} ${hora(reserva.hora_inicio)}`} />
             <Fila etiqueta="Modalidad" valor={reserva.tipo} capitalizar />
             <Fila etiqueta="Período" valor={rangoFechas(reserva.fecha_inicio, reserva.fecha_fin)} />
           </dl>

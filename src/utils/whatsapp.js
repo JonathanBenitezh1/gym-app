@@ -7,7 +7,7 @@
 
 import { GIMNASIO } from '../config/gimnasio'
 import { telefonoWhatsapp } from './telefono'
-import { precio, hora } from './formato'
+import { precio, hora, textoDias } from './formato'
 
 const NUMERO_GIMNASIO = import.meta.env.VITE_WHATSAPP || GIMNASIO.whatsapp
 
@@ -30,7 +30,7 @@ const primerNombre = (nombre) => String(nombre || '').trim().split(' ')[0]
 
 /** Recordatorio para quien reservó y todavía no pagó. */
 export function mensajePagoPendiente(reserva) {
-  const cuando = [reserva.dia_semana, reserva.hora_inicio && hora(reserva.hora_inicio)]
+  const cuando = [reserva.dias && textoDias(reserva.dias).toLowerCase(), reserva.hora_inicio && hora(reserva.hora_inicio)]
     .filter(Boolean)
     .join(' ')
 
@@ -43,13 +43,14 @@ export function mensajePagoPendiente(reserva) {
   )
 }
 
-/** Recordatorio de cuota, en gracia o vencida. */
+/** Recordatorio del plan mensual, en gracia o vencido. */
 export function mensajeCuota(socio) {
   const saludo = `Hola ${primerNombre(socio.nombre)}! Te escribimos de ${GIMNASIO.nombreCorto}. `
+  const plan = socio.plan ? `Tu plan ${socio.plan}` : 'Tu plan'
   if (socio.estado === 'gracia') {
     return saludo +
-      `Tu cuota venció y te ${socio.dias_restantes === 1 ? 'queda 1 día' : `quedan ${socio.dias_restantes} días`} ` +
-      `para ponerte al día sin que se te corte el ingreso. ¡Te esperamos!`
+      `${plan} venció y te ${socio.dias_restantes === 1 ? 'queda 1 día' : `quedan ${socio.dias_restantes} días`} ` +
+      `para ponerte al día sin perder el ingreso ni tus lugares fijos. ¡Te esperamos!`
   }
-  return saludo + 'Tu cuota está vencida. Acercate a la administración para regularizarla. ¡Te esperamos!'
+  return saludo + `${plan} está vencido. Acercate a la administración para renovarlo. ¡Te esperamos!`
 }

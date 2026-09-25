@@ -17,6 +17,17 @@ const ACCIONES = {
   'horario.crear':                { texto: 'creó un horario',                color: 'var(--color-acento)' },
   'horario.editar':               { texto: 'editó un horario',               color: 'var(--color-texto-2)' },
   'horario.eliminar':             { texto: 'eliminó un horario',             color: 'var(--color-error)' },
+  'horario.activar':              { texto: 'activó un horario',              color: 'var(--color-exito)' },
+  'horario.desactivar':           { texto: 'desactivó un horario',           color: 'var(--color-error)' },
+  'plan.crear':                   { texto: 'creó el plan',                   color: 'var(--color-acento)' },
+  'plan.editar':                  { texto: 'editó el plan',                  color: 'var(--color-texto-2)' },
+  'plan.activar':                 { texto: 'activó el plan',                 color: 'var(--color-exito)' },
+  'plan.desactivar':              { texto: 'desactivó el plan',              color: 'var(--color-error)' },
+  'plan.eliminar':                { texto: 'eliminó el plan',                color: 'var(--color-error)' },
+  'plan.pedir':                   { texto: 'pidió un plan',                  color: 'var(--color-acento)' },
+  'plan.asignar':                 { texto: 'cambió el plan de',              color: 'var(--color-alerta)' },
+  'fijo.tomar':                   { texto: 'tomó lugar fijo',                color: 'var(--color-exito)' },
+  'fijo.dejar':                   { texto: 'dejó su lugar fijo',             color: 'var(--color-texto-2)' },
   'usuario.rol':                  { texto: 'cambió el rol de',               color: 'var(--color-acento)' },
   'usuario.baja':                 { texto: 'dio de baja a',                  color: 'var(--color-error)' },
   'usuario.reactivar':            { texto: 'reactivó a',                     color: 'var(--color-exito)' },
@@ -37,7 +48,9 @@ const ACCIONES = {
 function detalleLegible(d = {}) {
   const partes = []
   if (d.nombre)                          partes.push(d.nombre)
+  if (d.plan)                            partes.push(`plan ${d.plan}`)
   if (d.dia_semana)                      partes.push([d.dia_semana, d.hora_inicio?.slice(0, 5)].filter(Boolean).join(' '))
+  if (d.dias)                            partes.push([d.dias, d.hora_inicio?.slice(0, 5)].filter(Boolean).join(' '))
   if (d.monto !== undefined)             partes.push(precio(d.monto))
   if (d.precio !== undefined)            partes.push(precio(d.precio))
   if (d.metodo)                          partes.push(d.metodo)

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { obtenerEstadisticas } from '../../services/adminService'
 import { SkeletonLista } from '../../components/Skeleton'
-import { precio, hora } from '../../utils/formato'
+import { precio, hora, diasCortos } from '../../utils/formato'
 
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 const nombreMes = (aaaamm) => MESES_CORTOS[Number(aaaamm.slice(5, 7)) - 1]
@@ -73,7 +73,7 @@ export default function SeccionEstadisticas({ alError }) {
             {ocupacion.map(h => (
               <BarraHorizontal
                 key={h.id}
-                etiqueta={`${h.clase} · ${h.dia_semana.slice(0, 3)} ${hora(h.hora_inicio)}`}
+                etiqueta={`${h.clase} · ${diasCortos(h.dias)} ${hora(h.hora_inicio)}`}
                 valor={h.ocupados} total={h.cupos_totales}
                 texto={`${h.ocupados}/${h.cupos_totales}`}
               />

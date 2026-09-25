@@ -1,7 +1,8 @@
 /**
  * El período que reserva la pantalla de clases: desde el próximo lunes, una
- * semana (semanal) o dos (quincenal). `fecha_fin` es el lunes siguiente al
- * último día y no cuenta: la semanal de un lunes va de ese lunes al domingo.
+ * semana. `fecha_fin` es el lunes siguiente y no cuenta: la semanal de un
+ * lunes va de ese lunes al domingo. (La quincenal salió el 25/09/2026: lo
+ * mensual es un plan con lugar fijo.)
  *
  * Es la misma cuenta que hace el servidor (utils/cupos.js) y se hace con el
  * día de Argentina, no con el del teléfono. Sin dependencias, para poder
@@ -9,7 +10,7 @@
  */
 
 const UN_DIA = 24 * 60 * 60 * 1000
-const DIAS = { semanal: 7, quincenal: 14 }
+const DIAS = { semanal: 7 }
 
 const hoyEnArgentina = () =>
   new Intl.DateTimeFormat('en-CA', {

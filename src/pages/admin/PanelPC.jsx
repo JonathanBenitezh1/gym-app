@@ -14,6 +14,9 @@ import {
 import SeccionActividad from './SeccionActividad'
 import SeccionEstadisticas from './SeccionEstadisticas'
 import SeccionCuotas from './SeccionCuotas'
+import SeccionPlanes from './SeccionPlanes'
+import Interruptor from '../../components/Interruptor'
+import SelectorDias from '../../components/SelectorDias'
 import FotoSocio from '../../components/FotoSocio'
 import SeccionRutinas from '../../components/SeccionRutinas'
 import BotonPresencia from '../../components/BotonPresencia'
@@ -23,13 +26,12 @@ import {
   IconoPanel, IconoSalir, IconoLapiz, IconoBasura, IconoReloj,
   IconoUsuarios, IconoBuscar, IconoCheck, IconoLlave, IconoWhatsapp
 } from '../../components/Iconos'
-import { precio, rangoHorario, hora } from '../../utils/formato'
+import { precio, rangoHorario, hora, textoDias, diasCortos } from '../../utils/formato'
 import logoDtc from '../img/logo_png.png'
 import { GIMNASIO } from '../../config/gimnasio'
 import { estadoApto } from '../../utils/apto'
 
 const RAMAS = ['gimnasio', 'disciplina', 'profesional']
-const DIAS  = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const ROLES = ['alumno', 'profesor', 'profesional', 'recepcion', 'admin']
 const NOMBRE_ROL = {
   alumno: 'Alumno', profesor: 'Profesor', profesional: 'Profesional',
@@ -41,6 +43,7 @@ const SECCIONES = [
   { id: 'numeros',  texto: 'Estadísticas' },
   { id: 'clases',   texto: 'Clases' },
   { id: 'horarios', texto: 'Horarios' },
+  { id: 'planes',   texto: 'Planes' },
   { id: 'cuotas',   texto: 'Cuotas' },
   { id: 'usuarios', texto: 'Usuarios' },
   { id: 'reservas', texto: 'Reservas' },
@@ -155,6 +158,7 @@ export default function PanelPC() {
             {seccion === 'numeros'  && <SeccionEstadisticas alError={avisarError} />}
             {seccion === 'clases'   && <SeccionClases clases={clases} profesores={profesores} {...comunes} />}
             {seccion === 'horarios' && <SeccionHorarios horarios={horarios} clases={clases} {...comunes} />}
+            {seccion === 'planes'   && <SeccionPlanes clases={clases} horarios={horarios} {...comunes} />}
             {seccion === 'cuotas'   && <SeccionCuotas alExito={exito} alError={avisarError} confirmar={confirmar} />}
             {seccion === 'usuarios' && <SeccionUsuarios usuarios={usuarios} {...comunes} />}
             {seccion === 'reservas' && <SeccionReservas reservas={reservas} {...comunes} />}
@@ -223,7 +227,7 @@ function Tablero({ reservas, clases, horarios, usuarios, alExito, alError, alRec
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{r.alumno}</p>
                   <p className="truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>
-                    {r.clase} · {r.dia_semana} {hora(r.hora_inicio)} · DNI {r.dni}
+                    {r.clase} · {diasCortos(r.dias)} {hora(r.hora_inicio)} · DNI {r.dni}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -250,7 +254,7 @@ function Tablero({ reservas, clases, horarios, usuarios, alExito, alError, alRec
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{r.alumno}</p>
                   <p className="truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>
-                    {r.clase} · {r.dia_semana} {hora(r.hora_inicio)} · {r.tipo}
+                    {r.clase} · {diasCortos(r.dias)} {hora(r.hora_inicio)} · {r.tipo}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
@@ -299,6 +303,7 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
   const [editando, setEditando] = useState(null)
   const [formEdit, setFormEdit] = useState({})
   const [guardando, setGuardando] = useState(false)
+  const [cambiando, setCambiando] = useState(null)
 
   const crear = async (e) => {
     e.preventDefault()
@@ -318,9 +323,24 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
   const guardar = async (id) => {
     setGuardando(true)
     try {
+      await editarClase(id, { ...formEdit, profesor_id: formEdit.profesor_id || null })
+      setEditando(null)
+      await alRecargar()
+      alExito('Clase actualizada')
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos guardar la clase')
+    } finally {
+      setGuardando(false)
+    }
+  }
+
+  // Afuera del editor, con el interruptor: manda solo { activo }.
+  const alternarActivo = async (c, activo) => {
+    setCambiando(c.id)
+    try {
       // Al desactivar avisamos qué pasa con las reservas ya hechas
-      if (formEdit.activo === false) {
-        const info = await verificarClase(id)
+      if (!activo) {
+        const info = await verificarClase(c.id)
         if (info.pagadas > 0 || info.pendientes > 0) {
           const seguir = await confirmar({
             titulo: 'Esta clase tiene reservas',
@@ -331,17 +351,16 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
             textoConfirmar: 'Desactivar igual',
             peligroso: true
           })
-          if (!seguir) { setGuardando(false); return }
+          if (!seguir) return
         }
       }
-      await editarClase(id, { ...formEdit, profesor_id: formEdit.profesor_id || null })
-      setEditando(null)
+      await editarClase(c.id, { activo })
       await alRecargar()
-      alExito('Clase actualizada')
+      alExito(activo ? 'Clase activada' : 'Clase desactivada')
     } catch (err) {
-      alError(err.response?.data?.error || 'No pudimos guardar la clase')
+      alError(err.response?.data?.error || 'No pudimos cambiar la clase')
     } finally {
-      setGuardando(false)
+      setCambiando(null)
     }
   }
 
@@ -411,11 +430,6 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
                 </select>
                 <textarea className="campo resize-none" rows={2} value={formEdit.descripcion || ''}
                           onChange={e => setFormEdit(f => ({ ...f, descripcion: e.target.value }))} />
-                <label className="flex cursor-pointer items-center gap-2.5 text-sm">
-                  <input type="checkbox" className="h-4 w-4 accent-sky-300" checked={Boolean(formEdit.activo)}
-                         onChange={e => setFormEdit(f => ({ ...f, activo: e.target.checked }))} />
-                  Clase activa
-                </label>
                 <div className="flex gap-2">
                   <button onClick={() => guardar(c.id)} disabled={guardando} className="btn btn-primario flex-1">
                     {guardando ? 'Guardando…' : 'Guardar'}
@@ -435,13 +449,13 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
                       {c.descripcion}
                     </p>
                   )}
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className={`insignia ${c.activo ? 'insignia-exito' : 'insignia-error'}`}>
-                      {c.activo ? 'Activa' : 'Inactiva'}
-                    </span>
-                    <span className="insignia insignia-neutra">
-                      {c.cantidad_horarios || 0} horarios
-                    </span>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    <Interruptor
+                      activo={c.activo}
+                      etiqueta={`${c.nombre} activa`}
+                      disabled={cambiando === c.id}
+                      alCambiar={activo => alternarActivo(c, activo)}
+                    />
                   </div>
                 </div>
                 <button
@@ -449,9 +463,10 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
                     setEditando(c.id)
                     setFormEdit({
                       nombre: c.nombre, rama: c.rama, profesor_id: c.profesor_id || '',
-                      descripcion: c.descripcion || '', duracion: c.duracion, activo: c.activo
+                      descripcion: c.descripcion || '', duracion: c.duracion
                     })
                   }}
+                  aria-label="Editar clase"
                   className="btn btn-contorno btn-chico shrink-0"
                 >
                   <IconoLapiz size={15} />
@@ -467,14 +482,11 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
 
 /* ═══ HORARIOS ═══════════════════════════════════════════ */
 
-// Los disponibles ya no se editan: se cuentan con las reservas de cada semana.
-// Se sigue mandando el que vino, acotado al total, solo para que el backend
-// anterior no lo pise con null mientras se publica el cambio.
-const conDisponiblesViejos = (form) =>
-  ({ ...form, cupos_disponibles: Math.min(Number(form.cupos_disponibles), Number(form.cupos_totales)) })
-
+// Un horario tiene varios días con la misma hora: "Lucha, lunes, miércoles y
+// viernes de 17 a 18:30" se carga una sola vez. El precio es el de la semana
+// completa, para quien reserva semanal; con plan, el lugar va incluido.
 const HORARIO_VACIO = {
-  clase_id: '', dia_semana: 'Lunes', hora_inicio: '', hora_fin: '',
+  clase_id: '', dias: [], hora_inicio: '', hora_fin: '',
   cupos_totales: '', precio: ''
 }
 
@@ -483,16 +495,22 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
   const [editando, setEditando] = useState(null)
   const [formEdit, setFormEdit] = useState({})
   const [guardando, setGuardando] = useState(false)
+  const [cambiando, setCambiando] = useState(null)
+
+  const revisar = (datos) => {
+    if (datos.dias.length === 0) return 'Elegí al menos un día'
+    if (datos.hora_fin <= datos.hora_inicio) return 'La hora de fin tiene que ser posterior a la de inicio'
+    return null
+  }
 
   const crear = async (e) => {
     e.preventDefault()
-    if (form.hora_fin <= form.hora_inicio) {
-      return alError('La hora de fin tiene que ser posterior a la de inicio')
-    }
+    const problema = revisar(form)
+    if (problema) return alError(problema)
     setGuardando(true)
     try {
       await crearHorario(form)
-      setForm(HORARIO_VACIO)
+      setForm(f => ({ ...HORARIO_VACIO, clase_id: f.clase_id }))
       await alRecargar()
       alExito('Horario creado')
     } catch (err) {
@@ -503,12 +521,11 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
   }
 
   const guardar = async (id) => {
-    if (formEdit.hora_fin <= formEdit.hora_inicio) {
-      return alError('La hora de fin tiene que ser posterior a la de inicio')
-    }
+    const problema = revisar(formEdit)
+    if (problema) return alError(problema)
     setGuardando(true)
     try {
-      await editarHorario(id, conDisponiblesViejos(formEdit))
+      await editarHorario(id, formEdit)
       setEditando(null)
       await alRecargar()
       alExito('Horario actualizado')
@@ -519,10 +536,33 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
     }
   }
 
+  // El interruptor manda solo { activo }: no hace falta abrir el editor.
+  const alternarActivo = async (h, activo) => {
+    if (!activo && (h.fijos > 0)) {
+      const seguir = await confirmar({
+        titulo: '¿Desactivar este horario?',
+        mensaje: `${h.fijos} ${h.fijos === 1 ? 'socio tiene' : 'socios tienen'} lugar fijo acá. Mientras esté desactivado no lo ven ni pueden entrar por la puerta en ese horario; al reactivarlo recuperan su lugar.`,
+        textoConfirmar: 'Desactivar',
+        peligroso: true
+      })
+      if (!seguir) return
+    }
+    setCambiando(h.id)
+    try {
+      await editarHorario(h.id, { activo })
+      await alRecargar()
+      alExito(activo ? 'Horario activado' : 'Horario desactivado')
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos cambiar el horario')
+    } finally {
+      setCambiando(null)
+    }
+  }
+
   const borrar = async (h) => {
     const seguro = await confirmar({
       titulo: '¿Eliminar este horario?',
-      mensaje: `${h.clase} · ${h.dia_semana} ${rangoHorario(h.hora_inicio, h.hora_fin)}. Si tiene reservas asociadas no se va a poder borrar.`,
+      mensaje: `${h.clase} · ${textoDias(h.dias)} ${rangoHorario(h.hora_inicio, h.hora_fin)}. Si tiene reservas o lugares fijos no se va a poder borrar.`,
       textoConfirmar: 'Eliminar',
       peligroso: true
     })
@@ -531,8 +571,8 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
       await eliminarHorario(h.id)
       await alRecargar()
       alExito('Horario eliminado')
-    } catch {
-      alError('No se pudo eliminar: probablemente tenga reservas. Desactivalo en vez de borrarlo.')
+    } catch (err) {
+      alError(err.response?.data?.error || 'No se pudo eliminar. Desactivalo en vez de borrarlo.')
     }
   }
 
@@ -557,11 +597,8 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
           )}
         </div>
         <div>
-          <label className="etiqueta-campo">Día</label>
-          <select className="campo" value={form.dia_semana}
-                  onChange={e => setForm(f => ({ ...f, dia_semana: e.target.value }))}>
-            {DIAS.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
+          <label className="etiqueta-campo">Días (todos con la misma hora)</label>
+          <SelectorDias dias={form.dias} alCambiar={dias => setForm(f => ({ ...f, dias }))} />
         </div>
         <div className="flex gap-2">
           <div className="flex-1">
@@ -582,11 +619,14 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
                    onChange={e => setForm(f => ({ ...f, cupos_totales: e.target.value }))} />
           </div>
           <div className="flex-1">
-            <label className="etiqueta-campo">Precio</label>
+            <label className="etiqueta-campo">Precio por semana</label>
             <input type="number" min="0" required className="campo" value={form.precio}
                    onChange={e => setForm(f => ({ ...f, precio: e.target.value }))} />
           </div>
         </div>
+        <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
+          El precio es para quien reserva la semana completa. Con plan mensual va incluido.
+        </p>
         <button type="submit" disabled={guardando} className="btn btn-primario btn-bloque">
           {guardando ? 'Creando…' : 'Crear horario'}
         </button>
@@ -599,14 +639,11 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
             Todavía no hay horarios.
           </div>
         ) : horarios.map(h => (
-          <article key={h.id} className="tarjeta p-4">
+          <article key={h.id} className="tarjeta p-4" style={{ opacity: h.activo && h.clase_activa ? 1 : 0.7 }}>
             {editando === h.id ? (
               <div className="flex flex-col gap-3">
                 <p className="text-sm font-semibold">{h.clase}</p>
-                <select className="campo" value={formEdit.dia_semana}
-                        onChange={e => setFormEdit(f => ({ ...f, dia_semana: e.target.value }))}>
-                  {DIAS.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+                <SelectorDias dias={formEdit.dias} alCambiar={dias => setFormEdit(f => ({ ...f, dias }))} />
                 <div className="flex gap-2">
                   <input type="time" className="campo flex-1" value={formEdit.hora_inicio}
                          onChange={e => setFormEdit(f => ({ ...f, hora_inicio: e.target.value }))} />
@@ -620,16 +657,11 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
                            onChange={e => setFormEdit(f => ({ ...f, cupos_totales: e.target.value }))} />
                   </div>
                   <div className="flex-1">
-                    <label className="etiqueta-campo">Precio</label>
+                    <label className="etiqueta-campo">Precio por semana</label>
                     <input type="number" min="0" className="campo" value={formEdit.precio}
                            onChange={e => setFormEdit(f => ({ ...f, precio: e.target.value }))} />
                   </div>
                 </div>
-                <label className="flex cursor-pointer items-center gap-2.5 text-sm">
-                  <input type="checkbox" className="h-4 w-4 accent-sky-300" checked={Boolean(formEdit.activo)}
-                         onChange={e => setFormEdit(f => ({ ...f, activo: e.target.checked }))} />
-                  Horario activo
-                </label>
                 <div className="flex gap-2">
                   <button onClick={() => guardar(h.id)} disabled={guardando} className="btn btn-primario flex-1">
                     {guardando ? 'Guardando…' : 'Guardar'}
@@ -643,38 +675,41 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
                   <p className="truncate font-semibold">{h.clase}</p>
                   <p className="mt-1 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>
                     <IconoReloj size={13} />
-                    {h.dia_semana} · {rangoHorario(h.hora_inicio, h.hora_fin)}
+                    {textoDias(h.dias)} · {rangoHorario(h.hora_inicio, h.hora_fin)}
                   </p>
                   <p className="mt-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>
                     <IconoUsuarios size={13} />
-                    {h.cupos_disponibles} de {h.cupos_totales} libres la semana que viene · {precio(h.precio)}
+                    {h.cupos_disponibles} de {h.cupos_totales} libres la semana que viene
+                    {h.fijos > 0 && ` · ${h.fijos} fijo${h.fijos === 1 ? '' : 's'}`} · {precio(h.precio)}/semana
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className={`insignia ${h.activo ? 'insignia-exito' : 'insignia-error'}`}>
-                      {h.activo ? 'Activo' : 'Inactivo'}
-                    </span>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    <Interruptor
+                      activo={h.activo}
+                      etiqueta={`${h.clase} ${textoDias(h.dias)} activo`}
+                      disabled={cambiando === h.id}
+                      alCambiar={activo => alternarActivo(h, activo)}
+                    />
                     {!h.clase_activa && <span className="insignia insignia-alerta">Clase inactiva</span>}
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
                   <button
+                    aria-label="Editar horario"
                     onClick={() => {
                       setEditando(h.id)
                       setFormEdit({
-                        dia_semana: h.dia_semana,
+                        dias: h.dias,
                         hora_inicio: h.hora_inicio.slice(0, 5),
                         hora_fin: h.hora_fin.slice(0, 5),
                         cupos_totales: h.cupos_totales,
-                        cupos_disponibles: h.cupos_disponibles,
-                        precio: h.precio,
-                        activo: h.activo
+                        precio: h.precio
                       })
                     }}
                     className="btn btn-contorno btn-chico"
                   >
                     <IconoLapiz size={15} />
                   </button>
-                  <button onClick={() => borrar(h)} className="btn btn-peligro btn-chico">
+                  <button aria-label="Eliminar horario" onClick={() => borrar(h)} className="btn btn-peligro btn-chico">
                     <IconoBasura size={15} />
                   </button>
                 </div>
@@ -1106,7 +1141,7 @@ function SeccionReservas({ reservas, alExito, alError, alRecargar, confirmar: pe
               <div className="min-w-0">
                 <p className="truncate font-semibold">{r.alumno}</p>
                 <p className="truncate text-xs" style={{ color: 'var(--color-texto-2)' }}>
-                  {r.clase} · {r.dia_semana} {hora(r.hora_inicio)}
+                  {r.clase} · {diasCortos(r.dias)} {hora(r.hora_inicio)}
                 </p>
                 <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
                   DNI {r.dni} · {r.tipo}

@@ -11,30 +11,33 @@ import { useSocketEventos } from '../hooks/useSocketEventos'
 import NavBar from '../components/NavBar'
 import { SkeletonPerfil } from '../components/Skeleton'
 import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave, IconoReloj } from '../components/Iconos'
-import { precio, fechaCorta, rangoFechas, hora, fechaHora } from '../utils/formato'
+import { precio, fechaCorta, rangoFechas, hora, fechaHora, diasCortos } from '../utils/formato'
 import { estadoApto } from '../utils/apto'
 
 const METODOS_CUOTA = {
   efectivo: 'Efectivo', transferencia: 'Transferencia', mercadopago: 'Mercado Pago', otro: 'Otro'
 }
 
-/** Insignia y explicación de la cuota, con las palabras del socio. */
+/** Insignia y explicación del plan mensual, con las palabras del socio. */
 function estadoCuota(c) {
+  const plan = c.plan ? `Plan ${c.plan}` : 'Plan'
   switch (c.estado) {
     case 'al_dia':
-      return { insignia: 'insignia-exito', corto: `Cuota al día hasta ${fechaCorta(c.cuota_vence)}`,
-               detalle: `Vence el ${fechaCorta(c.cuota_vence)}.` }
+      return { insignia: 'insignia-exito', corto: `${plan} al día hasta ${fechaCorta(c.cuota_vence)}`,
+               detalle: `${plan}. Vence el ${fechaCorta(c.cuota_vence)}.` }
     case 'gracia': {
       const quedan = c.dias_restantes === 1 ? 'queda 1 día' : `quedan ${c.dias_restantes} días`
-      return { insignia: 'insignia-alerta', corto: `Cuota vencida · ${quedan}`,
-               detalle: `Venció el ${fechaCorta(c.cuota_vence)}. Te ${quedan} para pagarla y seguir entrando.` }
+      return { insignia: 'insignia-alerta', corto: `${plan} vencido · ${quedan}`,
+               detalle: `${plan}. Venció el ${fechaCorta(c.cuota_vence)}. Te ${quedan} para pagarlo y seguir entrando.` }
     }
     case 'vencida':
-      return { insignia: 'insignia-error', corto: 'Cuota vencida',
-               detalle: `Venció el ${fechaCorta(c.cuota_vence)}. Acercate a la administración para regularizarla.` }
+      return { insignia: 'insignia-error', corto: `${plan} vencido`,
+               detalle: `${plan}. Venció el ${fechaCorta(c.cuota_vence)}. Acercate a la administración para renovarlo.` }
     default:
-      return { insignia: 'insignia-neutra', corto: 'Cuota sin registrar',
-               detalle: 'Todavía no registramos ningún pago de tu cuota.' }
+      return { insignia: 'insignia-neutra', corto: 'Sin plan mensual',
+               detalle: c.plan_pedido
+                 ? `Pediste el plan ${c.plan_pedido}. Pagalo en el gimnasio para activarlo.`
+                 : 'No tenés plan mensual. Los ves en Clases → Mensual.' }
   }
 }
 
@@ -163,7 +166,7 @@ export default function Perfil() {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{r.clase}</p>
                     <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
-                      {r.dia_semana} · {hora(r.hora_inicio)} · {r.tipo}
+                      {diasCortos(r.dias)} · {hora(r.hora_inicio)} · {r.tipo}
                     </p>
                     <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
                       {rangoFechas(r.fecha_inicio, r.fecha_fin)}
@@ -185,17 +188,17 @@ export default function Perfil() {
         {infoCuota && (
           <Acordeon
             nombre="cuota" abierta={seccion} alAlternar={alternar}
-            Icono={IconoReloj} titulo="Mi cuota"
-            insignia={{ gracia: 'En gracia', vencida: 'Vencida' }[cuota.estado]}
+            Icono={IconoReloj} titulo="Mi plan"
+            insignia={{ gracia: 'En gracia', vencida: 'Vencido' }[cuota.estado]}
           >
             <p className="text-sm">{infoCuota.detalle}</p>
-            {cuota.precio > 0 && (
+            {cuota.plan && cuota.precio > 0 && (
               <p className="mt-1 text-xs" style={{ color: 'var(--color-texto-3)' }}>
-                Cuota mensual: {precio(cuota.precio)}
+                Precio por mes: {precio(cuota.precio)}
               </p>
             )}
             {pagosCuota.length === 0 ? (
-              <Vacio texto="Todavía no hay pagos de cuota registrados" />
+              <Vacio texto="Todavía no hay pagos de plan registrados" />
             ) : (
               <ul className="mt-2 flex flex-col">
                 {pagosCuota.map(p => (
@@ -203,7 +206,7 @@ export default function Perfil() {
                       style={{ borderBottom: '1px solid var(--color-linea-sutil)' }}>
                     <div className="min-w-0">
                       <p className="text-sm font-medium">
-                        {p.meses === 1 ? '1 mes' : `${p.meses} meses`} · hasta {fechaCorta(p.vence_nuevo)}
+                        {p.plan_nombre && `${p.plan_nombre} · `}{p.meses === 1 ? '1 mes' : `${p.meses} meses`} · hasta {fechaCorta(p.vence_nuevo)}
                       </p>
                       <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
                         {METODOS_CUOTA[p.metodo] || p.metodo} · {fechaHora(p.created_at)}
