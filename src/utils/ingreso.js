@@ -39,12 +39,15 @@ export function estadoPlan(vence, diasGracia, hoy) {
 }
 
 /**
- * `clases`: lo que el socio tiene reservado. Cada una con clase, dias,
- * hora_inicio, hora_fin y tipo: 'fijo' (lugar del plan, vale mientras el plan
+ * `clases`: lo que el socio tiene reservado. Cada una con horario_id, clase,
+ * dias, hora_inicio, hora_fin y tipo: 'fijo' (lugar del plan, vale mientras el plan
  * esté al día o en gracia) o 'semanal' (vale de `desde` a `hasta`, sin
  * incluir `hasta`; `pagado` dice si ya se cobró).
  *
  * Resultados:
+ * Cuando deja pasar por una clase devuelve su horario_id: con eso la puerta
+ * le marca la asistencia.
+ *
  * - al_dia:         tiene clase ahora y está pagada.
  * - gracia:         tiene clase ahora por su plan, que está en gracia.
  * - pago_pendiente: tiene clase ahora, de una semanal sin cobrar.
@@ -71,13 +74,13 @@ export function decidirIngreso({ cuota_vence, plan, clases = [] }, { ahora, dias
   )
 
   const pagada = ahoraMismo.find(c => c.tipo === 'semanal' ? c.pagado : ep.estado === 'al_dia')
-  if (pagada) return { ...base, resultado: 'al_dia', clase: pagada.clase }
+  if (pagada) return { ...base, resultado: 'al_dia', clase: pagada.clase, horario_id: pagada.horario_id }
 
   const enGracia = ahoraMismo.find(c => c.tipo === 'fijo')
-  if (enGracia) return { ...base, resultado: 'gracia', clase: enGracia.clase, dias_restantes: ep.dias_restantes }
+  if (enGracia) return { ...base, resultado: 'gracia', clase: enGracia.clase, horario_id: enGracia.horario_id, dias_restantes: ep.dias_restantes }
 
   const sinPagar = ahoraMismo[0]
-  if (sinPagar) return { ...base, resultado: 'pago_pendiente', clase: sinPagar.clase }
+  if (sinPagar) return { ...base, resultado: 'pago_pendiente', clase: sinPagar.clase, horario_id: sinPagar.horario_id }
 
   if (vigentes.length > 0 || planVale) {
     const proxima = proximaClase(clases, valeEl, ahora, margen)

@@ -275,7 +275,7 @@ export default function Puerta() {
           .filter(min => min < MINUTOS_REINGRESO)
           .sort((a, b) => a - b)[0]
         if (previo !== undefined && PASA.includes(respuesta.resultado)) respuesta.minutos_desde_ultimo = Math.floor(previo)
-        encolar({ id_local: respuesta.id, dni: leido.dni, resultado: respuesta.resultado, fecha: ahora, clase: respuesta.clase })
+        encolar({ id_local: respuesta.id, dni: leido.dni, resultado: respuesta.resultado, fecha: ahora, clase: respuesta.clase, horario_id: respuesta.horario_id })
         setPorMandar(pendientes().length)
       }
       const foto = await traerFoto(respuesta, !sinConexion)
