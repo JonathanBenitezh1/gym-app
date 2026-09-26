@@ -145,6 +145,25 @@ export const asignarPlanSocio = async (usuario_id, plan_id) => {
   return res.data
 }
 
+// ─── CAJA ─────────────────────────────────────────────
+
+// fecha: "AAAA-MM-DD"
+export const obtenerCaja = async (fecha) => {
+  const res = await axios.get(`${API}/admin/caja`, { ...config(), params: { fecha } })
+  return res.data
+}
+
+export const obtenerCobros = async (desde, hasta) => {
+  const res = await axios.get(`${API}/admin/caja/cobros`, { ...config(), params: { desde, hasta } })
+  return res.data
+}
+
+// datos: { contado_efectivo, nota }
+export const cerrarCaja = async (fecha, datos) => {
+  const res = await axios.put(`${API}/admin/caja/${fecha}/cierre`, datos, config())
+  return res.data
+}
+
 // ─── PLANES ───────────────────────────────────────────
 
 export const obtenerPlanesAdmin = async () => {

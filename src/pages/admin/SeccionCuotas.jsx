@@ -5,7 +5,8 @@ import {
 } from '../../services/adminService'
 import { useSocketEventos } from '../../hooks/useSocketEventos'
 import { SkeletonLista } from '../../components/Skeleton'
-import { IconoBuscar, IconoWhatsapp, IconoCheck } from '../../components/Iconos'
+import { IconoBuscar, IconoWhatsapp, IconoCheck, IconoDescargar } from '../../components/Iconos'
+import { aCsv, descargar } from '../../utils/csv'
 import { precio, fechaCorta, fechaHora, leerMonto } from '../../utils/formato'
 import { linkWhatsapp, mensajeCuota } from '../../utils/whatsapp'
 
@@ -127,6 +128,9 @@ export default function SeccionCuotas({ alExito, alError, confirmar }) {
             value={busqueda} onChange={e => setBusqueda(e.target.value)}
           />
         </div>
+        <button onClick={() => exportarSocios(visibles)} disabled={visibles.length === 0} className="btn btn-contorno btn-chico self-start">
+          <IconoDescargar size={15} /> Exportar {filtro === 'todos' && !busqueda ? 'socios' : 'esta lista'} a Excel
+        </button>
         <div className="fila-scroll">
           {FILTROS.map(f => (
             <button
@@ -236,6 +240,22 @@ export default function SeccionCuotas({ alExito, alError, confirmar }) {
       )}
     </div>
   )
+}
+
+/** Plan de mejoras 1.5: la lista de socios con su plan, a Excel. */
+function exportarSocios(socios) {
+  const csv = aCsv(socios, [
+    { titulo: 'Socio', valor: s => s.nombre },
+    { titulo: 'DNI', valor: s => s.dni },
+    { titulo: 'Teléfono', valor: s => s.telefono },
+    { titulo: 'Plan', valor: s => s.plan ?? 'Sin plan' },
+    { titulo: 'Estado', valor: s => ESTADOS[s.estado]?.texto ?? s.estado },
+    { titulo: 'Vence', valor: s => s.cuota_vence ? fechaCorta(s.cuota_vence) : '' },
+    { titulo: 'Pidió plan', valor: s => s.plan_pedido ?? '' },
+    { titulo: 'Último pago', valor: s => s.ultimo_pago ? fechaCorta(s.ultimo_pago) : '' },
+    { titulo: 'Último monto', valor: s => s.ultimo_monto ?? '' }
+  ])
+  descargar(`socios_${new Date().toISOString().slice(0, 10)}.csv`, csv)
 }
 
 function Cifra({ valor, texto, color }) {
