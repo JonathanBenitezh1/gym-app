@@ -12,15 +12,12 @@ import {
 import { obtenerMiCuota } from '../services/perfilService'
 import NavBar from '../components/NavBar'
 import ProfesEnSede from '../components/ProfesEnSede'
-import AvisoApto from '../components/AvisoApto'
-import AvisoCuota from '../components/AvisoCuota'
 import InstalarApp from '../components/InstalarApp'
+import EncabezadoSocio from '../components/EncabezadoSocio'
 import { SkeletonListaHorarios } from '../components/Skeleton'
 import { IconoReloj, IconoCheck, IconoUsuarios, IconoCalendario, IconoFlecha } from '../components/Iconos'
 import { precio, rangoHorario, textoDias, fechaCorta } from '../utils/formato'
 import { periodoDeReserva, textoPeriodo } from '../utils/periodo'
-import logoGimnasio from './img/logo.webp'
-import { GIMNASIO } from '../config/gimnasio'
 
 /**
  * Pantalla de clases del socio (pedido del gimnasio, 25/09/2026).
@@ -31,7 +28,13 @@ import { GIMNASIO } from '../config/gimnasio'
  * - Con plan al día o en gracia: ve solo lo suyo. Sus lugares fijos y los
  *   horarios de las clases de su plan, donde toma lugar sin pagar aparte. Los
  *   demás planes y semanales quedan en "Ver suscripciones".
+ *
+ * Los avisos (plan vencido, apto, lugar liberado) están en la campanita de la
+ * barra desde el 26/09/2026: acá arriba queda solo el profe en el gimnasio.
  */
+
+/** La disciplina de un horario: la de su clase, o el nombre de la clase si no tiene. */
+const disciplinaDe = (h) => h.disciplina || h.clase
 export default function Horarios() {
   const { usuario } = useAuth()
   const { exito, error: avisarError, confirmar } = useAvisos()
@@ -127,16 +130,11 @@ export default function Horarios() {
     }
   }
 
-  const liberados = useMemo(
-    () => horarios.filter(h => espera.includes(h.id) && h.cupos_disponibles > 0 &&
-      !reservados.includes(h.id) && !idsFijos.has(h.id)),
-    [horarios, espera, reservados, idsFijos]
-  )
-
   // ─── Qué se muestra ───
 
+  // La barra de arriba: una por disciplina ("Gym" junta "GYM 2 DIAS" y "GYM 3 DIAS").
   const disciplinas = useMemo(
-    () => [...new Set(horarios.map(h => h.clase))].sort((a, b) => a.localeCompare(b, 'es')),
+    () => [...new Set(horarios.map(disciplinaDe))].sort((a, b) => a.localeCompare(b, 'es')),
     [horarios]
   )
 
@@ -144,12 +142,20 @@ export default function Horarios() {
   const porDisciplina = useMemo(() => {
     const grupos = new Map()
     for (const h of horarios) {
-      if (disciplina !== 'todas' && h.clase !== disciplina) continue
-      if (!grupos.has(h.clase)) grupos.set(h.clase, [])
-      grupos.get(h.clase).push(h)
+      const d = disciplinaDe(h)
+      if (disciplina !== 'todas' && d !== disciplina) continue
+      if (!grupos.has(d)) grupos.set(d, [])
+      grupos.get(d).push(h)
     }
     return [...grupos.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es'))
   }, [horarios, disciplina])
+
+  // En mensual, la barra deja los planes que traen esa disciplina.
+  const planesVisibles = useMemo(() => {
+    if (disciplina === 'todas') return planes
+    const clasesDeLaDisciplina = new Set(horarios.filter(h => disciplinaDe(h) === disciplina).map(h => h.clase_id))
+    return planes.filter(p => p.incluye_todo || p.clases_ids.some(id => clasesDeLaDisciplina.has(id)))
+  }, [planes, horarios, disciplina])
 
   // Los horarios de las clases de su plan donde todavía no tiene lugar.
   const delPlan = useMemo(
@@ -275,21 +281,12 @@ export default function Horarios() {
   return (
     <div className="min-h-screen" style={{ paddingBottom: hayBarra ? '11rem' : 'calc(var(--alto-nav) + 1.5rem)' }}>
 
-      <header
-        className="sticky top-0 z-20"
-        style={{
-          backgroundColor: 'var(--color-superficie)',
-          borderBottom: '1px solid var(--color-linea-sutil)'
-        }}
-      >
-        <div className="contenedor-ancho flex items-center justify-between py-3">
-          <img src={logoGimnasio} alt={GIMNASIO.nombre} className="h-9 w-auto" />
-          <div className="text-right">
-            <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>Hola,</p>
-            <p className="text-sm font-semibold leading-tight">{usuario?.nombre}</p>
-          </div>
+      <EncabezadoSocio>
+        <div className="max-w-[6.5rem] text-right">
+          <p className="text-[11px]" style={{ color: 'var(--color-texto-3)' }}>Hola,</p>
+          <p className="truncate text-sm font-semibold leading-tight">{usuario?.nombre?.split(' ')[0]}</p>
         </div>
-      </header>
+      </EncabezadoSocio>
 
       <main className="contenedor-ancho pt-5">
 
@@ -318,38 +315,6 @@ export default function Horarios() {
 
         <InstalarApp className="mt-4" />
         <ProfesEnSede className="mt-4" />
-        <AvisoCuota className="mt-4" />
-        <AvisoApto className="mt-4" />
-
-        {cuota?.plan_pedido && (
-          <div className="aparecer tarjeta mt-4 flex items-start justify-between gap-3 p-3.5"
-               style={{ borderColor: 'var(--color-acento)', backgroundColor: 'var(--color-acento-bajo)' }}>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-acento)' }}>
-                Pediste el plan {cuota.plan_pedido}
-              </p>
-              <p className="mt-0.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>
-                Pagalo en el gimnasio y queda activo.
-              </p>
-            </div>
-            <button onClick={cancelarPedido} className="btn btn-fantasma btn-chico shrink-0">Cancelar</button>
-          </div>
-        )}
-
-        {liberados.length > 0 && (
-          <div
-            className="aparecer tarjeta mt-4 p-3.5"
-            style={{ borderColor: 'var(--color-exito)', backgroundColor: 'var(--color-exito-bajo)' }}
-          >
-            <p className="text-sm font-semibold" style={{ color: 'var(--color-exito)' }}>
-              ¡Se liberó un lugar!
-            </p>
-            <p className="mt-0.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>
-              {liberados.map(h => `${h.clase} ${textoDias(h.dias).toLowerCase()} ${rangoHorario(h.hora_inicio, h.hora_fin)}`).join(' · ')}.
-              {' '}Es del primero que lo toma.
-            </p>
-          </div>
-        )}
 
         {cargando ? (
           <div className="mt-6"><SkeletonListaHorarios /></div>
@@ -367,6 +332,22 @@ export default function Horarios() {
           />
         ) : (
           <>
+            {/* Disciplinas: donde antes iban los avisos, arriba de Modalidad. */}
+            {disciplinas.length > 1 && (
+              <div className="fila-scroll mt-5" role="group" aria-label="Disciplinas">
+                {['todas', ...disciplinas].map(d => (
+                  <button
+                    key={d}
+                    onClick={() => setDisciplina(d)}
+                    aria-pressed={disciplina === d}
+                    className={`pildora ${disciplina === d ? 'pildora-activa' : ''}`}
+                  >
+                    {d === 'todas' ? 'Todas' : d}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Modalidad */}
             <div className="mt-5">
               <p className="titulo-seccion mb-2">Modalidad</p>
@@ -397,20 +378,6 @@ export default function Horarios() {
 
             {modalidad === 'semanal' ? (
               <>
-                {disciplinas.length > 1 && (
-                  <div className="fila-scroll mt-5">
-                    {['todas', ...disciplinas].map(d => (
-                      <button
-                        key={d}
-                        onClick={() => setDisciplina(d)}
-                        className={`pildora ${disciplina === d ? 'pildora-activa' : ''}`}
-                      >
-                        {d === 'todas' ? 'Todas' : d}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
                 <div className="mt-6">
                   {porDisciplina.length === 0 ? (
                     <div className="tarjeta p-8 text-center">
@@ -446,7 +413,7 @@ export default function Horarios() {
               </>
             ) : (
               <ListaPlanes
-                planes={planes}
+                planes={planesVisibles}
                 clases={clasesConHorarios}
                 cuota={cuota}
                 planVigente={planVigente}

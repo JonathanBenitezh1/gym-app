@@ -195,6 +195,13 @@ export const IconoAgregar = (p) => (
   </Svg>
 )
 
+export const IconoCampana = (p) => (
+  <Svg {...p}>
+    <path d="M6 16.5V11a6 6 0 1 1 12 0v5.5l1.5 2h-15l1.5-2Z" />
+    <path d="M10 20.5a2 2 0 0 0 4 0" />
+  </Svg>
+)
+
 export const IconoDescargar = (p) => (
   <Svg {...p}>
     <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14" />

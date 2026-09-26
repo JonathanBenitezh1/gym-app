@@ -8,8 +8,7 @@ import { obtenerMiProgreso, registrarProgreso, borrarProgreso } from '../service
 import { SkeletonLista } from '../components/Skeleton'
 import { IconoChevron, IconoRutina } from '../components/Iconos'
 import { fechaCorta } from '../utils/formato'
-import logoGimnasio from './img/logo.webp'
-import { GIMNASIO } from '../config/gimnasio'
+import EncabezadoSocio from '../components/EncabezadoSocio'
 
 export default function Rutinas() {
   const { usuario } = useAuth()
@@ -81,17 +80,7 @@ export default function Rutinas() {
   return (
     <div className="min-h-screen" style={{ paddingBottom: 'calc(var(--alto-nav) + 1.5rem)' }}>
 
-      <header
-        className="sticky top-0 z-20"
-        style={{
-          backgroundColor: 'var(--color-superficie)',
-          borderBottom: '1px solid var(--color-linea-sutil)'
-        }}
-      >
-        <div className="contenedor-ancho flex items-center py-3">
-          <img src={logoGimnasio} alt={GIMNASIO.nombre} className="h-9 w-auto" />
-        </div>
-      </header>
+      <EncabezadoSocio />
 
       <main className="contenedor-ancho pt-5">
 

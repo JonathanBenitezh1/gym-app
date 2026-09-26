@@ -69,6 +69,36 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+/* Logo de fondo, tenue y quieto detrás de todo (pedido del gimnasio,
+   26/09/2026). Va en un elemento fijo y no en background-attachment: fixed,
+   que el iPhone ignora. No recibe toques. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: url('./pages/img/fondo.png') center 55% / min(88vw, 30rem) no-repeat;
+  opacity: .06;
+}
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Letra del logo (DCE): bloque grueso con las esquinas cortadas. */
+.titulo-marca {
+  font-family: 'Black Ops One', var(--font-sans);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: .02em;
+  /* Plateado como el logo */
+  background: linear-gradient(180deg, #ffffff 0%, #d9dbde 45%, #9aa0a6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 /* Que el foco por teclado siempre se vea: accesibilidad */
 :focus-visible {
   outline: 2px solid var(--color-acento);
@@ -109,7 +139,8 @@ button, a, [role="button"] {
 
   /* ── Tarjetas ── */
   .tarjeta {
-    background-color: var(--color-superficie);
+    /* Apenas transparente: deja asomar el logo de fondo sin afectar la lectura */
+    background-color: color-mix(in srgb, var(--color-superficie) 88%, transparent);
     border: 1px solid var(--color-linea-sutil);
     border-radius: 1rem;
   }

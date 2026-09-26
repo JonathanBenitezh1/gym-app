@@ -68,7 +68,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2}'],
         globIgnores: ['icons/**'],
         // Sin caché de la API, a propósito. Antes cada GET a /api se guardaba
         // con la dirección como única clave, sin importar quién estaba

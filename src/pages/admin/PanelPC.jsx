@@ -296,7 +296,7 @@ function InsigniaEstado({ estado }) {
 
 /* ═══ CLASES ═════════════════════════════════════════════ */
 
-const CLASE_VACIA = { nombre: '', rama: 'gimnasio', descripcion: '', duracion: 60, profesor_id: '' }
+const CLASE_VACIA = { nombre: '', disciplina: '', rama: 'gimnasio', descripcion: '', duracion: 60, profesor_id: '' }
 
 function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confirmar }) {
   const [form, setForm]         = useState(CLASE_VACIA)
@@ -304,6 +304,10 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
   const [formEdit, setFormEdit] = useState({})
   const [guardando, setGuardando] = useState(false)
   const [cambiando, setCambiando] = useState(null)
+
+  // Las disciplinas ya usadas, para elegir en vez de escribir: "Gym" y "gym"
+  // serían dos botones distintos en la app.
+  const disciplinas = [...new Set(clases.map(c => c.disciplina).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'))
 
   const crear = async (e) => {
     e.preventDefault()
@@ -375,6 +379,17 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
                  value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} />
         </div>
         <div>
+          <label className="etiqueta-campo">Disciplina (botón en la app)</label>
+          <input className="campo" list="disciplinas-clase" maxLength={50} placeholder="Gym, Lucha, BJJ…"
+                 value={form.disciplina} onChange={e => setForm(f => ({ ...f, disciplina: e.target.value }))} />
+          <p className="mt-1 text-xs" style={{ color: 'var(--color-texto-3)' }}>
+            Las clases con la misma disciplina van juntas: "GYM 2 DIAS" y "GYM 3 DIAS" bajo "Gym". Vacía, usa el nombre.
+          </p>
+        </div>
+        <datalist id="disciplinas-clase">
+          {disciplinas.map(d => <option key={d} value={d} />)}
+        </datalist>
+        <div>
           <label className="etiqueta-campo">Tipo</label>
           <select className="campo" value={form.rama} onChange={e => setForm(f => ({ ...f, rama: e.target.value }))}>
             {RAMAS.map(r => <option key={r} value={r} className="capitalize">{r}</option>)}
@@ -415,6 +430,9 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
               <div className="flex flex-col gap-3">
                 <input className="campo" value={formEdit.nombre}
                        onChange={e => setFormEdit(f => ({ ...f, nombre: e.target.value }))} />
+                <input className="campo" list="disciplinas-clase" maxLength={50} placeholder="Disciplina (Gym, Lucha…)"
+                       value={formEdit.disciplina}
+                       onChange={e => setFormEdit(f => ({ ...f, disciplina: e.target.value }))} />
                 <div className="flex gap-2">
                   <select className="campo flex-1" value={formEdit.rama}
                           onChange={e => setFormEdit(f => ({ ...f, rama: e.target.value }))}>
@@ -441,8 +459,8 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{c.nombre}</p>
-                  <p className="truncate text-xs capitalize" style={{ color: 'var(--color-texto-2)' }}>
-                    {c.rama} · {c.duracion} min · {c.nombre_profesor || 'Sin profesor'}
+                  <p className="truncate text-xs" style={{ color: 'var(--color-texto-2)' }}>
+                    {c.disciplina ? `${c.disciplina} · ` : ''}<span className="capitalize">{c.rama}</span> · {c.duracion} min · {c.nombre_profesor || 'Sin profesor'}
                   </p>
                   {c.descripcion && (
                     <p className="mt-1 line-clamp-2 text-xs" style={{ color: 'var(--color-texto-3)' }}>
@@ -462,7 +480,7 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
                   onClick={() => {
                     setEditando(c.id)
                     setFormEdit({
-                      nombre: c.nombre, rama: c.rama, profesor_id: c.profesor_id || '',
+                      nombre: c.nombre, disciplina: c.disciplina || '', rama: c.rama, profesor_id: c.profesor_id || '',
                       descripcion: c.descripcion || '', duracion: c.duracion
                     })
                   }}

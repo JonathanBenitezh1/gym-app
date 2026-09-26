@@ -9,9 +9,12 @@
  * eso acá no puede haber `import.meta.env`: solo valores fijos.
  */
 export const GIMNASIO = {
-  // Desde el 25/09/2026. Antes: DTC Fight & Fitness.
-  nombre:      'Destribats Centro de Entrenamiento',
+  // Desde el 25/09/2026. Antes: DTC Fight & Fitness. "De" en mayúscula, como
+  // lo escribe el gimnasio.
+  nombre:      'Destribats Centro De Entrenamiento',
   nombreCorto: 'DCE',
+  // El nombre al lado del logo en la barra del socio, en dos renglones.
+  marca: ['Destribats', 'Centro De Entrenamiento'],
   descripcion: 'Reservá tus clases y gestioná tu entrenamiento',
 
   // Colores de la app instalada: la barra del sistema y la pantalla de arranque.

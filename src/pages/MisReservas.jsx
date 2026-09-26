@@ -7,8 +7,7 @@ import NavBar from '../components/NavBar'
 import { SkeletonListaReservas } from '../components/Skeleton'
 import { IconoReloj, IconoCalendario, IconoCheck, IconoAlerta } from '../components/Iconos'
 import { precio, rangoFechas, rangoHorario, textoDias } from '../utils/formato'
-import logoGimnasio from './img/logo.webp'
-import { GIMNASIO } from '../config/gimnasio'
+import EncabezadoSocio from '../components/EncabezadoSocio'
 
 export default function MisReservas() {
   const navigate = useNavigate()
@@ -75,20 +74,11 @@ export default function MisReservas() {
   return (
     <div className="min-h-screen" style={{ paddingBottom: 'calc(var(--alto-nav) + 1.5rem)' }}>
 
-      <header
-        className="sticky top-0 z-20"
-        style={{
-          backgroundColor: 'var(--color-superficie)',
-          borderBottom: '1px solid var(--color-linea-sutil)'
-        }}
-      >
-        <div className="contenedor-ancho flex items-center justify-between py-3">
-          <img src={logoGimnasio} alt={GIMNASIO.nombre} className="h-9 w-auto" />
-          <button onClick={() => navigate('/horarios')} className="btn btn-contorno btn-chico">
-            Ver clases
-          </button>
-        </div>
-      </header>
+      <EncabezadoSocio>
+        <button onClick={() => navigate('/horarios')} className="btn btn-contorno btn-chico">
+          Ver clases
+        </button>
+      </EncabezadoSocio>
 
       <main className="contenedor-ancho pt-5">
 
