@@ -14,6 +14,7 @@ import NavBar from '../components/NavBar'
 import ProfesEnSede from '../components/ProfesEnSede'
 import AvisoApto from '../components/AvisoApto'
 import AvisoCuota from '../components/AvisoCuota'
+import InstalarApp from '../components/InstalarApp'
 import { SkeletonListaHorarios } from '../components/Skeleton'
 import { IconoReloj, IconoCheck, IconoUsuarios, IconoCalendario, IconoFlecha } from '../components/Iconos'
 import { precio, rangoHorario, textoDias, fechaCorta } from '../utils/formato'
@@ -315,6 +316,7 @@ export default function Horarios() {
           </>
         )}
 
+        <InstalarApp className="mt-4" />
         <ProfesEnSede className="mt-4" />
         <AvisoCuota className="mt-4" />
         <AvisoApto className="mt-4" />

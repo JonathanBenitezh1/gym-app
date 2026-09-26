@@ -178,3 +178,25 @@ export const IconoBuscar = (p) => (
     <path d="M16 16l4.5 4.5" />
   </Svg>
 )
+
+// El botón Compartir de Safari: un cuadrado abierto con una flecha para arriba.
+export const IconoCompartir = (p) => (
+  <Svg {...p}>
+    <path d="M8.5 9.5H7a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5v-8A1.5 1.5 0 0 0 17 9.5h-1.5" />
+    <path d="M12 14V3.5M8.5 7 12 3.5 15.5 7" />
+  </Svg>
+)
+
+// "Agregar a inicio" de Safari: un cuadrado con un más.
+export const IconoAgregar = (p) => (
+  <Svg {...p}>
+    <rect x="4" y="4" width="16" height="16" rx="3.5" />
+    <path d="M12 8.5v7M8.5 12h7" />
+  </Svg>
+)
+
+export const IconoDescargar = (p) => (
+  <Svg {...p}>
+    <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14" />
+  </Svg>
+)
