@@ -9,26 +9,38 @@ import { SkeletonLista } from '../components/Skeleton'
 import { IconoChevron, IconoRutina } from '../components/Iconos'
 import { fechaCorta } from '../utils/formato'
 import EncabezadoSocio from '../components/EncabezadoSocio'
+import { recordado, recordar } from '../utils/memoria'
+import { useEsperaLarga } from '../hooks/useEsperaLarga'
+
+/**
+ * La primera sesión de cada rutina, abierta: casi siempre es lo que el socio
+ * viene a mirar, y ahorra un toque.
+ */
+function primerasSesiones(rutinas) {
+  const abiertas = {}
+  for (const r of rutinas) {
+    if (r.sesiones?.length) abiertas[r.id] = r.sesiones[0].id
+  }
+  return abiertas
+}
 
 export default function Rutinas() {
   const { usuario } = useAuth()
   const { error: avisarError, exito, confirmar } = useAvisos()
 
-  const [rutinas, setRutinas]   = useState([])
-  const [abierta, setAbierta]   = useState({})   // { [rutinaId]: sesionId }
-  const [cargando, setCargando] = useState(true)
+  const [previo] = useState(() => recordado('rutinas'))
+  const [rutinas, setRutinas]   = useState(previo ?? [])
+  const [abierta, setAbierta]   = useState(() => primerasSesiones(previo ?? []))   // { [rutinaId]: sesionId }
+  const [cargando, setCargando] = useState(!previo)
+  const barras = useEsperaLarga(cargando)
 
   const cargar = useCallback(async () => {
     try {
       const datos = await obtenerMisRutinas()
       setRutinas(datos)
-      // Abrimos la primera sesión de cada rutina: casi siempre es lo que
-      // el alumno viene a mirar, y ahorra un toque.
-      const iniciales = {}
-      for (const r of datos) {
-        if (r.sesiones?.length) iniciales[r.id] = r.sesiones[0].id
-      }
-      setAbierta(iniciales)
+      recordar('rutinas', datos)
+      // Lo que abrió el socio se respeta; lo nuevo, con su primera sesión.
+      setAbierta(actual => ({ ...primerasSesiones(datos), ...actual }))
     } catch {
       avisarError('No pudimos cargar tus rutinas')
     } finally {
@@ -38,9 +50,11 @@ export default function Rutinas() {
 
   useEffect(() => { cargar() }, [cargar])
 
-  const [progreso, setProgreso] = useState([])
+  const [progreso, setProgreso] = useState(() => recordado('progreso') ?? [])
   useEffect(() => {
-    obtenerMiProgreso().then(setProgreso).catch(() => avisarError('No pudimos cargar tu progreso'))
+    obtenerMiProgreso()
+      .then(datos => { setProgreso(datos); recordar('progreso', datos) })
+      .catch(() => avisarError('No pudimos cargar tu progreso'))
   }, [avisarError])
 
   const guardarProgreso = async (datos) => {
@@ -90,7 +104,7 @@ export default function Rutinas() {
         </p>
 
         {cargando ? (
-          <div className="mt-6"><SkeletonLista filas={2} /></div>
+          barras && <div className="mt-6"><SkeletonLista filas={2} /></div>
         ) : rutinas.length === 0 ? (
           <div className="tarjeta mt-6 p-8 text-center">
             <span

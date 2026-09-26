@@ -4,6 +4,7 @@ import { obtenerMisReservas } from '../services/clasesService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from './Avisos'
+import { recordado, recordar } from '../utils/memoria'
 import { linkContactoGimnasio } from '../utils/whatsapp'
 import { hora } from '../utils/formato'
 import {
@@ -36,7 +37,7 @@ export default function NavBar({ hayBarraAccion = false }) {
   const location = useLocation()
   const { cerrarSesion } = useAuth()
   const { confirmar, exito, info } = useAvisos()
-  const [pendientes, setPendientes] = useState(0)
+  const [pendientes, setPendientes] = useState(() => recordado('pendientes') ?? 0)
 
   const esActiva = (ruta) => location.pathname === ruta
 
@@ -44,7 +45,9 @@ export default function NavBar({ hayBarraAccion = false }) {
     try {
       if (!localStorage.getItem('token')) return
       const reservas = await obtenerMisReservas()
-      setPendientes(reservas.filter(r => r.estado === 'pendiente' && !r.metodo).length)
+      const cantidad = reservas.filter(r => r.estado === 'pendiente' && !r.metodo).length
+      setPendientes(cantidad)
+      recordar('pendientes', cantidad)
     } catch {
       // Silencioso: es un contador secundario, no vale interrumpir al usuario
     }

@@ -8,18 +8,23 @@ import { SkeletonListaReservas } from '../components/Skeleton'
 import { IconoReloj, IconoCalendario, IconoCheck, IconoAlerta } from '../components/Iconos'
 import { precio, rangoFechas, rangoHorario, textoDias } from '../utils/formato'
 import EncabezadoSocio from '../components/EncabezadoSocio'
+import { recordado, recordar } from '../utils/memoria'
+import { useEsperaLarga } from '../hooks/useEsperaLarga'
 
 export default function MisReservas() {
   const navigate = useNavigate()
   const location = useLocation()
   const { exito, error: avisarError, confirmar } = useAvisos()
 
-  const [reservas, setReservas] = useState([])
-  const [cargando, setCargando] = useState(true)
+  const [reservas, setReservas] = useState(() => recordado('reservas') ?? [])
+  const [cargando, setCargando] = useState(() => !recordado('reservas'))
+  const barras = useEsperaLarga(cargando)
 
   const cargar = useCallback(async () => {
     try {
-      setReservas(await obtenerMisReservas())
+      const datos = await obtenerMisReservas()
+      setReservas(datos)
+      recordar('reservas', datos)
     } catch {
       avisarError('No pudimos cargar tus reservas')
     } finally {
@@ -91,7 +96,7 @@ export default function MisReservas() {
         )}
 
         {cargando ? (
-          <div className="mt-6"><SkeletonListaReservas /></div>
+          barras && <div className="mt-6"><SkeletonListaReservas /></div>
         ) : sinNada ? (
           <div className="tarjeta mt-6 p-8 text-center">
             <span

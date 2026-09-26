@@ -14,6 +14,8 @@ import NavBar from '../components/NavBar'
 import ProfesEnSede from '../components/ProfesEnSede'
 import InstalarApp from '../components/InstalarApp'
 import EncabezadoSocio from '../components/EncabezadoSocio'
+import { recordado, recordar } from '../utils/memoria'
+import { useEsperaLarga } from '../hooks/useEsperaLarga'
 import { SkeletonListaHorarios } from '../components/Skeleton'
 import { IconoReloj, IconoCheck, IconoUsuarios, IconoCalendario, IconoFlecha } from '../components/Iconos'
 import { precio, rangoHorario, textoDias, fechaCorta } from '../utils/formato'
@@ -40,18 +42,21 @@ export default function Horarios() {
   const { exito, error: avisarError, confirmar } = useAvisos()
   const navigate = useNavigate()
 
-  const [horarios, setHorarios]     = useState([])
-  const [reservados, setReservados] = useState([])
-  const [fijos, setFijos]           = useState([])
-  const [planes, setPlanes]         = useState([])
-  const [cuota, setCuota]           = useState(null)
-  const [espera, setEspera]         = useState([])
+  // Al volver a la pantalla se muestra lo último y se actualiza por detrás.
+  const [previo] = useState(() => recordado('horarios'))
+  const [horarios, setHorarios]     = useState(previo?.horarios ?? [])
+  const [reservados, setReservados] = useState(previo?.reservados ?? [])
+  const [fijos, setFijos]           = useState(previo?.fijos ?? [])
+  const [planes, setPlanes]         = useState(previo?.planes ?? [])
+  const [cuota, setCuota]           = useState(previo?.cuota ?? null)
+  const [espera, setEspera]         = useState(previo?.espera ?? [])
   const [seleccion, setSeleccion]   = useState([])
   const [vistaElegida, setVista]    = useState(null)
   const [modalidad, setModalidad]   = useState('semanal')
   const [disciplina, setDisciplina] = useState('todas')
-  const [cargando, setCargando]     = useState(true)
+  const [cargando, setCargando]     = useState(!previo)
   const [enviando, setEnviando]     = useState(false)
+  const barras = useEsperaLarga(cargando)
 
   // Las semanales son de la semana que viene: los lugares libres y "Ya
   // reservada" son de esas fechas.
@@ -74,6 +79,10 @@ export default function Horarios() {
       setFijos(listaFijos)
       setCuota(miCuota)
       setPlanes(listaPlanes)
+      recordar('horarios', {
+        horarios: listaHorarios, reservados: listaReservados, espera: listaEspera.map(e => e.horario_id),
+        fijos: listaFijos, cuota: miCuota, planes: listaPlanes
+      })
       // Sale de lo elegido lo que ya no se puede tomar.
       const tomados = new Set([...listaReservados, ...listaFijos.map(f => f.horario_id)])
       setSeleccion(actual => actual
@@ -317,7 +326,7 @@ export default function Horarios() {
         <ProfesEnSede className="mt-4" />
 
         {cargando ? (
-          <div className="mt-6"><SkeletonListaHorarios /></div>
+          barras && <div className="mt-6"><SkeletonListaHorarios /></div>
         ) : vista === 'mias' ? (
           <VistaMiPlan
             cuota={cuota}

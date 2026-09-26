@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { profesEnSede } from '../services/presenciaService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import { IconoUsuarios } from './Iconos'
+import { recordado, recordar } from '../utils/memoria'
 
 /** "18:05" a partir de la hora de llegada, en la hora del teléfono. */
 const desde = (valor) =>
@@ -15,11 +16,13 @@ const desde = (valor) =>
  * a marcar la llegada, un cartel de "no hay nadie" diría algo falso.
  */
 export default function ProfesEnSede({ className = '' }) {
-  const [profes, setProfes] = useState([])
+  const [profes, setProfes] = useState(() => recordado('profesEnSede') ?? [])
 
   const cargar = useCallback(async () => {
     try {
-      setProfes(await profesEnSede())
+      const datos = await profesEnSede()
+      setProfes(datos)
+      recordar('profesEnSede', datos)
     } catch {
       // Es información de apoyo: si falla, la pantalla sigue andando.
     }

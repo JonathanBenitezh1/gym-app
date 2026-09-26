@@ -5,6 +5,7 @@ import { obtenerMiEspera } from '../services/clasesService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import { IconoCampana } from './Iconos'
 import { armarAvisos } from '../utils/avisos'
+import { recordado, recordar } from '../utils/memoria'
 
 /**
  * Campanita con los avisos del socio (pedido del gimnasio, 26/09/2026). Antes
@@ -38,7 +39,7 @@ const COLOR = {
 
 export default function CampanaAvisos() {
   const navigate = useNavigate()
-  const [avisos, setAvisos] = useState([])
+  const [avisos, setAvisos] = useState(() => recordado('avisos') ?? [])
   const [vistos, setVistos] = useState(leerVistos)
   const [abierta, setAbierta] = useState(false)
   const [arriba, setArriba] = useState(60)
@@ -47,11 +48,13 @@ export default function CampanaAvisos() {
   // Todo es secundario: lo que falla, no avisa.
   const cargar = useCallback(async () => {
     const [cuota, perfil, espera] = await Promise.allSettled([obtenerMiCuota(), obtenerPerfil(), obtenerMiEspera()])
-    setAvisos(armarAvisos({
+    const lista = armarAvisos({
       cuota: cuota.status === 'fulfilled' ? cuota.value : null,
       perfil: perfil.status === 'fulfilled' ? perfil.value : null,
       espera: espera.status === 'fulfilled' ? espera.value : []
-    }))
+    })
+    setAvisos(lista)
+    recordar('avisos', lista)
   }, [])
 
   useEffect(() => { cargar() }, [cargar])

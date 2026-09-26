@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from 'react'
 import socket from '../services/socket'
 import { borrarDatosDeLaPuerta } from '../utils/puertaLocal'
+import { olvidarTodo } from '../utils/memoria'
 
 // La versión anterior de la app instalable guardaba las respuestas de la API
 // en esta caché, y lo guardado queda en el teléfono aunque la versión nueva ya
@@ -44,6 +45,8 @@ export function AuthProvider({ children }) {
 
   const guardarSesion = (token, nuevo) => {
     const tokenCambio = localStorage.getItem('token') !== token
+    // Otra persona en el mismo teléfono: no ve lo que quedó en pantalla del anterior.
+    if (usuario?.id !== nuevo?.id) olvidarTodo()
     // Guardamos en localStorage para que persista al recargar
     localStorage.setItem('token', token)
     localStorage.setItem('usuario', JSON.stringify(nuevo))
@@ -58,6 +61,7 @@ export function AuthProvider({ children }) {
   }
 
   const cerrarSesion = () => {
+    olvidarTodo()
     localStorage.removeItem('token')
     localStorage.removeItem('usuario')
     borrarCacheApiVieja()

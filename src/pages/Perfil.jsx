@@ -10,6 +10,8 @@ import { obtenerMisReservas } from '../services/clasesService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import NavBar from '../components/NavBar'
 import { SkeletonPerfil } from '../components/Skeleton'
+import { recordado, recordar } from '../utils/memoria'
+import { useEsperaLarga } from '../hooks/useEsperaLarga'
 import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave, IconoReloj } from '../components/Iconos'
 import { precio, fechaCorta, rangoFechas, hora, fechaHora, diasCortos } from '../utils/formato'
 import { estadoApto } from '../utils/apto'
@@ -46,23 +48,32 @@ export default function Perfil() {
   const { exito, error: avisarError } = useAvisos()
   const navigate = useNavigate()
 
-  const [perfil, setPerfil]     = useState(null)
-  const [reservas, setReservas] = useState([])
-  const [pagos, setPagos]       = useState([])
-  const [cuota, setCuota]       = useState(null)
-  const [pagosCuota, setPagosCuota] = useState([])
-  const [cargando, setCargando] = useState(true)
+  const [previo] = useState(() => recordado('perfil'))
+  const [perfil, setPerfil]     = useState(previo?.perfil ?? null)
+  const [reservas, setReservas] = useState(previo?.reservas ?? [])
+  const [pagos, setPagos]       = useState(previo?.pagos ?? [])
+  const [cuota, setCuota]       = useState(previo?.cuota ?? null)
+  const [pagosCuota, setPagosCuota] = useState(previo?.pagosCuota ?? [])
+  const [cargando, setCargando] = useState(!previo)
+  const barras = useEsperaLarga(cargando)
   const [seccion, setSeccion]   = useState('datos')
 
   // La cuota es secundaria: si falla, la sección no aparece.
   const cargarCuota = useCallback(async () => {
     const [c, pc] = await Promise.allSettled([obtenerMiCuota(), obtenerMisPagosCuota()])
-    setCuota(c.status === 'fulfilled' && c.value.estado !== 'personal' ? c.value : null)
-    setPagosCuota(pc.status === 'fulfilled' ? pc.value : [])
+    const datos = {
+      cuota: c.status === 'fulfilled' && c.value.estado !== 'personal' ? c.value : null,
+      pagosCuota: pc.status === 'fulfilled' ? pc.value : []
+    }
+    setCuota(datos.cuota)
+    setPagosCuota(datos.pagosCuota)
+    const previo = recordado('perfil')
+    if (previo) recordar('perfil', { ...previo, ...datos })
+    return datos
   }, [])
 
   const cargar = useCallback(async () => {
-    const [p, r, pg] = await Promise.allSettled([
+    const [p, r, pg, c] = await Promise.allSettled([
       obtenerPerfil(),
       obtenerMisReservas(),
       obtenerHistorialPagos(),
@@ -70,8 +81,13 @@ export default function Perfil() {
     ])
     if (p.status === 'fulfilled') setPerfil(p.value)
     else avisarError('No pudimos cargar tus datos')
-    setReservas(r.status === 'fulfilled' ? r.value : [])
-    setPagos(pg.status === 'fulfilled' ? pg.value : [])
+    const lista = r.status === 'fulfilled' ? r.value : []
+    const historial = pg.status === 'fulfilled' ? pg.value : []
+    setReservas(lista)
+    setPagos(historial)
+    if (p.status === 'fulfilled') {
+      recordar('perfil', { perfil: p.value, reservas: lista, pagos: historial, ...(c.status === 'fulfilled' ? c.value : {}) })
+    }
     setCargando(false)
   }, [avisarError, cargarCuota])
 
@@ -87,7 +103,7 @@ export default function Perfil() {
   if (cargando) {
     return (
       <div className="min-h-screen" style={{ paddingBottom: 'calc(var(--alto-nav) + 1.5rem)' }}>
-        <SkeletonPerfil />
+        {barras && <SkeletonPerfil />}
         <NavBar />
       </div>
     )
