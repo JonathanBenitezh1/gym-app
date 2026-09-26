@@ -4,7 +4,7 @@ import { registrarUsuario } from '../services/authService'
 import { useAuth } from '../context/AuthContext'
 import { inicioDe } from '../components/RutaProtegida'
 import { IconoOjo, IconoOjoTachado } from '../components/Iconos'
-import logoDtc from './img/logo_png.png'
+import logoGimnasio from './img/logo.webp'
 import { GIMNASIO } from '../config/gimnasio'
 
 const VACIO = { nombre: '', dni: '', telefono: '', email: '', password: '', confirmar: '' }
@@ -108,7 +108,7 @@ export default function Registro() {
 
         <div className="mb-7 text-center">
           <img
-            src={logoDtc}
+            src={logoGimnasio}
             alt={GIMNASIO.nombre}
             className="mx-auto mb-4 h-24 w-auto"
             style={{ filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.45))' }}

@@ -11,7 +11,7 @@ import {
 import { leerDni } from '../utils/dni'
 import { ahoraEnArgentina } from '../utils/ingreso'
 import { IconoSalir, IconoAlerta } from '../components/Iconos'
-import logoDtc from './img/logo_png.png'
+import logoGimnasio from './img/logo.webp'
 import { GIMNASIO } from '../config/gimnasio'
 
 // Cuánto queda el resultado en pantalla antes de volver a "esperando".
@@ -315,7 +315,7 @@ export default function Puerta() {
         style={{ backgroundColor: 'var(--color-superficie)', borderBottom: '1px solid var(--color-linea-sutil)' }}
       >
         <div className="flex items-center gap-3">
-          <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto" />
+          <img src={logoGimnasio} alt={GIMNASIO.nombre} className="h-9 w-auto" />
           <div>
             <p className="text-sm font-bold leading-tight">Ingreso</p>
             <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>

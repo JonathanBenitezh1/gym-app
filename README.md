@@ -1,6 +1,6 @@
 # gym-app
 
-Frontend de la app de reservas de DTC Fight & Fitness (React + Vite, PWA).
+Frontend de la app de reservas de DCE, Destribats Centro de Entrenamiento (React + Vite, PWA).
 
 La documentación completa está en `../DOCUMENTACION-GYM-APP.md`, fuera de este repo.
 

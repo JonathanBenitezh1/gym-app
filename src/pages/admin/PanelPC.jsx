@@ -27,7 +27,7 @@ import {
   IconoUsuarios, IconoBuscar, IconoCheck, IconoLlave, IconoWhatsapp
 } from '../../components/Iconos'
 import { precio, rangoHorario, hora, textoDias, diasCortos } from '../../utils/formato'
-import logoDtc from '../img/logo_png.png'
+import logoGimnasio from '../img/logo.webp'
 import { GIMNASIO } from '../../config/gimnasio'
 import { estadoApto } from '../../utils/apto'
 
@@ -119,7 +119,7 @@ export default function PanelPC() {
             botones no. */}
         <div className="contenedor-ancho flex items-center justify-between gap-2 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto shrink-0" />
+            <img src={logoGimnasio} alt={GIMNASIO.nombre} className="h-9 w-auto shrink-0" />
             <div className="min-w-0">
               <p className="flex items-center gap-1.5 text-sm font-bold leading-tight">
                 <span className="hidden sm:inline-flex"><IconoPanel size={15} /></span>

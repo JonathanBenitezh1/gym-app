@@ -32,7 +32,10 @@ export default defineConfig({
     datosDelGimnasioEnElHtml(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icons/*.png'],
+      // Los íconos no van al caché sin conexión: el celular los baja al
+      // instalar, y con el logo metálico pesan medio mega entre todos.
+      includeAssets: ['favicon.png'],
+      includeManifestIcons: false,
       manifest: {
         name: GIMNASIO.nombre,
         short_name: GIMNASIO.nombreCorto,
@@ -55,8 +58,8 @@ export default defineConfig({
             type: 'image/png'
           },
           {
-            // Logo más chico, para que Android lo pueda recortar en círculo
-            // sin comerse los bordes.
+            // El emblema redondo sobre el gris del logo, dentro de la zona
+            // segura: Android lo recorta en círculo sin comerse nada.
             src: 'icons/icon-maskable-512.png',
             sizes: '512x512',
             type: 'image/png',
@@ -65,7 +68,8 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+        globIgnores: ['icons/**'],
         // Sin caché de la API, a propósito. Antes cada GET a /api se guardaba
         // con la dirección como única clave, sin importar quién estaba
         // logueado, y se servía si la red tardaba más de 10 segundos. En un

@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { useAvisos } from './Avisos'
 import { cambiarPassword } from '../services/perfilService'
 import { IconoOjo, IconoOjoTachado, IconoAlerta } from './Iconos'
-import logoDtc from '../pages/img/logo_png.png'
+import logoGimnasio from '../pages/img/logo.webp'
 import { GIMNASIO } from '../config/gimnasio'
 
 /**
@@ -52,7 +52,7 @@ export default function CambioObligatorio() {
 
         <div className="mb-6 text-center">
           <img
-            src={logoDtc}
+            src={logoGimnasio}
             alt={GIMNASIO.nombre}
             className="mx-auto mb-4 h-20 w-auto"
             style={{ filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.45))' }}

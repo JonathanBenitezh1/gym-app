@@ -16,7 +16,7 @@ import {
   IconoMas, IconoCruz, IconoSalir, IconoLapiz
 } from '../../components/Iconos'
 import { rangoHorario, hoyISO, fechaCorta, textoDias, diasCortos } from '../../utils/formato'
-import logoDtc from '../img/logo_png.png'
+import logoGimnasio from '../img/logo.webp'
 import { GIMNASIO } from '../../config/gimnasio'
 
 const SOLAPAS = [
@@ -62,7 +62,7 @@ export default function MisClases() {
       >
         <div className="contenedor-ancho flex items-center justify-between gap-2 py-3">
           <div className="flex min-w-0 items-center gap-3">
-            <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto shrink-0" />
+            <img src={logoGimnasio} alt={GIMNASIO.nombre} className="h-9 w-auto shrink-0" />
             <div className="min-w-0">
               <p className="text-sm font-bold leading-tight">Panel del profesor</p>
               <p className="truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>

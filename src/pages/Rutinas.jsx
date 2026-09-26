@@ -8,7 +8,7 @@ import { obtenerMiProgreso, registrarProgreso, borrarProgreso } from '../service
 import { SkeletonLista } from '../components/Skeleton'
 import { IconoChevron, IconoRutina } from '../components/Iconos'
 import { fechaCorta } from '../utils/formato'
-import logoDtc from './img/logo_png.png'
+import logoGimnasio from './img/logo.webp'
 import { GIMNASIO } from '../config/gimnasio'
 
 export default function Rutinas() {
@@ -89,7 +89,7 @@ export default function Rutinas() {
         }}
       >
         <div className="contenedor-ancho flex items-center py-3">
-          <img src={logoDtc} alt={GIMNASIO.nombre} className="h-9 w-auto" />
+          <img src={logoGimnasio} alt={GIMNASIO.nombre} className="h-9 w-auto" />
         </div>
       </header>
 
