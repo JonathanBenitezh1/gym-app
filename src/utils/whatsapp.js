@@ -54,3 +54,16 @@ export function mensajeCuota(socio) {
   }
   return saludo + `${plan} está vencido. Acercate a la administración para renovarlo. ¡Te esperamos!`
 }
+
+/**
+ * Para un socio en riesgo (panel → En riesgo), según el motivo principal:
+ * el plan pesa más que las visitas, y las visitas más que las semanales.
+ */
+export function mensajeRiesgo(socio, motivo) {
+  if (motivo === 'plan_vencido') return mensajeCuota(socio)
+  const saludo = `Hola ${primerNombre(socio.nombre)}! Te escribimos de ${GIMNASIO.nombreCorto}. `
+  if (motivo === 'sin_venir') {
+    return saludo + 'Hace unos días que no te vemos por el gimnasio. ¿Está todo bien? ¡Te esperamos!'
+  }
+  return saludo + 'Hace un tiempo que no reservás clases. Ya podés reservar las de la semana que viene desde la app. ¡Te esperamos!'
+}

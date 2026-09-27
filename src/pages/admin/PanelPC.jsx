@@ -16,6 +16,7 @@ import SeccionEstadisticas from './SeccionEstadisticas'
 import SeccionCuotas from './SeccionCuotas'
 import SeccionPlanes from './SeccionPlanes'
 import SeccionCaja from './SeccionCaja'
+import SeccionRiesgo from './SeccionRiesgo'
 import Interruptor from '../../components/Interruptor'
 import SelectorDias from '../../components/SelectorDias'
 import FotoSocio from '../../components/FotoSocio'
@@ -46,6 +47,7 @@ const SECCIONES = [
   { id: 'horarios', texto: 'Horarios' },
   { id: 'planes',   texto: 'Planes' },
   { id: 'cuotas',   texto: 'Cuotas' },
+  { id: 'riesgo',   texto: 'En riesgo' },
   { id: 'caja',     texto: 'Caja' },
   { id: 'usuarios', texto: 'Usuarios' },
   { id: 'reservas', texto: 'Reservas' },
@@ -162,7 +164,8 @@ export default function PanelPC() {
             {seccion === 'horarios' && <SeccionHorarios horarios={horarios} clases={clases} {...comunes} />}
             {seccion === 'planes'   && <SeccionPlanes clases={clases} horarios={horarios} {...comunes} />}
             {seccion === 'cuotas'   && <SeccionCuotas alExito={exito} alError={avisarError} confirmar={confirmar} />}
-            {seccion === 'caja'     && <SeccionCaja alExito={exito} alError={avisarError} confirmar={confirmar} />}
+            {seccion === 'riesgo'   && <SeccionRiesgo alError={avisarError} />}
+      {seccion === 'caja'     && <SeccionCaja alExito={exito} alError={avisarError} confirmar={confirmar} />}
             {seccion === 'usuarios' && <SeccionUsuarios usuarios={usuarios} {...comunes} />}
             {seccion === 'reservas' && <SeccionReservas reservas={reservas} {...comunes} />}
             {seccion === 'rutinas'  && <SeccionRutinas alExito={exito} alError={avisarError} />}

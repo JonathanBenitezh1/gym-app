@@ -41,8 +41,11 @@ const ACCIONES = {
   'usuario.apto':                 { texto: 'actualizó el apto médico de',    color: 'var(--color-acento)' },
   'usuario.restablecer_password': { texto: 'restableció la clave de',        color: 'var(--color-alerta)' },
   'turno.llegada':                { texto: 'llegó al gimnasio',              color: 'var(--color-exito)' },
-  'turno.salida':                 { texto: 'se fue del gimnasio',            color: 'var(--color-texto-2)' }
+  'turno.salida':                 { texto: 'se fue del gimnasio',            color: 'var(--color-texto-2)' },
+  'riesgo.whatsapp':              { texto: 'le escribió por WhatsApp a',     color: 'var(--color-acento)' }
 }
+
+const MOTIVOS_RIESGO = { sin_venir: 'no viene', plan_vencido: 'plan vencido', dejo_semanales: 'dejó las semanales' }
 
 /** El detalle de cada movimiento, armado con lo que quedó guardado. */
 function detalleLegible(d = {}) {
@@ -61,6 +64,7 @@ function detalleLegible(d = {}) {
   if (d.vence_nuevo)                     partes.push(`hasta el ${fechaCorta(d.vence_nuevo)}`)
   if ('anterior' in d && 'vence' in d)   partes.push(`de ${d.anterior ? fechaCorta(d.anterior) : 'sin fecha'} a ${d.vence ? fechaCorta(d.vence) : 'sin fecha'}`)
   if (d.dias_gracia !== undefined)       partes.push(`${d.dias_gracia} días de gracia`)
+  if (MOTIVOS_RIESGO[d.motivo])          partes.push(MOTIVOS_RIESGO[d.motivo])
   return partes.join(' · ')
 }
 

@@ -211,3 +211,15 @@ export const cerrarSesionesUsuario = async (id) => {
   const res = await axios.put(`${API}/admin/usuarios/${id}/cerrar-sesiones`, {}, config())
   return res.data
 }
+
+// ─── SOCIOS EN RIESGO ─────────────────────────────────
+
+export const obtenerRiesgo = async (dias) => {
+  const res = await axios.get(`${API}/admin/riesgo`, { ...config(), params: { dias } })
+  return res.data
+}
+
+export const anotarContactoRiesgo = async (id, motivo) => {
+  const res = await axios.post(`${API}/admin/riesgo/${id}/contacto`, { motivo }, config())
+  return res.data
+}
