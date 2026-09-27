@@ -17,6 +17,7 @@ import EncabezadoSocio from '../components/EncabezadoSocio'
 import { recordado, recordar } from '../utils/memoria'
 import { useEsperaLarga } from '../hooks/useEsperaLarga'
 import { SkeletonListaHorarios } from '../components/Skeleton'
+import GrillaSemanal, { SelectorFormato } from '../components/GrillaSemanal'
 import { IconoReloj, IconoCheck, IconoUsuarios, IconoCalendario, IconoFlecha } from '../components/Iconos'
 import { precio, rangoHorario, textoDias, fechaCorta } from '../utils/formato'
 import { periodoDeReserva, textoPeriodo } from '../utils/periodo'
@@ -37,6 +38,14 @@ import { periodoDeReserva, textoPeriodo } from '../utils/periodo'
 
 /** La disciplina de un horario: la de su clase, o el nombre de la clase si no tiene. */
 const disciplinaDe = (h) => h.disciplina || h.clase
+
+// Lista o grilla de la semana (plan de mejoras 2.3): lo último que eligió en
+// este teléfono.
+const CLAVE_FORMATO = 'clases.formato'
+const leerFormato = () => {
+  try { return localStorage.getItem(CLAVE_FORMATO) === 'semana' ? 'semana' : 'lista' } catch { return 'lista' }
+}
+
 export default function Horarios() {
   const { usuario } = useAuth()
   const { exito, error: avisarError, confirmar } = useAvisos()
@@ -56,7 +65,13 @@ export default function Horarios() {
   const [disciplina, setDisciplina] = useState('todas')
   const [cargando, setCargando]     = useState(!previo)
   const [enviando, setEnviando]     = useState(false)
+  const [formato, setFormato]       = useState(leerFormato)
   const barras = useEsperaLarga(cargando)
+
+  const cambiarFormato = (nuevo) => {
+    setFormato(nuevo)
+    try { localStorage.setItem(CLAVE_FORMATO, nuevo) } catch { /* vuelve a la lista al recargar */ }
+  }
 
   // Las semanales son de la semana que viene: los lugares libres y "Ya
   // reservada" son de esas fechas.
@@ -329,6 +344,9 @@ export default function Horarios() {
           barras && <div className="mt-6"><SkeletonListaHorarios /></div>
         ) : vista === 'mias' ? (
           <VistaMiPlan
+            formato={formato}
+            alCambiarFormato={cambiarFormato}
+            periodo={periodo}
             cuota={cuota}
             fijos={fijos}
             delPlan={delPlan}
@@ -387,7 +405,13 @@ export default function Horarios() {
 
             {modalidad === 'semanal' ? (
               <>
-                <div className="mt-6">
+                {porDisciplina.length > 0 && (
+                  <div className="mt-6 flex items-center justify-between gap-3">
+                    <p className="titulo-seccion">Horarios</p>
+                    <SelectorFormato formato={formato} alCambiar={cambiarFormato} />
+                  </div>
+                )}
+                <div className={porDisciplina.length > 0 ? 'mt-3' : 'mt-6'}>
                   {porDisciplina.length === 0 ? (
                     <div className="tarjeta p-8 text-center">
                       <p className="font-medium">Todavía no hay horarios cargados</p>
@@ -395,6 +419,18 @@ export default function Horarios() {
                         Consultá en el gimnasio
                       </p>
                     </div>
+                  ) : formato === 'semana' ? (
+                    <GrillaSemanal
+                      desde={periodo.fecha_inicio}
+                      items={porDisciplina.flatMap(([, lista]) => lista).map(h => itemDeHorario(h, {
+                        tomado: reservados.includes(h.id) || idsFijos.has(h.id),
+                        textoTomado: idsFijos.has(h.id) ? 'Tu lugar fijo' : 'Ya reservada',
+                        seleccionado: estaSeleccionado(h.id),
+                        enEspera: espera.includes(h.id),
+                        alElegir: () => alternar(h),
+                        alAlternarEspera: () => alternarEspera(h)
+                      }))}
+                    />
                   ) : (
                     <div className="flex flex-col gap-6">
                       {porDisciplina.map(([nombre, lista]) => (
@@ -476,8 +512,9 @@ export default function Horarios() {
 
 /* ─── Socio con plan: lo suyo ──────────────────────────── */
 
-function VistaMiPlan({ cuota, fijos, delPlan, espera, estaSeleccionado, alElegir, alAlternarEspera, alSoltar, alVerSuscripciones }) {
+function VistaMiPlan({ formato, alCambiarFormato, periodo, cuota, fijos, delPlan, espera, estaSeleccionado, alElegir, alAlternarEspera, alSoltar, alVerSuscripciones }) {
   const gracia = cuota.estado === 'gracia'
+  const hayClases = fijos.length > 0 || delPlan.length > 0
   return (
     <>
       <div className="tarjeta mt-5 flex items-center justify-between gap-3 p-4">
@@ -493,8 +530,44 @@ function VistaMiPlan({ cuota, fijos, delPlan, espera, estaSeleccionado, alElegir
         </button>
       </div>
 
-      <section className="mt-6">
-        <h2 className="titulo-seccion mb-2">Tus lugares fijos</h2>
+      {hayClases && (
+        <div className="mt-6 flex items-center justify-between gap-3">
+          <p className="titulo-seccion">{formato === 'semana' ? 'Tu semana' : 'Tus lugares fijos'}</p>
+          <SelectorFormato formato={formato} alCambiar={alCambiarFormato} />
+        </div>
+      )}
+
+      {hayClases && formato === 'semana' ? (
+        <div className="mt-3">
+          <GrillaSemanal
+            desde={periodo.fecha_inicio}
+            items={[
+              ...fijos.map(f => ({
+                id: `fijo-${f.horario_id}`, dias: f.dias, hora_inicio: f.hora_inicio, hora_fin: f.hora_fin,
+                titulo: f.clase,
+                subtitulo: f.profesor ? `Prof. ${f.profesor}` : null,
+                nota: f.activo ? 'Tu lugar fijo' : 'Suspendida por el gimnasio',
+                tono: f.activo ? 'exito' : 'alerta',
+                resaltado: true,
+                apagado: !f.activo
+              })),
+              ...delPlan.map(h => itemDeHorario(h, {
+                seleccionado: estaSeleccionado(h.id),
+                enEspera: espera.includes(h.id),
+                alElegir: () => alElegir(h),
+                alAlternarEspera: () => alAlternarEspera(h)
+              }))
+            ]}
+          />
+          <p className="mt-3 text-xs" style={{ color: 'var(--color-texto-3)' }}>
+            En verde, tus lugares fijos.{delPlan.length > 0 && ' Tocá otro horario de tu plan para tomar lugar.'} Para dejar uno, pasá a la lista.
+          </p>
+        </div>
+      ) : (
+      <>
+      <section className={hayClases ? 'mt-3' : 'mt-6'}>
+        {/* Con clases, el título va arriba, junto a Lista / Semana. */}
+        {!hayClases && <h2 className="titulo-seccion mb-2">Tus lugares fijos</h2>}
         {fijos.length === 0 ? (
           <div className="tarjeta p-5 text-center text-sm" style={{ color: 'var(--color-texto-2)' }}>
             Todavía no elegiste horarios. Tocá uno de abajo para tomar tu lugar.
@@ -540,8 +613,37 @@ function VistaMiPlan({ cuota, fijos, delPlan, espera, estaSeleccionado, alElegir
           </div>
         </section>
       )}
+      </>
+      )}
     </>
   )
+}
+
+/* ─── Horario en la grilla de la semana ────────────────── */
+
+/**
+ * Un horario como bloque de la grilla, con los mismos estados que su tarjeta
+ * de la lista. Sin cupos, tocarlo anota (o saca) de la lista de espera, que en
+ * la lista es el botón de abajo de la tarjeta.
+ */
+function itemDeHorario(h, { tomado = false, textoTomado, seleccionado, enEspera, alElegir, alAlternarEspera }) {
+  const sinCupos = h.cupos_disponibles <= 0
+  const pocos = !sinCupos && h.cupos_disponibles <= 3
+  const lugares = `${h.cupos_disponibles} ${h.cupos_disponibles === 1 ? 'lugar' : 'lugares'}`
+  return {
+    id: h.id, dias: h.dias, hora_inicio: h.hora_inicio, hora_fin: h.hora_fin,
+    titulo: h.clase,
+    subtitulo: h.profesor ? `Prof. ${h.profesor}` : null,
+    nota: tomado ? textoTomado
+      : sinCupos ? (enEspera ? 'Sin cupos · te avisamos' : 'Sin cupos · tocá y te avisamos')
+      : seleccionado ? `Elegido · ${lugares}`
+      : lugares,
+    tono: seleccionado ? 'acento' : tomado ? 'exito' : sinCupos ? 'error' : pocos ? 'alerta' : 'neutro',
+    resaltado: seleccionado || tomado,
+    seleccionado,
+    apagado: sinCupos && !tomado && !enEspera,
+    alTocar: tomado ? undefined : sinCupos ? alAlternarEspera : alElegir
+  }
 }
 
 /* ─── Planes mensuales ─────────────────────────────────── */

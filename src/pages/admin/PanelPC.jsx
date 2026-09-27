@@ -19,6 +19,8 @@ import SeccionCaja from './SeccionCaja'
 import SeccionRiesgo from './SeccionRiesgo'
 import Interruptor from '../../components/Interruptor'
 import SelectorDias from '../../components/SelectorDias'
+import GrillaSemanal, { SelectorFormato } from '../../components/GrillaSemanal'
+import { periodoDeReserva, textoPeriodo } from '../../utils/periodo'
 import FotoSocio from '../../components/FotoSocio'
 import SeccionRutinas from '../../components/SeccionRutinas'
 import BotonPresencia from '../../components/BotonPresencia'
@@ -520,6 +522,7 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
   const [formEdit, setFormEdit] = useState({})
   const [guardando, setGuardando] = useState(false)
   const [cambiando, setCambiando] = useState(null)
+  const [formato, setFormato] = useState('lista')
 
   const revisar = (datos) => {
     if (datos.dias.length === 0) return 'Elegí al menos un día'
@@ -602,7 +605,49 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
 
   const activas = clases.filter(c => c.activo)
 
+  // Grilla de la semana (plan de mejoras 2.3): la ocupación de la semana que
+  // viene, la misma cuenta que la lista. Los horarios apagados no van.
+  const itemsSemana = horarios.filter(h => h.activo && h.clase_activa).map(h => {
+    const ocupados = h.cupos_totales - h.cupos_disponibles
+    const lleno = h.cupos_disponibles <= 0
+    const casi = !lleno && ocupados >= h.cupos_totales * 0.8
+    return {
+      id: h.id, dias: h.dias, hora_inicio: h.hora_inicio, hora_fin: h.hora_fin,
+      titulo: h.clase,
+      subtitulo: h.profesor ? `Prof. ${h.profesor}` : null,
+      nota: `${ocupados}/${h.cupos_totales} ocupados${h.fijos > 0 ? ` · ${h.fijos} fijo${h.fijos === 1 ? '' : 's'}` : ''}`,
+      tono: lleno ? 'error' : casi ? 'alerta' : 'neutro',
+      resaltado: lleno || casi,
+      alTocar: () => irAlHorario(h.id)
+    }
+  })
+
+  // Tocar un horario en la grilla lo muestra en la lista, para editarlo.
+  const irAlHorario = (id) => {
+    setFormato('lista')
+    setTimeout(() => document.getElementById(`horario-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
+  }
+
+  const apagados = horarios.length - itemsSemana.length
+
   return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
+          {formato === 'semana'
+            ? `Ocupación ${textoPeriodo(periodoDeReserva('semanal'))}. Tocá un horario para editarlo.${apagados > 0 ? ` ${apagados} apagado${apagados === 1 ? '' : 's'} no aparece${apagados === 1 ? '' : 'n'}.` : ''}`
+            : 'Cargá y editá los horarios. En Semana, la ocupación de cada día.'}
+        </p>
+        <SelectorFormato formato={formato} alCambiar={setFormato} />
+      </div>
+
+      {formato === 'semana' ? (
+        <div className="tarjeta p-4">
+          {itemsSemana.length === 0
+            ? <p className="text-center text-sm" style={{ color: 'var(--color-texto-3)' }}>No hay horarios activos.</p>
+            : <GrillaSemanal items={itemsSemana} desde={periodoDeReserva('semanal').fecha_inicio} />}
+        </div>
+      ) : (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
 
       <form onSubmit={crear} className="tarjeta flex h-fit flex-col gap-3 p-4">
@@ -663,7 +708,7 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
             Todavía no hay horarios.
           </div>
         ) : horarios.map(h => (
-          <article key={h.id} className="tarjeta p-4" style={{ opacity: h.activo && h.clase_activa ? 1 : 0.7 }}>
+          <article key={h.id} id={`horario-${h.id}`} className="tarjeta p-4" style={{ opacity: h.activo && h.clase_activa ? 1 : 0.7 }}>
             {editando === h.id ? (
               <div className="flex flex-col gap-3">
                 <p className="text-sm font-semibold">{h.clase}</p>
@@ -742,6 +787,8 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
           </article>
         ))}
       </div>
+    </div>
+      )}
     </div>
   )
 }
