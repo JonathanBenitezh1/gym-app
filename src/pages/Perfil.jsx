@@ -12,7 +12,8 @@ import NavBar from '../components/NavBar'
 import { SkeletonPerfil } from '../components/Skeleton'
 import { recordado, recordar } from '../utils/memoria'
 import { useEsperaLarga } from '../hooks/useEsperaLarga'
-import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave, IconoReloj } from '../components/Iconos'
+import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave, IconoReloj, IconoCampana } from '../components/Iconos'
+import AvisosCelular from '../components/AvisosCelular'
 import { precio, fechaCorta, rangoFechas, hora, fechaHora, diasCortos } from '../utils/formato'
 import { estadoApto } from '../utils/apto'
 
@@ -233,6 +234,15 @@ export default function Perfil() {
                 ))}
               </ul>
             )}
+          </Acordeon>
+        )}
+
+        {perfil?.rol === 'alumno' && (
+          <Acordeon
+            nombre="avisos" abierta={seccion} alAlternar={alternar}
+            Icono={IconoCampana} titulo="Avisos en el celular"
+          >
+            <AvisosCelular />
           </Acordeon>
         )}
 

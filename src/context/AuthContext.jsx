@@ -2,6 +2,7 @@ import { createContext, useContext, useState } from 'react'
 import socket from '../services/socket'
 import { borrarDatosDeLaPuerta } from '../utils/puertaLocal'
 import { olvidarTodo } from '../utils/memoria'
+import { cortarAvisos } from '../utils/avisosCelular'
 
 // La versión anterior de la app instalable guardaba las respuestas de la API
 // en esta caché, y lo guardado queda en el teléfono aunque la versión nueva ya
@@ -61,6 +62,8 @@ export function AuthProvider({ children }) {
   }
 
   const cerrarSesion = () => {
+    // Antes de borrar el token: lo usa para avisarle al servidor.
+    cortarAvisos()
     olvidarTodo()
     localStorage.removeItem('token')
     localStorage.removeItem('usuario')

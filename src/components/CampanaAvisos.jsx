@@ -6,6 +6,9 @@ import { useSocketEventos } from '../hooks/useSocketEventos'
 import { IconoCampana } from './Iconos'
 import { armarAvisos } from '../utils/avisos'
 import { recordado, recordar } from '../utils/memoria'
+import { sincronizarAvisos } from '../utils/avisosCelular'
+import { useAuth } from '../context/AuthContext'
+import AvisosCelular from './AvisosCelular'
 
 /**
  * Campanita con los avisos del socio (pedido del gimnasio, 26/09/2026). Antes
@@ -39,6 +42,7 @@ const COLOR = {
 
 export default function CampanaAvisos() {
   const navigate = useNavigate()
+  const { usuario } = useAuth()
   const [avisos, setAvisos] = useState(() => recordado('avisos') ?? [])
   const [vistos, setVistos] = useState(leerVistos)
   const [abierta, setAbierta] = useState(false)
@@ -58,6 +62,8 @@ export default function CampanaAvisos() {
   }, [])
 
   useEffect(() => { cargar() }, [cargar])
+  // Los avisos al celular, al día con el servidor (una vez por apertura de la app).
+  useEffect(() => { if (usuario?.id) sincronizarAvisos(usuario.id) }, [usuario?.id])
   useSocketEventos({
     cuota_actualizada: cargar,
     cupo_liberado: cargar,
@@ -126,6 +132,7 @@ export default function CampanaAvisos() {
           aria-label="Avisos"
         >
           <p className="titulo-seccion px-1">Avisos</p>
+          <AvisosCelular compacto />
           {avisos.length === 0 ? (
             <p className="px-1 py-3 text-sm" style={{ color: 'var(--color-texto-2)' }}>No tenés avisos. Todo en orden.</p>
           ) : avisos.map(a => (

@@ -76,7 +76,9 @@ export default defineConfig({
         // teléfono compartido un socio podía ver el perfil y las reservas del
         // anterior, y con el servidor despertando se veían cupos viejos. La
         // app instalable guarda solo sus propios archivos.
-        cleanupOutdatedCaches: true
+        cleanupOutdatedCaches: true,
+        // Recibir y mostrar los avisos al celular (public/sw-avisos.js).
+        importScripts: ['sw-avisos.js']
       }
     })
   ],
