@@ -5,7 +5,11 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="{{GYM_DESCRIPCION}}" />
     <meta name="theme-color" content="{{GYM_COLOR_TEMA}}" />
+    <!-- La conexión con la API (TLS incluido) se abre mientras carga la app, y
+         no recién con el primer pedido: medio segundo menos en el celular. -->
+    <link rel="preconnect" href="%VITE_API_URL%" crossorigin />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="{{GYM_NOMBRE_CORTO}}" />

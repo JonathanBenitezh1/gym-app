@@ -20,12 +20,25 @@ function datosDelGimnasioEnElHtml() {
       handler: (html) => html
         .replaceAll('{{GYM_NOMBRE}}', escapar(GIMNASIO.nombre))
         .replaceAll('{{GYM_NOMBRE_CORTO}}', escapar(GIMNASIO.nombreCorto))
+        .replaceAll('{{GYM_DESCRIPCION}}', escapar(GIMNASIO.descripcion))
         .replaceAll('{{GYM_COLOR_TEMA}}', escapar(GIMNASIO.colorTema))
     }
   }
 }
 
 export default defineConfig({
+  build: {
+    rolldownOptions: {
+      output: {
+        // Las librerías (React, el router, axios, socket.io) en un archivo
+        // aparte. Cambian poco: con cada versión nueva de la app, el celular
+        // baja solo el código propio y no las vuelve a descargar.
+        codeSplitting: {
+          groups: [{ name: 'librerias', test: /[\\/]node_modules[\\/]/ }]
+        }
+      }
+    }
+  },
   plugins: [
     react(),
     tailwindcss(),

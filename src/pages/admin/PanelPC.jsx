@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useAvisos } from '../../components/Avisos'
@@ -97,11 +97,20 @@ export default function PanelPC() {
 
   useEffect(() => { cargarTodo() }, [cargarTodo])
 
+  // Varios avisos seguidos (una reserva de tres horarios, un pago y su
+  // confirmación) disparaban una recarga completa cada uno: se juntan en una.
+  const recargaPendiente = useRef(null)
+  const recargarPronto = useCallback(() => {
+    clearTimeout(recargaPendiente.current)
+    recargaPendiente.current = setTimeout(cargarTodo, 400)
+  }, [cargarTodo])
+  useEffect(() => () => clearTimeout(recargaPendiente.current), [])
+
   useSocketEventos({
-    nueva_reserva: () => cargarTodo(),
-    pago_confirmado: () => cargarTodo(),
-    reserva_cancelada: () => cargarTodo(),
-    nuevo_pago: () => cargarTodo()
+    nueva_reserva: recargarPronto,
+    pago_confirmado: recargarPronto,
+    reserva_cancelada: recargarPronto,
+    nuevo_pago: recargarPronto
   })
 
   const salir = async () => {
@@ -167,7 +176,7 @@ export default function PanelPC() {
             {seccion === 'planes'   && <SeccionPlanes clases={clases} horarios={horarios} {...comunes} />}
             {seccion === 'cuotas'   && <SeccionCuotas alExito={exito} alError={avisarError} confirmar={confirmar} />}
             {seccion === 'riesgo'   && <SeccionRiesgo alError={avisarError} />}
-      {seccion === 'caja'     && <SeccionCaja alExito={exito} alError={avisarError} confirmar={confirmar} />}
+            {seccion === 'caja'     && <SeccionCaja alExito={exito} alError={avisarError} confirmar={confirmar} />}
             {seccion === 'usuarios' && <SeccionUsuarios usuarios={usuarios} {...comunes} />}
             {seccion === 'reservas' && <SeccionReservas reservas={reservas} {...comunes} />}
             {seccion === 'rutinas'  && <SeccionRutinas alExito={exito} alError={avisarError} />}
@@ -213,14 +222,14 @@ function Tablero({ reservas, clases, horarios, usuarios, alExito, alError, alRec
     <div className="flex flex-col gap-5">
 
       <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-        <Metrica valor={datos.activas}    titulo="Reservas activas" />
-        <Metrica valor={precio(datos.recaudado)} titulo="Recaudado" acento />
+        <Metrica valor={datos.activas}    titulo="Reservas (90 días)" />
+        <Metrica valor={precio(datos.recaudado)} titulo="Semanales cobradas (90 días)" acento />
         <Metrica valor={datos.pendientes} titulo="Pendientes de pago" alerta={datos.pendientes > 0} />
         <Metrica valor={precio(datos.porCobrar)} titulo="Por cobrar" />
         <Metrica valor={datos.alumnos}    titulo="Alumnos" />
         <Metrica valor={clases.length}    titulo="Clases" />
         <Metrica valor={horarios.length}  titulo="Horarios" />
-        <Metrica valor={datos.canceladas} titulo="Canceladas" />
+        <Metrica valor={datos.canceladas} titulo="Canceladas (90 días)" />
       </div>
 
       {datos.aConfirmar.length > 0 && (
@@ -1203,7 +1212,12 @@ function SeccionReservas({ reservas, alExito, alError, alRecargar, confirmar: pe
         </div>
       </div>
 
-      <p className="titulo-seccion">{visibles.length} reservas</p>
+      <p className="titulo-seccion">
+        {visibles.length} reservas
+        <span className="ml-2 font-normal normal-case tracking-normal" style={{ color: 'var(--color-texto-3)' }}>
+          · últimos 90 días y las que falta cobrar
+        </span>
+      </p>
 
       <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
         {visibles.map(r => (

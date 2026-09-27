@@ -18,6 +18,13 @@ const socket = io(import.meta.env.VITE_SOCKET_URL, {
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
 
+  // WebSocket directo. Por defecto arranca con pedidos HTTP repetidos (long
+  // polling) y recién después se pasa a WebSocket: dos o tres viajes más
+  // hasta Virginia en cada conexión. Si una red bloquea WebSocket, vuelve a
+  // probar con polling.
+  transports: ['websocket', 'polling'],
+  tryAllTransports: true,
+
   // El servidor ahora exige el mismo token que la API. Va como funcion para
   // que se lea de nuevo en cada reconexion: si viniera fijo, despues de
   // cambiar la contrasena se seguiria mandando el token viejo.
