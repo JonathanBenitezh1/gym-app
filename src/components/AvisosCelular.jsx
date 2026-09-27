@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from './Avisos'
 import { estadoAvisos, activarAvisos, desactivarAvisos, ErrorAvisos } from '../utils/avisosCelular'
+import { mandarAvisoDePrueba } from '../services/avisosService'
 
 const QUE_AVISA = [
   'Tu plan, unos días antes de que venza y cuando vence',
@@ -53,6 +54,15 @@ export default function AvisosCelular({ compacto = false }) {
     }
   }
 
+  const probar = async () => {
+    try {
+      await mandarAvisoDePrueba()
+      exito('Aviso enviado: tiene que llegarte en unos segundos')
+    } catch (e) {
+      avisarError(e.response?.data?.error || 'No pudimos mandar el aviso')
+    }
+  }
+
   if (compacto) {
     if (estado !== 'apagados') return null
     return (
@@ -88,9 +98,14 @@ export default function AvisosCelular({ compacto = false }) {
         {QUE_AVISA.map(q => <li key={q}>· {q}</li>)}
       </ul>
       {estado === 'activos' ? (
-        <button onClick={desactivar} disabled={trabajando} className="btn btn-contorno btn-bloque">
-          {trabajando ? 'Desactivando…' : 'Desactivar en este celular'}
-        </button>
+        <div className="flex flex-col gap-2">
+          <button onClick={probar} disabled={trabajando} className="btn btn-primario btn-bloque">
+            Mandar aviso de prueba
+          </button>
+          <button onClick={desactivar} disabled={trabajando} className="btn btn-contorno btn-bloque">
+            {trabajando ? 'Desactivando…' : 'Desactivar en este celular'}
+          </button>
+        </div>
       ) : (
         <button onClick={activar} disabled={trabajando} className="btn btn-primario btn-bloque">
           {trabajando ? 'Activando…' : 'Activar avisos'}

@@ -17,6 +17,11 @@ export const guardarSuscripcion = async (suscripcion) => {
   return res.data
 }
 
+export const mandarAvisoDePrueba = async () => {
+  const res = await axios.post(`${API}/avisos/prueba`, {}, config())
+  return res.data
+}
+
 export const borrarSuscripcion = async (endpoint) => {
   const res = await axios.delete(`${API}/avisos/suscripcion`, { ...config(), data: { endpoint } })
   return res.data
