@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { loginUsuario } from '../services/authService'
 import { useAuth } from '../context/AuthContext'
@@ -6,6 +6,7 @@ import { inicioDe } from '../components/RutaProtegida'
 import { IconoOjo, IconoOjoTachado } from '../components/Iconos'
 import logoGimnasio from './img/logo.webp'
 import { GIMNASIO } from '../config/gimnasio'
+import { verMotivoSalida, olvidarMotivoSalida } from '../utils/salida'
 
 export default function Login() {
   const [email, setEmail]       = useState('')
@@ -13,6 +14,9 @@ export default function Login() {
   const [verClave, setVerClave] = useState(false)
   const [error, setError]       = useState('')
   const [cargando, setCargando] = useState(false)
+  // Por qué se cerró la sesión, si no fue la persona (utils/salida.js).
+  const [aviso] = useState(verMotivoSalida)
+  useEffect(() => { olvidarMotivoSalida() }, [])
 
   const navigate = useNavigate()
   const { usuario, guardarSesion } = useAuth()
@@ -63,6 +67,16 @@ export default function Login() {
             Ingresá para reservar tus clases
           </p>
         </div>
+
+        {aviso && (
+          <p
+            className="aparecer mb-4 rounded-xl px-4 py-3 text-sm"
+            style={{ backgroundColor: 'var(--color-alerta-bajo)', color: 'var(--color-alerta)', border: '1px solid var(--color-alerta)' }}
+            role="status"
+          >
+            {aviso}
+          </p>
+        )}
 
         <form onSubmit={enviar} className="tarjeta flex flex-col gap-4 p-6" noValidate>
           <div>

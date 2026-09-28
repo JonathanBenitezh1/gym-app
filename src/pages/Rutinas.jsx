@@ -5,12 +5,11 @@ import { obtenerMisRutinas } from '../services/profesorService'
 import NavBar from '../components/NavBar'
 import Progreso from '../components/Progreso'
 import { obtenerMiProgreso, registrarProgreso, borrarProgreso } from '../services/progresoService'
-import { SkeletonLista } from '../components/Skeleton'
 import { IconoChevron, IconoRutina } from '../components/Iconos'
 import { fechaCorta } from '../utils/formato'
 import EncabezadoSocio from '../components/EncabezadoSocio'
 import { recordado, recordar } from '../utils/memoria'
-import { useEsperaLarga } from '../hooks/useEsperaLarga'
+import Cargando from '../components/Cargando'
 
 /**
  * La primera sesión de cada rutina, abierta: casi siempre es lo que el socio
@@ -32,7 +31,6 @@ export default function Rutinas() {
   const [rutinas, setRutinas]   = useState(previo ?? [])
   const [abierta, setAbierta]   = useState(() => primerasSesiones(previo ?? []))   // { [rutinaId]: sesionId }
   const [cargando, setCargando] = useState(!previo)
-  const barras = useEsperaLarga(cargando)
 
   const cargar = useCallback(async () => {
     try {
@@ -104,7 +102,7 @@ export default function Rutinas() {
         </p>
 
         {cargando ? (
-          barras && <div className="mt-6"><SkeletonLista filas={2} /></div>
+          <Cargando />
         ) : rutinas.length === 0 ? (
           <div className="tarjeta mt-6 p-8 text-center">
             <span

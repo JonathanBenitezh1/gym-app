@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import RutaProtegida from './components/RutaProtegida'
+import Cargando from './components/Cargando'
 
 import Login from './pages/Login'
 import Horarios from './pages/Horarios'
@@ -13,10 +14,29 @@ import Perfil from './pages/Perfil'
 // Antes iban todas en un solo archivo: cada socio descargaba el panel del
 // admin, la puerta y la pantalla del profe sin usarlos nunca (auditoría del
 // 27/09/2026). La app instalada igual las guarda todas para sin conexión.
-const Registro  = lazy(() => import('./pages/Registro'))
-const PanelPC   = lazy(() => import('./pages/admin/PanelPC'))
-const MisClases = lazy(() => import('./pages/profesor/MisClases'))
-const Puerta    = lazy(() => import('./pages/Puerta'))
+//
+// Después de publicar una versión, una app que quedó abierta con la anterior
+// puede pedir un archivo que ya no existe. Se recarga una vez para tomar la
+// nueva, en vez de quedar en blanco.
+const CLAVE_RECARGA = 'recarga-por-version'
+const conReintento = (importar) => lazy(() => importar()
+  .then((modulo) => {
+    try { sessionStorage.removeItem(CLAVE_RECARGA) } catch { /* sin almacenamiento */ }
+    return modulo
+  })
+  .catch((error) => {
+    let yaRecargo = true
+    try { yaRecargo = sessionStorage.getItem(CLAVE_RECARGA) === '1' } catch { /* sin almacenamiento */ }
+    if (yaRecargo) throw error
+    try { sessionStorage.setItem(CLAVE_RECARGA, '1') } catch { /* sin almacenamiento */ }
+    window.location.reload()
+    return new Promise(() => {})
+  }))
+
+const Registro  = conReintento(() => import('./pages/Registro'))
+const PanelPC   = conReintento(() => import('./pages/admin/PanelPC'))
+const MisClases = conReintento(() => import('./pages/profesor/MisClases'))
+const Puerta    = conReintento(() => import('./pages/Puerta'))
 
 // Los profesionales (nutrición, kinesiología, entrenamiento personal)
 // gestionan sus clases igual que los profesores.
@@ -25,7 +45,7 @@ const DOCENTES = ['profesor', 'profesional', 'admin']
 function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<div className="min-h-screen" />}>
+      <Suspense fallback={<Cargando pantalla />}>
         <Routes>
 
           {/* Públicas */}

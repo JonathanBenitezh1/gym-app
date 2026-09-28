@@ -4,12 +4,11 @@ import { useAvisos } from '../components/Avisos'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import { obtenerMisReservas, cancelarReserva } from '../services/clasesService'
 import NavBar from '../components/NavBar'
-import { SkeletonListaReservas } from '../components/Skeleton'
 import { IconoReloj, IconoCalendario, IconoCheck, IconoAlerta } from '../components/Iconos'
 import { precio, rangoFechas, rangoHorario, textoDias } from '../utils/formato'
 import EncabezadoSocio from '../components/EncabezadoSocio'
 import { recordado, recordar } from '../utils/memoria'
-import { useEsperaLarga } from '../hooks/useEsperaLarga'
+import Cargando from '../components/Cargando'
 
 export default function MisReservas() {
   const navigate = useNavigate()
@@ -18,7 +17,6 @@ export default function MisReservas() {
 
   const [reservas, setReservas] = useState(() => recordado('reservas') ?? [])
   const [cargando, setCargando] = useState(() => !recordado('reservas'))
-  const barras = useEsperaLarga(cargando)
 
   const cargar = useCallback(async () => {
     try {
@@ -96,7 +94,7 @@ export default function MisReservas() {
         )}
 
         {cargando ? (
-          barras && <div className="mt-6"><SkeletonListaReservas /></div>
+          <Cargando />
         ) : sinNada ? (
           <div className="tarjeta mt-6 p-8 text-center">
             <span

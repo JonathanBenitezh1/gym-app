@@ -1,4 +1,5 @@
 import { io } from 'socket.io-client'
+import { salidaForzada } from '../utils/salida'
 
 /**
  * Una sola conexión de tiempo real para toda la app.
@@ -29,6 +30,17 @@ const socket = io(import.meta.env.VITE_SOCKET_URL, {
   // que se lea de nuevo en cada reconexion: si viniera fijo, despues de
   // cambiar la contrasena se seguiria mandando el token viejo.
   auth: (cb) => cb({ token: localStorage.getItem('token') })
+})
+
+// La sesión se cerró con la app abierta (entró en otro dispositivo, cambió la
+// clave, el gimnasio la cerró): el servidor avisa y la app sale al instante,
+// sin esperar al próximo pedido.
+socket.on('sesion_cerrada', ({ motivo, mensaje } = {}) => salidaForzada(motivo, mensaje))
+
+// Al reconectarse con una sesión que ya no existe, el servidor la rechaza con
+// "SESION:motivo". Sin esto, la app reintentaba conectarse para siempre.
+socket.on('connect_error', (error) => {
+  if (String(error?.message).startsWith('SESION:')) salidaForzada(error.message.slice(7))
 })
 
 export default socket

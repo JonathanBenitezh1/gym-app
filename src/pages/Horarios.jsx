@@ -15,8 +15,8 @@ import ProfesEnSede from '../components/ProfesEnSede'
 import InstalarApp from '../components/InstalarApp'
 import EncabezadoSocio from '../components/EncabezadoSocio'
 import { recordado, recordar } from '../utils/memoria'
-import { useEsperaLarga } from '../hooks/useEsperaLarga'
-import { SkeletonListaHorarios } from '../components/Skeleton'
+import { precargarSocio } from '../utils/precarga'
+import Cargando from '../components/Cargando'
 import GrillaSemanal, { SelectorFormato } from '../components/GrillaSemanal'
 import { IconoReloj, IconoCheck, IconoUsuarios, IconoCalendario, IconoFlecha } from '../components/Iconos'
 import { precio, rangoHorario, textoDias, fechaCorta } from '../utils/formato'
@@ -48,6 +48,7 @@ const leerFormato = () => {
 
 export default function Horarios() {
   const { usuario } = useAuth()
+  const usuarioId = usuario?.id
   const { exito, error: avisarError, confirmar } = useAvisos()
   const navigate = useNavigate()
 
@@ -66,7 +67,6 @@ export default function Horarios() {
   const [cargando, setCargando]     = useState(!previo)
   const [enviando, setEnviando]     = useState(false)
   const [formato, setFormato]       = useState(leerFormato)
-  const barras = useEsperaLarga(cargando)
 
   const cambiarFormato = (nuevo) => {
     setFormato(nuevo)
@@ -103,12 +103,14 @@ export default function Horarios() {
       setSeleccion(actual => actual
         .map(s => listaHorarios.find(h => h.id === s.id))
         .filter(h => h && h.cupos_disponibles > 0 && !tomados.has(h.id)))
+      // Con Clases ya en pantalla, se traen por detrás las otras secciones.
+      precargarSocio(usuarioId)
     } catch {
       avisarError('No pudimos cargar los horarios. Revisá tu conexión.')
     } finally {
       setCargando(false)
     }
-  }, [avisarError, periodo])
+  }, [avisarError, periodo, usuarioId])
 
   useEffect(() => { cargarTodo() }, [cargarTodo])
 
@@ -341,7 +343,7 @@ export default function Horarios() {
         <ProfesEnSede className="mt-4" />
 
         {cargando ? (
-          barras && <div className="mt-6"><SkeletonListaHorarios /></div>
+          <Cargando />
         ) : vista === 'mias' ? (
           <VistaMiPlan
             formato={formato}

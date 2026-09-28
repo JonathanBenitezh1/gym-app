@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { borrarDatosDeLaPuerta } from '../utils/puertaLocal'
+import { salidaForzada } from '../utils/salida'
 
 axios.interceptors.response.use(
   response => response,
@@ -14,12 +14,12 @@ axios.interceptors.response.use(
     // Solo cuenta si el pedido llevaba token. El login con una clave mala
     // tambien da 401, y antes eso recargaba la pagina: el mensaje de "email
     // o contraseña incorrectos" no se llegaba a ver.
+    //
+    // Desde el 27/09/2026 el servidor dice por qué (entró en otro
+    // dispositivo, venció, cambió la clave): la pantalla de ingreso lo muestra.
     const conSesion = Boolean(error.config?.headers?.Authorization)
     if (estado === 401 && conSesion) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('usuario')
-      await borrarDatosDeLaPuerta()
-      window.location.href = '/'
+      salidaForzada(error.response?.data?.motivo, error.response?.data?.error)
       return Promise.reject(error)
     }
 

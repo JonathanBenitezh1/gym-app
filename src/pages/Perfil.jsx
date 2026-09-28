@@ -9,9 +9,8 @@ import {
 import { obtenerMisReservas } from '../services/clasesService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import NavBar from '../components/NavBar'
-import { SkeletonPerfil } from '../components/Skeleton'
 import { recordado, recordar } from '../utils/memoria'
-import { useEsperaLarga } from '../hooks/useEsperaLarga'
+import Cargando from '../components/Cargando'
 import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave, IconoReloj, IconoCampana } from '../components/Iconos'
 import AvisosCelular from '../components/AvisosCelular'
 import { precio, fechaCorta, rangoFechas, hora, fechaHora, diasCortos } from '../utils/formato'
@@ -56,7 +55,6 @@ export default function Perfil() {
   const [cuota, setCuota]       = useState(previo?.cuota ?? null)
   const [pagosCuota, setPagosCuota] = useState(previo?.pagosCuota ?? [])
   const [cargando, setCargando] = useState(!previo)
-  const barras = useEsperaLarga(cargando)
   const [seccion, setSeccion]   = useState('datos')
 
   // La cuota es secundaria: si falla, la sección no aparece.
@@ -104,7 +102,7 @@ export default function Perfil() {
   if (cargando) {
     return (
       <div className="min-h-screen" style={{ paddingBottom: 'calc(var(--alto-nav) + 1.5rem)' }}>
-        {barras && <SkeletonPerfil />}
+        <Cargando pantalla />
         <NavBar />
       </div>
     )
