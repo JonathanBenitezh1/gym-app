@@ -40,7 +40,7 @@ export default function InstalarApp({ className = '' }) {
   }
 
   return (
-    <div className={`aparecer tarjeta p-4 ${className}`} style={{ borderColor: 'var(--color-acento)' }}>
+    <div className={`tarjeta p-4 ${className}`} style={{ borderColor: 'var(--color-acento)' }}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold">Instalá la app de {GIMNASIO.nombreCorto}</p>

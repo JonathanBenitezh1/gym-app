@@ -5,6 +5,7 @@ import { SkeletonLista } from '../../components/Skeleton'
 import { IconoFlecha, IconoDescargar, IconoCheck } from '../../components/Iconos'
 import { precio, fechaCorta, fechaHora, hoyISO, leerMonto } from '../../utils/formato'
 import { aCsv, descargar } from '../../utils/csv'
+import { recordado, recordar } from '../../utils/memoria'
 
 /**
  * Caja del día (plan de mejoras 1.4): lo cobrado en el mostrador, planes y
@@ -25,11 +26,17 @@ const sumarDias = (texto, n) => {
 export default function SeccionCaja({ alExito, alError, confirmar }) {
   const hoy = hoyISO()
   const [fecha, setFecha] = useState(hoy)
-  const [caja, setCaja] = useState(null)
+  // Lo último de ese día, al instante (utils/memoria.js); se actualiza por detrás.
+  const [caja, setCaja] = useState(() => recordado(`panel.caja.${hoy}`) ?? null)
 
   const cargar = useCallback(async () => {
+    // Otro día: lo que haya de ese día, o las barras. Nunca el día anterior
+    // con la fecha nueva arriba.
+    setCaja(prev => (prev && prev.fecha !== fecha ? (recordado(`panel.caja.${fecha}`) ?? null) : prev))
     try {
-      setCaja(await obtenerCaja(fecha))
+      const datos = await obtenerCaja(fecha)
+      setCaja(datos)
+      recordar(`panel.caja.${fecha}`, datos)
     } catch (err) {
       alError(err.response?.data?.error || 'No pudimos cargar la caja')
       setCaja(prev => prev ?? false)

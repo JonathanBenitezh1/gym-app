@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { obtenerEstadisticas } from '../../services/adminService'
 import { SkeletonLista } from '../../components/Skeleton'
 import { precio, hora, diasCortos } from '../../utils/formato'
+import { recordado, recordar } from '../../utils/memoria'
 
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 const nombreMes = (aaaamm) => MESES_CORTOS[Number(aaaamm.slice(5, 7)) - 1]
@@ -12,12 +13,13 @@ const nombreMes = (aaaamm) => MESES_CORTOS[Number(aaaamm.slice(5, 7)) - 1]
  * y sin leyenda: el título de cada bloque dice qué se mide.
  */
 export default function SeccionEstadisticas({ alError }) {
-  const [datos, setDatos] = useState(null)
+  // Lo último, al instante (utils/memoria.js); se actualiza por detrás.
+  const [datos, setDatos] = useState(() => recordado('panel.estadisticas') ?? null)
 
   useEffect(() => {
     obtenerEstadisticas()
-      .then(setDatos)
-      .catch(() => { alError('No pudimos cargar las estadísticas'); setDatos(false) })
+      .then(d => { setDatos(d); recordar('panel.estadisticas', d) })
+      .catch(() => { alError('No pudimos cargar las estadísticas'); setDatos(prev => prev ?? false) })
   }, [alError])
 
   if (datos === null) return <SkeletonLista filas={4} />

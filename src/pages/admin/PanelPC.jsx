@@ -17,6 +17,8 @@ import SeccionCuotas from './SeccionCuotas'
 import SeccionPlanes from './SeccionPlanes'
 import SeccionCaja from './SeccionCaja'
 import SeccionRiesgo from './SeccionRiesgo'
+import { recordado, recordar } from '../../utils/memoria'
+import { precargarAdmin } from '../../utils/precarga'
 import Interruptor from '../../components/Interruptor'
 import SelectorDias from '../../components/SelectorDias'
 import GrillaSemanal, { SelectorFormato } from '../../components/GrillaSemanal'
@@ -59,16 +61,20 @@ const SECCIONES = [
 
 export default function PanelPC() {
   const { usuario, cerrarSesion } = useAuth()
+  const usuarioId = usuario?.id
   const { exito, error: avisarError, confirmar } = useAvisos()
   const navigate = useNavigate()
 
+  // Al volver al panel (desde la puerta, por ejemplo) se muestra al instante
+  // lo último y se actualiza por detrás (utils/memoria.js).
+  const [previo] = useState(() => recordado('panel'))
   const [seccion, setSeccion]     = useState('panel')
-  const [clases, setClases]       = useState([])
-  const [horarios, setHorarios]   = useState([])
-  const [usuarios, setUsuarios]   = useState([])
-  const [reservas, setReservas]   = useState([])
-  const [profesores, setProfesores] = useState([])
-  const [cargando, setCargando]   = useState(true)
+  const [clases, setClases]       = useState(previo?.clases ?? [])
+  const [horarios, setHorarios]   = useState(previo?.horarios ?? [])
+  const [usuarios, setUsuarios]   = useState(previo?.usuarios ?? [])
+  const [reservas, setReservas]   = useState(previo?.reservas ?? [])
+  const [profesores, setProfesores] = useState(previo?.profesores ?? [])
+  const [cargando, setCargando]   = useState(!previo)
 
   // El esqueleto aparece solo si la carga pasa de 300 ms: si la API contesta
   // rápido, mostrarlo un instante y sacarlo se ve como un parpadeo.
@@ -91,9 +97,13 @@ export default function PanelPC() {
     if (p.status === 'fulfilled') setProfesores(p.value)
     if ([c, h, u, r, p].some(x => x.status === 'rejected')) {
       avisarError('Algunos datos no se pudieron cargar')
+    } else {
+      recordar('panel', { clases: c.value, horarios: h.value, usuarios: u.value, reservas: r.value, profesores: p.value })
+      // Con el panel en pantalla, se traen por detrás las otras secciones.
+      precargarAdmin(usuarioId)
     }
     setCargando(false)
-  }, [avisarError])
+  }, [avisarError, usuarioId])
 
   useEffect(() => { cargarTodo() }, [cargarTodo])
 

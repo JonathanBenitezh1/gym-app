@@ -82,7 +82,12 @@ export default function Rutinas() {
     }
   }
 
+  // La animación de abrir va solo cuando el socio toca: la sesión que ya
+  // viene abierta al entrar no se anima, si no la pantalla parpadeaba en cada visita.
+  const [tocada, setTocada] = useState(false)
+
   const alternar = (rutinaId, sesionId) => {
+    setTocada(true)
     setAbierta(prev => ({
       ...prev,
       [rutinaId]: prev[rutinaId] === sesionId ? null : sesionId
@@ -175,7 +180,7 @@ export default function Rutinas() {
                           </button>
 
                           {expandida && (
-                            <ul className="aparecer flex flex-col">
+                            <ul className={`${tocada ? 'aparecer ' : ''}flex flex-col`}>
                               {ejercicios.length === 0 ? (
                                 <li className="px-4 pb-4 text-sm" style={{ color: 'var(--color-texto-3)' }}>
                                   Esta sesión todavía no tiene ejercicios cargados.

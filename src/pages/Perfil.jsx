@@ -95,7 +95,13 @@ export default function Perfil() {
 
   const infoCuota = cuota && estadoCuota(cuota)
 
-  const alternar = (nombre) => setSeccion(s => (s === nombre ? null : nombre))
+  // La animación de abrir va solo cuando el socio toca: "Mis datos", que ya
+  // viene abierta, no se anima en cada visita (parecía un parpadeo).
+  const [tocado, setTocado] = useState(false)
+  const alternar = (nombre) => {
+    setTocado(true)
+    setSeccion(s => (s === nombre ? null : nombre))
+  }
 
   const pendientes = reservas.filter(r => r.estado === 'pendiente').length
 
@@ -144,7 +150,7 @@ export default function Perfil() {
       <main className="contenedor flex flex-col gap-2.5 pt-4">
 
         <Acordeon
-          nombre="datos" abierta={seccion} alAlternar={alternar}
+          nombre="datos" abierta={seccion} alAlternar={alternar} animar={tocado}
           Icono={IconoPerfil} titulo="Mis datos"
         >
           <SeccionDatos
@@ -160,14 +166,14 @@ export default function Perfil() {
         </Acordeon>
 
         <Acordeon
-          nombre="clave" abierta={seccion} alAlternar={alternar}
+          nombre="clave" abierta={seccion} alAlternar={alternar} animar={tocado}
           Icono={IconoLlave} titulo="Cambiar contraseña"
         >
           <SeccionClave alExito={exito} alError={avisarError} />
         </Acordeon>
 
         <Acordeon
-          nombre="reservas" abierta={seccion} alAlternar={alternar}
+          nombre="reservas" abierta={seccion} alAlternar={alternar} animar={tocado}
           Icono={IconoCalendario} titulo="Mis reservas"
           insignia={pendientes > 0 && `${pendientes} pendiente${pendientes > 1 ? 's' : ''}`}
         >
@@ -202,7 +208,7 @@ export default function Perfil() {
 
         {infoCuota && (
           <Acordeon
-            nombre="cuota" abierta={seccion} alAlternar={alternar}
+            nombre="cuota" abierta={seccion} alAlternar={alternar} animar={tocado}
             Icono={IconoReloj} titulo="Mi plan"
             insignia={{ gracia: 'En gracia', vencida: 'Vencido' }[cuota.estado]}
           >
@@ -237,7 +243,7 @@ export default function Perfil() {
 
         {perfil?.rol === 'alumno' && (
           <Acordeon
-            nombre="avisos" abierta={seccion} alAlternar={alternar}
+            nombre="avisos" abierta={seccion} alAlternar={alternar} animar={tocado}
             Icono={IconoCampana} titulo="Avisos en el celular"
           >
             <AvisosCelular />
@@ -245,7 +251,7 @@ export default function Perfil() {
         )}
 
         <Acordeon
-          nombre="pagos" abierta={seccion} alAlternar={alternar}
+          nombre="pagos" abierta={seccion} alAlternar={alternar} animar={tocado}
           Icono={IconoPago} titulo="Pagos de reservas"
         >
           {pagos.length === 0 ? (
@@ -282,7 +288,7 @@ export default function Perfil() {
 
 /* ─── Piezas ───────────────────────────────────────────── */
 
-function Acordeon({ nombre, abierta, alAlternar, Icono, titulo, insignia, children }) {
+function Acordeon({ nombre, abierta, alAlternar, animar, Icono, titulo, insignia, children }) {
   const expandida = abierta === nombre
   return (
     <section className="tarjeta overflow-hidden">
@@ -302,7 +308,7 @@ function Acordeon({ nombre, abierta, alAlternar, Icono, titulo, insignia, childr
         </span>
       </button>
       {expandida && (
-        <div className="aparecer px-4 pb-4" style={{ borderTop: '1px solid var(--color-linea-sutil)' }}>
+        <div className={`${animar ? 'aparecer ' : ''}px-4 pb-4`} style={{ borderTop: '1px solid var(--color-linea-sutil)' }}>
           <div className="pt-3">{children}</div>
         </div>
       )}

@@ -16,6 +16,7 @@ import {
   IconoMas, IconoCruz, IconoSalir, IconoLapiz
 } from '../../components/Iconos'
 import { rangoHorario, hoyISO, fechaCorta, textoDias, diasCortos } from '../../utils/formato'
+import { recordado, recordar } from '../../utils/memoria'
 import logoGimnasio from '../img/logo.webp'
 import { GIMNASIO } from '../../config/gimnasio'
 
@@ -31,12 +32,15 @@ export default function MisClases() {
   const navigate = useNavigate()
 
   const [solapa, setSolapa]     = useState('horarios')
-  const [horarios, setHorarios] = useState([])
-  const [cargando, setCargando] = useState(true)
+  // Lo último, al instante (utils/memoria.js); se actualiza por detrás.
+  const [horarios, setHorarios] = useState(() => recordado('profe.horarios') ?? [])
+  const [cargando, setCargando] = useState(() => !recordado('profe.horarios'))
 
   const cargarHorarios = useCallback(async () => {
     try {
-      setHorarios(await obtenerMisHorarios())
+      const lista = await obtenerMisHorarios()
+      setHorarios(lista)
+      recordar('profe.horarios', lista)
     } catch {
       avisarError('No pudimos cargar tus horarios')
     } finally {

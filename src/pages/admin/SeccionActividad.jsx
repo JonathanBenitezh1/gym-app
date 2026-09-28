@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { obtenerActividad } from '../../services/adminService'
-import { useAuth } from '../../context/AuthContext'
 import { SkeletonLista } from '../../components/Skeleton'
+import { recordado, recordar } from '../../utils/memoria'
 import { IconoBuscar } from '../../components/Iconos'
 import { precio, fechaHora, fechaCorta } from '../../utils/formato'
 
@@ -68,31 +68,16 @@ function detalleLegible(d = {}) {
   return partes.join(' · ')
 }
 
-// Lo último que se cargó, y de quién. Al volver a abrir la sección se muestra
-// al instante mientras se actualiza de fondo: antes cada visita arrancaba con
-// barras de carga que después se achicaban de golpe.
-//
-// Se lee y se escribe a través de estas dos funciones y no directo desde el
-// componente: el compilador de React no puede memorizar una función que
-// reasigna una variable del módulo.
-let ultimaCarga = null
-
-function cargaRecordada(usuarioId) {
-  return ultimaCarga?.usuarioId === usuarioId ? ultimaCarga.movimientos : null
-}
-
-function recordarCarga(usuarioId, movimientos) {
-  ultimaCarga = { usuarioId, movimientos }
-}
-
 /**
  * Quién hizo qué. Sirve para revisar el trabajo del panel y encontrar un
  * movimiento sin tener que adivinar.
+ *
+ * Lo último que se cargó se muestra al instante al volver a abrir la sección,
+ * mientras se actualiza de fondo (utils/memoria.js, que se borra al salir o
+ * entrar con otra cuenta). El panel lo precarga (utils/precarga.js).
  */
 export default function SeccionActividad({ alError }) {
-  const { usuario } = useAuth()
-  const usuarioId = usuario?.id
-  const guardada = cargaRecordada(usuarioId)
+  const [guardada] = useState(() => recordado('panel.actividad') ?? null)
 
   const [movimientos, setMovimientos] = useState(guardada || [])
   const [cargando, setCargando]       = useState(guardada === null)
@@ -102,14 +87,14 @@ export default function SeccionActividad({ alError }) {
   const cargar = useCallback(async () => {
     try {
       const datos = await obtenerActividad(150)
-      recordarCarga(usuarioId, datos)
+      recordar('panel.actividad', datos)
       setMovimientos(datos)
     } catch {
       alError('No se pudo cargar la actividad')
     } finally {
       setCargando(false)
     }
-  }, [alError, usuarioId])
+  }, [alError])
 
   useEffect(() => { cargar() }, [cargar])
 

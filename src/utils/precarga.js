@@ -3,9 +3,13 @@ import { obtenerMisReservas } from '../services/clasesService'
 import { obtenerPerfil, obtenerHistorialPagos, obtenerMiCuota, obtenerMisPagosCuota } from '../services/perfilService'
 import { obtenerMisRutinas } from '../services/profesorService'
 import { obtenerMiProgreso } from '../services/progresoService'
+import {
+  obtenerCuotas, obtenerPlanesAdmin, obtenerRiesgo, obtenerCaja, obtenerEstadisticas, obtenerActividad
+} from '../services/adminService'
+import { hoyISO } from './formato'
 
 /**
- * Precarga de las pantallas del socio (27/09/2026).
+ * Precarga de las pantallas del socio y del panel (27/09/2026).
  *
  * Cada pantalla muestra al instante lo último que tuvo (utils/memoria.js),
  * pero la primera vez que se abre en la sesión no tiene nada y parpadea: vacía,
@@ -52,7 +56,40 @@ export function precargarSocio(usuarioId) {
   cuandoPueda(() => { pedir() })
 }
 
+/**
+ * Lo mismo para el panel del admin: con el tablero en pantalla se traen
+ * Cuotas, En riesgo, Caja de hoy, Estadísticas, Planes y Actividad, con las
+ * claves que usa cada sección.
+ */
+let hechaAdminPara = null
+
+export function precargarAdmin(usuarioId) {
+  if (!usuarioId || hechaAdminPara === usuarioId) return
+  hechaAdminPara = usuarioId
+
+  const pedir = async () => {
+    const hoy = hoyISO()
+    const [cuotas, planes, riesgo, caja, estadisticas, actividad] = (await Promise.allSettled([
+      obtenerCuotas(), obtenerPlanesAdmin(), obtenerRiesgo(10), obtenerCaja(hoy), obtenerEstadisticas(),
+      obtenerActividad(150)
+    ])).map(r => (r.status === 'fulfilled' ? r.value : undefined))
+
+    if (hechaAdminPara !== usuarioId) return
+
+    if (cuotas && planes && !recordado('panel.cuotas')) recordar('panel.cuotas', { cuotas, planes })
+    if (planes && !recordado('panel.planes')) recordar('panel.planes', planes)
+    if (riesgo && !recordado('panel.riesgo.10')) recordar('panel.riesgo.10', riesgo)
+    if (caja && !recordado(`panel.caja.${hoy}`)) recordar(`panel.caja.${hoy}`, caja)
+    if (estadisticas && !recordado('panel.estadisticas')) recordar('panel.estadisticas', estadisticas)
+    if (actividad && !recordado('panel.actividad')) recordar('panel.actividad', actividad)
+  }
+
+  const cuandoPueda = window.requestIdleCallback ?? ((f) => setTimeout(f, 800))
+  cuandoPueda(() => { pedir() })
+}
+
 /** Al salir o entrar con otra cuenta. */
 export function olvidarPrecarga() {
   hechaPara = null
+  hechaAdminPara = null
 }

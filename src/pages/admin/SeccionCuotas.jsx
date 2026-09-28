@@ -9,6 +9,7 @@ import { IconoBuscar, IconoWhatsapp, IconoCheck, IconoDescargar } from '../../co
 import { aCsv, descargar } from '../../utils/csv'
 import { precio, fechaCorta, fechaHora, leerMonto } from '../../utils/formato'
 import { linkWhatsapp, mensajeCuota } from '../../utils/whatsapp'
+import { recordado, recordar } from '../../utils/memoria'
 
 const ESTADOS = {
   al_dia:    { texto: 'Al día',     insignia: 'insignia-exito' },
@@ -47,8 +48,9 @@ function detalleVence(s) {
  * desde la app: cobrarlo se los asigna.
  */
 export default function SeccionCuotas({ alExito, alError, confirmar }) {
-  const [datos, setDatos]       = useState(null)
-  const [planes, setPlanes]     = useState([])
+  // Lo último, al instante (utils/memoria.js); se actualiza por detrás.
+  const [datos, setDatos]       = useState(() => recordado('panel.cuotas')?.cuotas ?? null)
+  const [planes, setPlanes]     = useState(() => recordado('panel.cuotas')?.planes ?? [])
   const [filtro, setFiltro]     = useState('todos')
   const [busqueda, setBusqueda] = useState('')
   const [abierto, setAbierto]   = useState(null) // { id, modo: 'cobrar' | 'plan' | 'corregir' | 'historial' }
@@ -58,6 +60,7 @@ export default function SeccionCuotas({ alExito, alError, confirmar }) {
       const [cuotas, listaPlanes] = await Promise.all([obtenerCuotas(), obtenerPlanesAdmin()])
       setDatos(cuotas)
       setPlanes(listaPlanes)
+      recordar('panel.cuotas', { cuotas, planes: listaPlanes })
     } catch {
       alError('No pudimos cargar las cuotas')
       setDatos(prev => prev ?? false)

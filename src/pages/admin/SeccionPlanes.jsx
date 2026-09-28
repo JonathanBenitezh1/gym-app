@@ -5,6 +5,7 @@ import Interruptor from '../../components/Interruptor'
 import { SkeletonLista } from '../../components/Skeleton'
 import { IconoLapiz, IconoBasura, IconoUsuarios } from '../../components/Iconos'
 import { precio, leerMonto, textoDias, rangoHorario } from '../../utils/formato'
+import { recordado, recordar } from '../../utils/memoria'
 
 /**
  * Planes mensuales (25/09/2026). El gimnasio arma cada plan con las clases
@@ -15,8 +16,9 @@ import { precio, leerMonto, textoDias, rangoHorario } from '../../utils/formato'
 const PLAN_VACIO = { nombre: '', precio: '', descripcion: '', incluye_todo: false, clases_ids: [] }
 
 export default function SeccionPlanes({ clases, horarios, alExito, alError, confirmar }) {
-  const [planes, setPlanes] = useState([])
-  const [cargando, setCargando] = useState(true)
+  // Lo último, al instante (utils/memoria.js); se actualiza por detrás.
+  const [planes, setPlanes] = useState(() => recordado('panel.planes') ?? [])
+  const [cargando, setCargando] = useState(() => !recordado('panel.planes'))
   const [form, setForm] = useState(PLAN_VACIO)
   const [editando, setEditando] = useState(null)
   const [formEdit, setFormEdit] = useState(PLAN_VACIO)
@@ -25,7 +27,9 @@ export default function SeccionPlanes({ clases, horarios, alExito, alError, conf
 
   const cargar = useCallback(async () => {
     try {
-      setPlanes(await obtenerPlanesAdmin())
+      const lista = await obtenerPlanesAdmin()
+      setPlanes(lista)
+      recordar('panel.planes', lista)
     } catch {
       alError('No pudimos cargar los planes')
     } finally {

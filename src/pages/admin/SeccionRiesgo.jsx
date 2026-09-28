@@ -5,6 +5,7 @@ import { SkeletonLista } from '../../components/Skeleton'
 import { IconoBuscar, IconoWhatsapp } from '../../components/Iconos'
 import { fechaCorta, fechaHora } from '../../utils/formato'
 import { linkWhatsapp, mensajeRiesgo } from '../../utils/whatsapp'
+import { recordado, recordar } from '../../utils/memoria'
 
 const OPCIONES_DIAS = [7, 10, 14, 21, 30]
 
@@ -52,14 +53,17 @@ function detalle(m, s) {
  * escrito. Al tocarlo queda anotado, así nadie le escribe dos veces.
  */
 export default function SeccionRiesgo({ alError }) {
-  const [datos, setDatos]       = useState(null)
+  // Lo último, al instante (utils/memoria.js); se actualiza por detrás.
+  const [datos, setDatos]       = useState(() => recordado('panel.riesgo.10') ?? null)
   const [diasSin, setDiasSin]   = useState(10)
   const [filtro, setFiltro]     = useState('todos')
   const [busqueda, setBusqueda] = useState('')
 
   const cargar = useCallback(async () => {
     try {
-      setDatos(await obtenerRiesgo(diasSin))
+      const d = await obtenerRiesgo(diasSin)
+      setDatos(d)
+      recordar(`panel.riesgo.${diasSin}`, d)
     } catch {
       alError('No pudimos cargar los socios en riesgo')
       setDatos(prev => prev ?? false)
