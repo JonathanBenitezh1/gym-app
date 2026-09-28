@@ -10,6 +10,8 @@ import { fechaCorta } from '../utils/formato'
 import EncabezadoSocio from '../components/EncabezadoSocio'
 import { recordado, recordar } from '../utils/memoria'
 import Cargando from '../components/Cargando'
+import { agruparEjercicios, letra, SENSACIONES, GANAS, sensacionDe } from '../utils/rutinas'
+import { comentarDia, obtenerMisComentarios } from '../services/comentariosService'
 
 /**
  * La primera sesión de cada rutina, abierta: casi siempre es lo que el socio
@@ -47,6 +49,14 @@ export default function Rutinas() {
   }, [avisarError])
 
   useEffect(() => { cargar() }, [cargar])
+
+  // Sus comentarios, para mostrarle cuándo comentó cada día.
+  const [comentarios, setComentarios] = useState(() => recordado('comentarios') ?? [])
+  useEffect(() => {
+    obtenerMisComentarios()
+      .then(datos => { setComentarios(datos); recordar('comentarios', datos) })
+      .catch(() => {})
+  }, [])
 
   const [progreso, setProgreso] = useState(() => recordado('progreso') ?? [])
   useEffect(() => {
@@ -180,40 +190,49 @@ export default function Rutinas() {
                           </button>
 
                           {expandida && (
-                            <ul className={`${tocada ? 'aparecer ' : ''}flex flex-col`}>
+                            <div className={tocada ? 'aparecer' : undefined}>
                               {ejercicios.length === 0 ? (
-                                <li className="px-4 pb-4 text-sm" style={{ color: 'var(--color-texto-3)' }}>
+                                <p className="px-4 pb-4 text-sm" style={{ color: 'var(--color-texto-3)' }}>
                                   Esta sesión todavía no tiene ejercicios cargados.
-                                </li>
-                              ) : ejercicios.map((ej, i) => (
-                                <li
-                                  key={ej.id || i}
-                                  className="flex items-center justify-between gap-3 px-4 py-2.5"
-                                  style={{
-                                    borderTop: '1px solid var(--color-linea-sutil)',
-                                    backgroundColor: 'var(--color-fondo)'
-                                  }}
-                                >
-                                  <span className="flex min-w-0 items-center gap-2.5">
-                                    <span
-                                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold"
-                                      style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
+                                </p>
+                              ) : (
+                                <ol>
+                                  {agruparEjercicios(ejercicios).map(g => (
+                                    <li
+                                      key={g.ejercicios[0].id ?? g.numero}
+                                      style={{ borderTop: '1px solid var(--color-linea-sutil)', backgroundColor: 'var(--color-fondo)' }}
                                     >
-                                      {i + 1}
-                                    </span>
-                                    <span className="truncate text-sm font-medium">{ej.nombre}</span>
-                                  </span>
-                                  <span className="flex shrink-0 gap-3 text-xs">
-                                    <span style={{ color: 'var(--color-texto-3)' }}>
-                                      <b style={{ color: 'var(--color-acento)' }}>{ej.series}</b> series
-                                    </span>
-                                    <span style={{ color: 'var(--color-texto-3)' }}>
-                                      <b style={{ color: 'var(--color-acento)' }}>{ej.repeticiones}</b> reps
-                                    </span>
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
+                                      {g.circuito ? (
+                                        <div className="px-4 py-3">
+                                          <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-acento)' }}>
+                                            Circuito{g.series ? ` · ${g.series} ${g.series === 1 ? 'vuelta' : 'vueltas'}` : ''} · hacelos seguidos
+                                          </p>
+                                          <ul className="mt-2 flex flex-col gap-2.5 border-l-2 pl-3" style={{ borderColor: 'var(--color-acento)' }}>
+                                            {g.ejercicios.map((ej, i) => (
+                                              <FilaEjercicio key={ej.id ?? i} numero={`${g.numero}${letra(i)}`} ejercicio={ej} />
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      ) : (
+                                        <ul className="px-4 py-3">
+                                          <FilaEjercicio numero={g.numero} ejercicio={g.ejercicios[0]} series={g.series} />
+                                        </ul>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ol>
+                              )}
+                              <ComentarioDia
+                                rutinaId={rutina.id}
+                                dia={sesion.nombre}
+                                ultimo={comentarios.find(c => c.rutina_id === rutina.id && c.dia === sesion.nombre)}
+                                alEnviar={(nuevo) => {
+                                  const lista = [nuevo, ...comentarios]
+                                  setComentarios(lista)
+                                  recordar('comentarios', lista)
+                                }}
+                              />
+                            </div>
                           )}
                         </div>
                       )
@@ -242,5 +261,139 @@ export default function Rutinas() {
 
       <NavBar />
     </div>
+  )
+}
+
+/* ─── Un ejercicio ──────────────────────────────────────── */
+
+// "10-12" o "15" llevan "reps"; "fallo" o "30 s" van como están.
+const textoReps = (r) => (/^\d+(\s*[-–a]\s*\d+)?$/.test(String(r).trim()) ? `${r} reps` : r)
+
+/**
+ * El nombre entero, en varias líneas si hace falta, y las series y
+ * repeticiones abajo. Antes iban en la misma línea y el nombre se cortaba
+ * con "…" en el celular.
+ */
+function FilaEjercicio({ numero, ejercicio, series }) {
+  return (
+    <li className="flex items-start gap-2.5">
+      <span
+        className="mt-px flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md px-1 text-[11px] font-bold"
+        style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
+      >
+        {numero}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block break-words text-sm font-medium leading-snug">{ejercicio.nombre}</span>
+        {(series || ejercicio.repeticiones) && (
+          <span className="mt-0.5 flex flex-wrap gap-x-3 text-xs" style={{ color: 'var(--color-texto-3)' }}>
+            {series && <span><b style={{ color: 'var(--color-acento)' }}>{series}</b> {series === 1 ? 'serie' : 'series'}</span>}
+            {ejercicio.repeticiones && <b style={{ color: 'var(--color-acento)' }}>{textoReps(ejercicio.repeticiones)}</b>}
+          </span>
+        )}
+      </span>
+    </li>
+  )
+}
+
+/* ─── Cómo te fue ───────────────────────────────────────── */
+
+/**
+ * Al final de cada día: cómo se sintió, con qué ganas y, si quiere, algo
+ * escrito. Lo ven su profe y el admin (migración 019).
+ */
+function ComentarioDia({ rutinaId, dia, ultimo, alEnviar }) {
+  const { exito, error: avisarError } = useAvisos()
+  const [abierto, setAbierto]     = useState(false)
+  const [sensacion, setSensacion] = useState(null)
+  const [ganas, setGanas]         = useState(null)
+  const [texto, setTexto]         = useState('')
+  const [enviando, setEnviando]   = useState(false)
+
+  const cerrar = () => {
+    setAbierto(false)
+    setSensacion(null)
+    setGanas(null)
+    setTexto('')
+  }
+
+  const enviar = async (e) => {
+    e.preventDefault()
+    if (!sensacion || !ganas) return avisarError('Elegí cómo te sentiste y con qué ganas entrenaste')
+    setEnviando(true)
+    try {
+      const nuevo = await comentarDia({ rutina_id: rutinaId, dia, sensacion, ganas, texto })
+      alEnviar({ ...nuevo, rutina_id: rutinaId, dia, sensacion, ganas, texto })
+      exito('¡Gracias! Tu profe lo va a ver')
+      cerrar()
+    } catch (err) {
+      avisarError(err.response?.data?.error || 'No pudimos mandar tu comentario')
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  if (!abierto) {
+    return (
+      <div
+        className="flex flex-wrap items-center justify-between gap-2 px-4 py-3"
+        style={{ borderTop: '1px solid var(--color-linea-sutil)' }}
+      >
+        <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>
+          {ultimo
+            ? `Tu último comentario: ${fechaCorta(ultimo.creado_en)} · ${sensacionDe(ultimo.sensacion)?.texto}`
+            : 'Contale a tu profe cómo te fue'}
+        </p>
+        <button onClick={() => setAbierto(true)} className="btn btn-contorno btn-chico">
+          ¿Cómo te fue hoy?
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <form
+      onSubmit={enviar}
+      className="aparecer flex flex-col gap-3 px-4 py-4"
+      style={{ borderTop: '1px solid var(--color-linea-sutil)', backgroundColor: 'var(--color-elevado)' }}
+    >
+      <Opciones titulo="¿Cómo te sentiste?" opciones={SENSACIONES} valor={sensacion} alElegir={setSensacion} />
+      <Opciones titulo="¿Con qué ganas entrenaste?" opciones={GANAS} valor={ganas} alElegir={setGanas} />
+      <div>
+        <label htmlFor={`comentario-${rutinaId}-${dia}`} className="etiqueta-campo">Contale a tu profe (opcional)</label>
+        <textarea
+          id={`comentario-${rutinaId}-${dia}`}
+          className="campo" rows={3} maxLength={500}
+          placeholder="Ej: me costó el peso muerto, dormí poco…"
+          value={texto} onChange={e => setTexto(e.target.value)}
+        />
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={cerrar} className="btn btn-fantasma btn-chico flex-1">Cancelar</button>
+        <button type="submit" disabled={enviando || !sensacion || !ganas} className="btn btn-primario btn-chico flex-1">
+          {enviando ? 'Enviando…' : 'Enviar'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+function Opciones({ titulo, opciones, valor, alElegir }) {
+  return (
+    <fieldset>
+      <legend className="etiqueta-campo">{titulo}</legend>
+      <div className="flex flex-wrap gap-1.5">
+        {opciones.map(o => (
+          <button
+            key={o.valor} type="button"
+            aria-pressed={valor === o.valor}
+            onClick={() => alElegir(o.valor)}
+            className={`pildora ${valor === o.valor ? 'pildora-activa' : ''}`}
+          >
+            {o.texto}
+          </button>
+        ))}
+      </div>
+    </fieldset>
   )
 }

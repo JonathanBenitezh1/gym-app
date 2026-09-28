@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   buscarAlumnos, obtenerRutinaDeAlumno, guardarRutina,
   obtenerPlantillas, guardarPlantilla, borrarPlantilla
@@ -8,23 +8,49 @@ import { useAvisos } from './Avisos'
 import { IconoBuscar, IconoMas, IconoCruz, IconoBasura } from './Iconos'
 import Progreso from './Progreso'
 import { obtenerProgresoDeAlumno } from '../services/progresoService'
+import { obtenerComentarios } from '../services/comentariosService'
+import { useSocketEventos } from '../hooks/useSocketEventos'
+import { letra, sensacionDe, ganasDe } from '../utils/rutinas'
+import { fechaHora } from '../utils/formato'
 
 // Editor de rutinas: se busca al alumno por nombre o DNI. Lo usan el panel del profe y el del admin:
 // la API guarda la rutina a nombre de quien la carga.
+
+const ejercicioVacio = (enCircuito = false) => ({ nombre: '', series: '', repeticiones: '', en_circuito: enCircuito })
 
 // Lo que vuelve de la base trae null donde el campo espera texto.
 const aEditor = (lista) => lista.map(s => ({
   nombre: s.nombre,
   orden: s.orden,
   ejercicios: s.ejercicios?.length
-    ? s.ejercicios.map(ej => ({ ...ej, series: ej.series ?? '', repeticiones: ej.repeticiones ?? '' }))
-    : [{ nombre: '', series: '', repeticiones: '', orden: 1 }]
+    ? s.ejercicios.map(ej => ({
+        ...ej, series: ej.series ?? '', repeticiones: ej.repeticiones ?? '', en_circuito: ej.en_circuito === true
+      }))
+    : [ejercicioVacio()]
 }))
 
-const sesionVacia = (orden = 1) => ({
-  nombre: '', orden,
-  ejercicios: [{ nombre: '', series: '', repeticiones: '', orden: 1 }]
-})
+const sesionVacia = (orden = 1) => ({ nombre: '', orden, ejercicios: [ejercicioVacio()] })
+
+// Circuitos (migración 019): un ejercicio con `en_circuito` va seguido del de
+// arriba. El grupo de un ejercicio termina en el último que va pegado a él.
+const finDelGrupo = (ejercicios, ei) => {
+  let j = ei
+  while (ejercicios[j + 1]?.en_circuito) j++
+  return j
+}
+
+/** "3" para uno suelto; "3A", "3B"… dentro de un circuito. */
+function etiquetasDe(ejercicios) {
+  let numero = 0
+  let dentro = 0
+  return ejercicios.map((ej, ei) => {
+    const miembro = ej.en_circuito && ei > 0
+    if (miembro) dentro++
+    else { numero++; dentro = 0 }
+    const encabeza = !miembro && ejercicios[ei + 1]?.en_circuito
+    return { miembro, encabeza, texto: miembro || encabeza ? `${numero}${letra(dentro)}` : String(numero) }
+  })
+}
 
 export default function SeccionRutinas({ alExito, alError }) {
   const [dni, setDni]         = useState('')
@@ -44,6 +70,16 @@ export default function SeccionRutinas({ alExito, alError }) {
   useEffect(() => {
     obtenerPlantillas().then(setPlantillas).catch(() => {})
   }, [])
+
+  // Comentarios de los socios (migración 019): los últimos arriba, y los del
+  // alumno abierto junto a su rutina. El profe ve los de sus rutinas; el admin, todos.
+  const [recientes, setRecientes] = useState([])
+  const [delAlumno, setDelAlumno] = useState([])
+  const cargarRecientes = useCallback(() => {
+    obtenerComentarios({ limite: 8 }).then(setRecientes).catch(() => {})
+  }, [])
+  useEffect(() => { cargarRecientes() }, [cargarRecientes])
+  useSocketEventos({ comentario_rutina: cargarRecientes })
 
   const plantillaElegida = plantillas.find(p => String(p.id) === plantillaId)
   const puedeBorrar = plantillaElegida &&
@@ -128,6 +164,10 @@ export default function SeccionRutinas({ alExito, alError }) {
     setResultados(null)
     setAlumno(encontrado)
     setProgreso([])
+    setDelAlumno([])
+    obtenerComentarios({ alumno_id: encontrado.id, limite: 20 })
+      .then(c => { if (sigueAbierto()) setDelAlumno(c) })
+      .catch(() => {})
     // El editor arranca vacío mientras carga: si la carga falla, no queda la
     // rutina del alumno anterior a nombre de este.
     setSesiones([sesionVacia()])
@@ -166,12 +206,31 @@ export default function SeccionRutinas({ alExito, alError }) {
   const agregarEjercicio = (si) =>
     setSesiones(prev => prev.map((s, idx) => idx !== si ? s : {
       ...s,
-      ejercicios: [...s.ejercicios, { nombre: '', series: '', repeticiones: '', orden: s.ejercicios.length + 1 }]
+      ejercicios: [...s.ejercicios, ejercicioVacio()]
     }))
 
+  // El "+" de entre medio: suma un ejercicio al circuito, detrás del último del grupo.
+  const agregarAlCircuito = (si, ei) =>
+    setSesiones(prev => prev.map((s, idx) => {
+      if (idx !== si) return s
+      const ejercicios = [...s.ejercicios]
+      ejercicios.splice(finDelGrupo(ejercicios, ei) + 1, 0, ejercicioVacio(true))
+      return { ...s, ejercicios }
+    }))
+
+  // Sale del circuito y queda suelto, con sus propias series.
+  const separarDelCircuito = (si, ei) => actualizarEjercicio(si, ei, 'en_circuito', false)
+
   const quitarEjercicio = (si, ei) =>
-    setSesiones(prev => prev.map((s, idx) => idx !== si ? s : {
-      ...s, ejercicios: s.ejercicios.filter((_, j) => j !== ei)
+    setSesiones(prev => prev.map((s, idx) => {
+      if (idx !== si) return s
+      const quitado = s.ejercicios[ei]
+      const ejercicios = s.ejercicios.filter((_, j) => j !== ei)
+      // Si se va el primero de un circuito, el que seguía lo encabeza con sus series.
+      if (!quitado.en_circuito && ejercicios[ei]?.en_circuito) {
+        ejercicios[ei] = { ...ejercicios[ei], en_circuito: false, series: quitado.series }
+      }
+      return { ...s, ejercicios }
     }))
 
   const guardar = async () => {
@@ -191,6 +250,17 @@ export default function SeccionRutinas({ alExito, alError }) {
 
   return (
     <div className="flex flex-col gap-4">
+
+      {!alumno && recientes.length > 0 && (
+        <section className="tarjeta flex flex-col gap-2 p-4">
+          <h2 className="titulo-seccion">Comentarios recientes de los socios</h2>
+          <ListaComentarios
+            comentarios={recientes}
+            conAlumno
+            alAbrir={(c) => elegir({ id: c.alumno_id, nombre: c.alumno, dni: c.dni, email: c.email })}
+          />
+        </section>
+      )}
 
       <form onSubmit={buscar} className="tarjeta p-4">
         <label htmlFor="dni" className="etiqueta-campo">Buscar alumno por nombre o DNI</label>
@@ -252,6 +322,13 @@ export default function SeccionRutinas({ alExito, alError }) {
 
       {alumno && (
         <>
+          {delAlumno.length > 0 && (
+            <section className="tarjeta flex flex-col gap-2 p-4">
+              <h2 className="titulo-seccion">Cómo le fue a {alumno.nombre.split(' ')[0]}</h2>
+              <ListaComentarios comentarios={delAlumno} />
+            </section>
+          )}
+
           {progreso.length > 0 && (
             <section className="flex flex-col gap-2">
               <h2 className="titulo-seccion">Progreso de {alumno.nombre.split(' ')[0]}</h2>
@@ -342,51 +419,92 @@ export default function SeccionRutinas({ alExito, alError }) {
               </div>
 
               <div className="flex flex-col gap-2.5 p-3">
-                {sesion.ejercicios.map((ej, ei) => (
-                  <div key={ei} className="rounded-xl p-3" style={{ backgroundColor: 'var(--color-fondo)' }}>
-                    <div className="mb-2 flex items-center gap-2">
-                      <span
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[11px] font-bold"
-                        style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
-                      >
-                        {ei + 1}
-                      </span>
-                      <input
-                        className="campo flex-1"
-                        placeholder="Nombre del ejercicio"
-                        value={ej.nombre}
-                        onChange={e => actualizarEjercicio(si, ei, 'nombre', e.target.value)}
-                      />
-                      {sesion.ejercicios.length > 1 && (
-                        <button
-                          onClick={() => quitarEjercicio(si, ei)}
-                          className="btn btn-fantasma btn-chico shrink-0"
-                          aria-label="Quitar ejercicio"
+                {(() => {
+                  const etiquetas = etiquetasDe(sesion.ejercicios)
+                  return sesion.ejercicios.map((ej, ei) => {
+                    const { miembro, encabeza, texto } = etiquetas[ei]
+                    const cierraGrupo = !sesion.ejercicios[ei + 1]?.en_circuito
+                    return (
+                      <div key={ei} className="flex flex-col gap-1.5">
+                        <div
+                          className={`rounded-xl p-3 ${miembro ? 'ml-6' : ''}`}
+                          style={{
+                            backgroundColor: 'var(--color-fondo)',
+                            borderLeft: miembro || encabeza ? '3px solid var(--color-acento)' : undefined
+                          }}
                         >
-                          <IconoCruz size={14} />
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex gap-2 pl-8">
-                      <div className="flex-1">
-                        <label className="etiqueta-campo">Series</label>
-                        <input
-                          type="number" min="1" className="campo" placeholder="3"
-                          value={ej.series}
-                          onChange={e => actualizarEjercicio(si, ei, 'series', e.target.value)}
-                        />
+                          {(miembro || encabeza) && (
+                            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-acento)' }}>
+                              {miembro ? 'En circuito con el de arriba' : 'Circuito: se hacen seguidos'}
+                            </p>
+                          )}
+                          <div className="mb-2 flex items-center gap-2">
+                            <span
+                              className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md px-1 text-[11px] font-bold"
+                              style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
+                            >
+                              {texto}
+                            </span>
+                            <input
+                              className="campo flex-1"
+                              placeholder="Nombre del ejercicio"
+                              value={ej.nombre}
+                              onChange={e => actualizarEjercicio(si, ei, 'nombre', e.target.value)}
+                            />
+                            {sesion.ejercicios.length > 1 && (
+                              <button
+                                onClick={() => quitarEjercicio(si, ei)}
+                                className="btn btn-fantasma btn-chico shrink-0"
+                                aria-label="Quitar ejercicio"
+                              >
+                                <IconoCruz size={14} />
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex gap-2 pl-8">
+                            {miembro ? (
+                              <div className="flex-1">
+                                <p className="etiqueta-campo">Series</p>
+                                <p className="py-2 text-xs" style={{ color: 'var(--color-texto-3)' }}>Las del circuito</p>
+                              </div>
+                            ) : (
+                              <div className="flex-1">
+                                <label className="etiqueta-campo">{encabeza ? 'Vueltas del circuito' : 'Series'}</label>
+                                <input
+                                  type="number" min="1" className="campo" placeholder="3"
+                                  value={ej.series}
+                                  onChange={e => actualizarEjercicio(si, ei, 'series', e.target.value)}
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <label className="etiqueta-campo">Repeticiones</label>
+                              <input
+                                className="campo" placeholder="10-12"
+                                value={ej.repeticiones}
+                                onChange={e => actualizarEjercicio(si, ei, 'repeticiones', e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          {miembro && (
+                            <button onClick={() => separarDelCircuito(si, ei)} className="btn btn-fantasma btn-chico mt-1.5">
+                              Sacar del circuito
+                            </button>
+                          )}
+                        </div>
+                        {cierraGrupo && (
+                          <button
+                            onClick={() => agregarAlCircuito(si, ei)}
+                            className={`btn btn-fantasma btn-chico self-start ${miembro ? 'ml-6' : ''}`}
+                            style={{ color: 'var(--color-acento)' }}
+                          >
+                            <IconoMas size={14} /> {miembro || encabeza ? 'Sumar al circuito' : 'Armar circuito con este'}
+                          </button>
+                        )}
                       </div>
-                      <div className="flex-1">
-                        <label className="etiqueta-campo">Repeticiones</label>
-                        <input
-                          className="campo" placeholder="10-12"
-                          value={ej.repeticiones}
-                          onChange={e => actualizarEjercicio(si, ei, 'repeticiones', e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    )
+                  })
+                })()}
 
                 <button onClick={() => agregarEjercicio(si)} className="btn btn-contorno btn-chico btn-bloque">
                   <IconoMas size={15} /> Agregar ejercicio
@@ -401,5 +519,51 @@ export default function SeccionRutinas({ alExito, alError }) {
         </>
       )}
     </div>
+  )
+}
+
+/** Comentarios de los socios: cómo se sintieron, con qué ganas y lo que escribieron. */
+function ListaComentarios({ comentarios, conAlumno = false, alAbrir }) {
+  return (
+    <ul className="flex flex-col gap-2">
+      {comentarios.map(c => {
+        const sensacion = sensacionDe(c.sensacion)
+        const ganas = ganasDe(c.ganas)
+        const contenido = (
+          <>
+            <span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <span className="min-w-0 text-sm font-semibold">
+                {conAlumno && <>{c.alumno} · </>}{c.dia}
+              </span>
+              <span className="shrink-0 text-[11px]" style={{ color: 'var(--color-texto-3)' }}>{fechaHora(c.creado_en)}</span>
+            </span>
+            <span className="mt-1.5 flex flex-wrap gap-1.5">
+              <span className={`insignia ${sensacion?.insignia}`}>Se sintió {sensacion?.texto.toLowerCase()}</span>
+              <span className={`insignia ${ganas?.insignia}`}>Ganas {ganas?.texto.toLowerCase()}</span>
+            </span>
+            {c.texto && (
+              <span className="mt-1.5 block whitespace-pre-line break-words text-sm" style={{ color: 'var(--color-texto-2)' }}>
+                {c.texto}
+              </span>
+            )}
+          </>
+        )
+        return (
+          <li key={c.id}>
+            {alAbrir ? (
+              <button
+                type="button" onClick={() => alAbrir(c)}
+                className="block w-full rounded-xl p-3 text-left transition-colors hover:brightness-110"
+                style={{ backgroundColor: 'var(--color-elevado)' }}
+              >
+                {contenido}
+              </button>
+            ) : (
+              <div className="rounded-xl p-3" style={{ backgroundColor: 'var(--color-elevado)' }}>{contenido}</div>
+            )}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
