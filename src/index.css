@@ -301,8 +301,14 @@ button, a, [role="button"] {
     white-space: nowrap;
     min-height: 34px;
   }
-  .pildora:hover { border-color: var(--color-texto-3); color: var(--color-texto); }
-  .pildora-activa {
+  /* Solo con mouse: en el celular el :hover queda pegado después del toque, y
+     pintaba de blanco la letra de la pastilla recién elegida. Con el acento
+     #EEEEEE la letra desaparecía (29/09/2026). */
+  @media (hover: hover) {
+    .pildora:hover { border-color: var(--color-texto-3); color: var(--color-texto); }
+  }
+  .pildora-activa,
+  .pildora-activa:hover {
     background-color: var(--color-acento);
     border-color: var(--color-acento);
     color: var(--color-sobre-acento);
