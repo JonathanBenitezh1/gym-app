@@ -238,7 +238,7 @@ function CamposPlan({ datos, alCambiar, clases }) {
       <div>
         <label className="etiqueta-campo">Qué incluye</label>
         <label className="mb-2 flex cursor-pointer items-center gap-2.5 text-sm">
-          <input type="checkbox" className="h-4 w-4 accent-sky-300" checked={datos.incluye_todo}
+          <input type="checkbox" className="h-4 w-4" style={{ accentColor: 'var(--color-acento)' }} checked={datos.incluye_todo}
                  onChange={e => alCambiar(d => ({ ...d, incluye_todo: e.target.checked }))} />
           Todas las clases (pase completo)
         </label>

@@ -24,11 +24,13 @@
      El anterior, #6d7982, daba 3,4:1 sobre las tarjetas. */
   --color-texto-3:    #8e9aa3;
 
-  /* Acento de marca — el celeste del logo */
-  --color-acento:      #87ceeb;
-  --color-acento-alto: #a8dcf1;
-  --color-acento-bajo: #1e3a47;
-  --color-sobre-acento: #0d1b22;
+  /* Acento de marca. Hasta el 29/09/2026 era el celeste del logo (#87ceeb);
+     pedido del gimnasio, pasó a este gris casi blanco. El texto sobre el
+     acento es el fondo de la app (14,6:1), y el acento sobre -bajo da 9:1. */
+  --color-acento:      #eeeeee;
+  --color-acento-alto: #ffffff;
+  --color-acento-bajo: #3a3f45;
+  --color-sobre-acento: #1b1d20;
 
   /* Verde azulado secundario, de los botones originales */
   --color-teal:      #1e5761;
