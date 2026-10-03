@@ -181,8 +181,8 @@ export default function PanelPC() {
       <main className="contenedor-ancho pt-5">
         {cargando ? (esperaLarga ? <SkeletonLista filas={4} /> : null) : (
           <>
-            {seccion === 'panel'    && <Tablero reservas={reservas} clases={clases} horarios={horarios} usuarios={usuarios} {...comunes} />}
-            {seccion === 'numeros'  && <SeccionEstadisticas alError={avisarError} />}
+            {seccion === 'panel'    && <Tablero reservas={reservas} {...comunes} />}
+            {seccion === 'numeros'  && <SeccionEstadisticas reservas={reservas} alError={avisarError} />}
             {seccion === 'clases'   && <SeccionClases clases={clases} profesores={profesores} {...comunes} />}
             {seccion === 'horarios' && <SeccionHorarios horarios={horarios} clases={clases} {...comunes} />}
             {seccion === 'planes'   && <SeccionPlanes clases={clases} horarios={horarios} {...comunes} />}
@@ -203,23 +203,13 @@ export default function PanelPC() {
 
 /* ═══ TABLERO ════════════════════════════════════════════ */
 
-function Tablero({ reservas, clases, horarios, usuarios, alExito, alError, alRecargar }) {
-  const datos = useMemo(() => {
-    const activas    = reservas.filter(r => r.estado !== 'cancelado')
-    const pagadas    = reservas.filter(r => r.estado === 'pagado')
-    const pendientes = reservas.filter(r => r.estado === 'pendiente')
-    return {
-      activas: activas.length,
-      pagadas: pagadas.length,
-      pendientes: pendientes.length,
-      canceladas: reservas.filter(r => r.estado === 'cancelado').length,
-      recaudado: pagadas.reduce((acc, r) => acc + Number(r.total || 0), 0),
-      porCobrar: pendientes.reduce((acc, r) => acc + Number(r.total || 0), 0),
-      alumnos: usuarios.filter(u => u.rol === 'alumno').length,
-      ultimas: activas.slice(0, 8),
-      aConfirmar: pendientes.filter(r => r.metodo === 'efectivo')
-    }
-  }, [reservas, usuarios])
+// Al entrar, solo las reservas: lo que hay que cobrar y las últimas. Los
+// números de las reservas pasaron a Estadísticas (03/10/2026).
+function Tablero({ reservas, alExito, alError, alRecargar }) {
+  const datos = useMemo(() => ({
+    ultimas: reservas.filter(r => r.estado !== 'cancelado').slice(0, 8),
+    aConfirmar: reservas.filter(r => r.estado === 'pendiente' && r.metodo === 'efectivo')
+  }), [reservas])
 
   const confirmar = async (id) => {
     try {
@@ -233,17 +223,6 @@ function Tablero({ reservas, clases, horarios, usuarios, alExito, alError, alRec
 
   return (
     <div className="flex flex-col gap-5">
-
-      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-        <Metrica valor={datos.activas}    titulo="Reservas (90 días)" />
-        <Metrica valor={precio(datos.recaudado)} titulo="Semanales cobradas (90 días)" acento />
-        <Metrica valor={datos.pendientes} titulo="Pendientes de pago" alerta={datos.pendientes > 0} />
-        <Metrica valor={precio(datos.porCobrar)} titulo="Por cobrar" />
-        <Metrica valor={datos.alumnos}    titulo="Alumnos" />
-        <Metrica valor={clases.length}    titulo="Clases" />
-        <Metrica valor={horarios.length}  titulo="Horarios" />
-        <Metrica valor={datos.canceladas} titulo="Canceladas (90 días)" />
-      </div>
 
       {datos.aConfirmar.length > 0 && (
         <section className="tarjeta p-4" style={{ borderColor: 'var(--color-alerta)' }}>
@@ -296,20 +275,6 @@ function Tablero({ reservas, clases, horarios, usuarios, alExito, alError, alRec
           </ul>
         )}
       </section>
-    </div>
-  )
-}
-
-function Metrica({ valor, titulo, acento, alerta }) {
-  return (
-    <div className="tarjeta p-3.5">
-      <p
-        className="text-xl font-bold tracking-tight"
-        style={{ color: acento ? 'var(--color-acento)' : alerta ? 'var(--color-alerta)' : 'var(--color-texto)' }}
-      >
-        {valor}
-      </p>
-      <p className="mt-0.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>{titulo}</p>
     </div>
   )
 }

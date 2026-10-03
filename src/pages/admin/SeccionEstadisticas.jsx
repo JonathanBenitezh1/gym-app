@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { obtenerEstadisticas } from '../../services/adminService'
 import { SkeletonLista } from '../../components/Skeleton'
 import { precio, hora, diasCortos } from '../../utils/formato'
@@ -12,9 +12,21 @@ const nombreMes = (aaaamm) => MESES_CORTOS[Number(aaaamm.slice(5, 7)) - 1]
  * Todas las barras son de una sola serie, así que van en el color de acento
  * y sin leyenda: el título de cada bloque dice qué se mide.
  */
-export default function SeccionEstadisticas({ alError }) {
+export default function SeccionEstadisticas({ reservas = [], alError }) {
   // Lo último, al instante (utils/memoria.js); se actualiza por detrás.
   const [datos, setDatos] = useState(() => recordado('panel.estadisticas') ?? null)
+
+  // Las reservas semanales que trae el panel (90 días). Estaban en la
+  // pantalla de entrada; desde el 03/10/2026 van acá.
+  const semanales = useMemo(() => {
+    const pagadas = reservas.filter(r => r.estado === 'pagado')
+    return {
+      activas: reservas.filter(r => r.estado !== 'cancelado').length,
+      cobrado: pagadas.reduce((acc, r) => acc + Number(r.total || 0), 0),
+      pendientes: reservas.filter(r => r.estado === 'pendiente').length,
+      canceladas: reservas.filter(r => r.estado === 'cancelado').length
+    }
+  }, [reservas])
 
   useEffect(() => {
     obtenerEstadisticas()
@@ -46,6 +58,16 @@ export default function SeccionEstadisticas({ alError }) {
                detalle={`${socios.nuevos_mes} ${socios.nuevos_mes === 1 ? 'nuevo' : 'nuevos'} este mes`} />
         <Cifra valor={socios.sin_apto} titulo="Sin apto vigente" alerta={socios.sin_apto > 0} />
       </div>
+
+      <section className="flex flex-col gap-2.5">
+        <h2 className="titulo-seccion">Reservas semanales · últimos 90 días</h2>
+        <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+          <Cifra valor={semanales.activas} titulo="Reservas" />
+          <Cifra valor={precio(semanales.cobrado)} titulo="Cobradas" acento />
+          <Cifra valor={semanales.pendientes} titulo="Pendientes de pago" alerta={semanales.pendientes > 0} />
+          <Cifra valor={semanales.canceladas} titulo="Canceladas" />
+        </div>
+      </section>
 
       <section className="tarjeta p-4">
         <h2 className="titulo-seccion">Cobrado por mes</h2>
