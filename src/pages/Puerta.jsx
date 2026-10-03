@@ -13,6 +13,7 @@ import { ahoraEnArgentina } from '../utils/ingreso'
 import { IconoSalir, IconoAlerta } from '../components/Iconos'
 import logoGimnasio from './img/logo.webp'
 import { GIMNASIO } from '../config/gimnasio'
+import { useNoLeidos } from '../hooks/useNoLeidos'
 
 // Cuánto queda el resultado en pantalla antes de volver a "esperando".
 const SEGUNDOS_EN_PANTALLA = 5
@@ -116,6 +117,8 @@ const hora = (fecha) => new Date(fecha).toLocaleTimeString('es-AR', { hour: '2-d
 
 export default function Puerta() {
   const { usuario, cerrarSesion } = useAuth()
+  // Recepción responde los mensajes al gimnasio (migración 021); la cuenta fija de la puerta, no.
+  const mensajes = useNoLeidos()
   const { error: avisarError, confirmar } = useAvisos()
   const navigate = useNavigate()
 
@@ -330,6 +333,11 @@ export default function Puerta() {
           >
             {prueba ? 'Salir de la prueba' : 'Probar lector'}
           </button>
+          {usuario?.rol === 'recepcion' && mensajes.atiende && (
+            <button onClick={() => navigate('/mensajes')} className="btn btn-contorno btn-chico">
+              Mensajes{mensajes.no_leidos > 0 && <span className="insignia insignia-error ml-1">{mensajes.no_leidos}</span>}
+            </button>
+          )}
           {usuario?.rol === 'admin' && (
             <button onClick={() => navigate('/panel-gym')} className="btn btn-contorno btn-chico">Volver al panel</button>
           )}

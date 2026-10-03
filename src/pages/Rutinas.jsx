@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from '../components/Avisos'
 import { obtenerMisRutinas } from '../services/profesorService'
 import NavBar from '../components/NavBar'
 import Progreso from '../components/Progreso'
 import { obtenerMiProgreso, registrarProgreso, borrarProgreso } from '../services/progresoService'
-import { IconoChevron, IconoRutina, IconoInfo, IconoCruz } from '../components/Iconos'
+import { IconoChevron, IconoRutina, IconoInfo, IconoCruz, IconoMensaje } from '../components/Iconos'
 import { fechaCorta } from '../utils/formato'
 import EncabezadoSocio from '../components/EncabezadoSocio'
 import { recordado, recordar } from '../utils/memoria'
@@ -27,6 +28,7 @@ function primerasSesiones(rutinas) {
 
 export default function Rutinas() {
   const { usuario } = useAuth()
+  const navigate = useNavigate()
   const { error: avisarError, exito, confirmar } = useAvisos()
 
   const [previo] = useState(() => recordado('rutinas'))
@@ -149,14 +151,15 @@ export default function Rutinas() {
                       Plan de {usuario?.nombre?.split(' ')[0]}
                     </p>
                     <p className="truncate text-xs" style={{ color: 'var(--color-texto-2)' }}>
-                      Prof. {rutina.profesor}
+                      Prof. {rutina.profesor}{rutina.updated_at && <> · {fechaCorta(rutina.updated_at)}</>}
                     </p>
                   </div>
-                  {rutina.updated_at && (
-                    <span className="insignia insignia-neutra shrink-0">
-                      {fechaCorta(rutina.updated_at)}
-                    </span>
-                  )}
+                  <button
+                    onClick={() => navigate(`/consultas?con=${rutina.profesor_id}`)}
+                    className="btn btn-contorno btn-chico shrink-0"
+                  >
+                    <IconoMensaje size={15} /> Consultar
+                  </button>
                 </div>
 
                 {rutina.sesiones?.length > 0 ? (

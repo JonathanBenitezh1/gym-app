@@ -18,6 +18,8 @@ import SeccionPlanes from './SeccionPlanes'
 import SeccionCaja from './SeccionCaja'
 import SeccionRiesgo from './SeccionRiesgo'
 import SeccionBiblioteca from './SeccionBiblioteca'
+import BandejaMensajes from '../../components/BandejaMensajes'
+import { useNoLeidos } from '../../hooks/useNoLeidos'
 import { recordado, recordar } from '../../utils/memoria'
 import { precargarAdmin } from '../../utils/precarga'
 import Interruptor from '../../components/Interruptor'
@@ -57,6 +59,7 @@ const SECCIONES = [
   { id: 'usuarios', texto: 'Usuarios' },
   { id: 'reservas', texto: 'Reservas' },
   { id: 'rutinas',  texto: 'Rutinas' },
+  { id: 'mensajes', texto: 'Mensajes' },
   { id: 'biblioteca', texto: 'Ejercicios' },
   { id: 'actividad', texto: 'Actividad' }
 ]
@@ -71,6 +74,7 @@ export default function PanelPC() {
   // lo último y se actualiza por detrás (utils/memoria.js).
   const [previo] = useState(() => recordado('panel'))
   const [seccion, setSeccion]     = useState('panel')
+  const { no_leidos: mensajesSinLeer } = useNoLeidos()
   const [clases, setClases]       = useState(previo?.clases ?? [])
   const [horarios, setHorarios]   = useState(previo?.horarios ?? [])
   const [usuarios, setUsuarios]   = useState(previo?.usuarios ?? [])
@@ -173,6 +177,7 @@ export default function PanelPC() {
               className={`pildora ${seccion === s.id ? 'pildora-activa' : ''}`}
             >
               {s.texto}
+              {s.id === 'mensajes' && mensajesSinLeer > 0 && <span className="insignia insignia-error ml-1">{mensajesSinLeer}</span>}
             </button>
           ))}
         </div>
@@ -192,6 +197,7 @@ export default function PanelPC() {
             {seccion === 'usuarios' && <SeccionUsuarios usuarios={usuarios} {...comunes} />}
             {seccion === 'reservas' && <SeccionReservas reservas={reservas} {...comunes} />}
             {seccion === 'rutinas'  && <SeccionRutinas alExito={exito} alError={avisarError} />}
+            {seccion === 'mensajes' && <BandejaMensajes alError={avisarError} />}
             {seccion === 'biblioteca' && <SeccionBiblioteca alExito={exito} alError={avisarError} confirmar={confirmar} />}
             {seccion === 'actividad' && <SeccionActividad alError={avisarError} />}
           </>

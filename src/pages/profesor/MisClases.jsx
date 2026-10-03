@@ -9,6 +9,8 @@ import {
 import { SkeletonLista } from '../../components/Skeleton'
 import BotonPresencia from '../../components/BotonPresencia'
 import SeccionRutinas from '../../components/SeccionRutinas'
+import BandejaMensajes from '../../components/BandejaMensajes'
+import { useNoLeidos } from '../../hooks/useNoLeidos'
 import Interruptor from '../../components/Interruptor'
 import SelectorDias from '../../components/SelectorDias'
 import {
@@ -23,7 +25,8 @@ import { GIMNASIO } from '../../config/gimnasio'
 const SOLAPAS = [
   { id: 'horarios',   texto: 'Mis horarios' },
   { id: 'rutinas',    texto: 'Rutinas' },
-  { id: 'asistencia', texto: 'Asistencia' }
+  { id: 'asistencia', texto: 'Asistencia' },
+  { id: 'mensajes',   texto: 'Mensajes' }
 ]
 
 export default function MisClases() {
@@ -32,6 +35,7 @@ export default function MisClases() {
   const navigate = useNavigate()
 
   const [solapa, setSolapa]     = useState('horarios')
+  const { no_leidos: mensajesSinLeer } = useNoLeidos()
   // Lo último, al instante (utils/memoria.js); se actualiza por detrás.
   const [horarios, setHorarios] = useState(() => recordado('profe.horarios') ?? [])
   const [cargando, setCargando] = useState(() => !recordado('profe.horarios'))
@@ -88,6 +92,7 @@ export default function MisClases() {
               className={`pildora ${solapa === s.id ? 'pildora-activa' : ''}`}
             >
               {s.texto}
+              {s.id === 'mensajes' && mensajesSinLeer > 0 && <span className="insignia insignia-error ml-1">{mensajesSinLeer}</span>}
             </button>
           ))}
         </div>
@@ -109,6 +114,7 @@ export default function MisClases() {
         {solapa === 'asistencia' && (
           <SeccionAsistencia horarios={horarios} alError={avisarError} />
         )}
+        {solapa === 'mensajes' && <BandejaMensajes alError={avisarError} />}
       </main>
     </div>
   )

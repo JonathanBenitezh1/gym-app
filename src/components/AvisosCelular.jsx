@@ -15,9 +15,10 @@ const QUE_AVISA = [
  *
  * Completo, en Perfil: explica qué avisa y cada estado (bloqueados, iPhone sin
  * instalar). `compacto`, en la campanita: solo la invitación a activarlos, y
- * nada si no se puede.
+ * nada si no se puede. `titulo` cambia la invitación (la bandeja de mensajes
+ * del personal la usa para los mensajes).
  */
-export default function AvisosCelular({ compacto = false }) {
+export default function AvisosCelular({ compacto = false, titulo = 'Recibí estos avisos en el celular' }) {
   const { usuario } = useAuth()
   const { exito, error: avisarError } = useAvisos()
   const [estado, setEstado] = useState(null)
@@ -67,7 +68,7 @@ export default function AvisosCelular({ compacto = false }) {
     if (estado !== 'apagados') return null
     return (
       <div className="rounded-xl p-3" style={{ border: '1px solid var(--color-acento)', backgroundColor: 'var(--color-acento-bajo)' }}>
-        <p className="text-sm font-semibold">Recibí estos avisos en el celular</p>
+        <p className="text-sm font-semibold">{titulo}</p>
         <p className="mt-0.5 text-xs" style={{ color: 'var(--color-texto-2)' }}>Te llegan aunque tengas la app cerrada.</p>
         <button onClick={activar} disabled={trabajando} className="btn btn-primario btn-chico mt-2">
           {trabajando ? 'Activando…' : 'Activar'}

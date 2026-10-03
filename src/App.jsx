@@ -37,6 +37,8 @@ const Registro  = conReintento(() => import('./pages/Registro'))
 const PanelPC   = conReintento(() => import('./pages/admin/PanelPC'))
 const MisClases = conReintento(() => import('./pages/profesor/MisClases'))
 const Puerta    = conReintento(() => import('./pages/Puerta'))
+const Consultas = conReintento(() => import('./pages/Consultas'))
+const MensajesRecepcion = conReintento(() => import('./pages/MensajesRecepcion'))
 
 // Los profesionales (nutrición, kinesiología, entrenamiento personal)
 // gestionan sus clases igual que los profesores.
@@ -68,6 +70,9 @@ function App() {
           <Route path="/rutinas" element={
             <RutaProtegida roles={['alumno']}><Rutinas /></RutaProtegida>
           } />
+          <Route path="/consultas" element={
+            <RutaProtegida roles={['alumno']}><Consultas /></RutaProtegida>
+          } />
 
           {/* Profesores y profesionales */}
           <Route path="/mis-clases" element={
@@ -82,6 +87,11 @@ function App() {
           {/* Pantalla de ingreso: el empleado de la puerta, y el admin */}
           <Route path="/puerta" element={
             <RutaProtegida roles={['recepcion', 'admin']}><Puerta /></RutaProtegida>
+          } />
+
+          {/* Mensajes al gimnasio, para recepción (el admin los ve en el panel) */}
+          <Route path="/mensajes" element={
+            <RutaProtegida roles={['recepcion', 'admin']}><MensajesRecepcion /></RutaProtegida>
           } />
 
           {/* Cualquier otra dirección */}

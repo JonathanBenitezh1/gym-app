@@ -207,3 +207,16 @@ export const IconoDescargar = (p) => (
     <path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14" />
   </Svg>
 )
+
+export const IconoMensaje = (p) => (
+  <Svg {...p}>
+    <path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-4 3.5v-3.5h0a2 2 0 0 1-2-2Z" />
+  </Svg>
+)
+
+export const IconoEnviar = (p) => (
+  <Svg {...p}>
+    <path d="M4.5 12 19.5 4.5 15 19.5l-3.5-6Z" />
+    <path d="M11.5 13.5 19.5 4.5" />
+  </Svg>
+)

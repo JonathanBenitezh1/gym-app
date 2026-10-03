@@ -125,3 +125,12 @@ export function hoyISO() {
   const dd = String(f.getDate()).padStart(2, '0')
   return `${f.getFullYear()}-${mm}-${dd}`
 }
+
+/** Para mensajes: hoy, solo la hora ("14:30"); otro día, "03/10 14:30". */
+export function momento(valor) {
+  const f = new Date(valor)
+  if (isNaN(f)) return ''
+  const horaMin = f.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+  if (f.toDateString() === new Date().toDateString()) return horaMin
+  return `${f.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })} ${horaMin}`
+}
