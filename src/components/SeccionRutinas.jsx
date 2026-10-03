@@ -10,6 +10,7 @@ import Progreso from './Progreso'
 import { obtenerProgresoDeAlumno } from '../services/progresoService'
 import { obtenerComentarios } from '../services/comentariosService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
+import { obtenerBiblioteca } from '../services/bibliotecaService'
 import { letra, sensacionDe, ganasDe } from '../utils/rutinas'
 import { fechaHora } from '../utils/formato'
 
@@ -69,6 +70,13 @@ export default function SeccionRutinas({ alExito, alError }) {
 
   useEffect(() => {
     obtenerPlantillas().then(setPlantillas).catch(() => {})
+  }, [])
+
+  // Nombres de la biblioteca (migración 020), como sugerencia al escribir:
+  // con el mismo nombre, el socio ve el consejo del ejercicio.
+  const [biblioteca, setBiblioteca] = useState([])
+  useEffect(() => {
+    obtenerBiblioteca().then(setBiblioteca).catch(() => {})
   }, [])
 
   // Comentarios de los socios (migración 019): los últimos arriba, y los del
@@ -388,6 +396,10 @@ export default function SeccionRutinas({ alExito, alError }) {
             )}
           </section>
 
+          <datalist id="biblioteca-ejercicios">
+            {biblioteca.map(b => <option key={b.id} value={b.nombre} />)}
+          </datalist>
+
           <div className="flex items-center justify-between">
             <h2 className="titulo-seccion">Sesiones del plan</h2>
             <button onClick={agregarSesion} className="btn btn-contorno btn-chico">
@@ -448,6 +460,7 @@ export default function SeccionRutinas({ alExito, alError }) {
                             <input
                               className="campo flex-1"
                               placeholder="Nombre del ejercicio"
+                              list="biblioteca-ejercicios"
                               value={ej.nombre}
                               onChange={e => actualizarEjercicio(si, ei, 'nombre', e.target.value)}
                             />

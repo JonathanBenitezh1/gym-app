@@ -17,6 +17,7 @@ import SeccionCuotas from './SeccionCuotas'
 import SeccionPlanes from './SeccionPlanes'
 import SeccionCaja from './SeccionCaja'
 import SeccionRiesgo from './SeccionRiesgo'
+import SeccionBiblioteca from './SeccionBiblioteca'
 import { recordado, recordar } from '../../utils/memoria'
 import { precargarAdmin } from '../../utils/precarga'
 import Interruptor from '../../components/Interruptor'
@@ -56,6 +57,7 @@ const SECCIONES = [
   { id: 'usuarios', texto: 'Usuarios' },
   { id: 'reservas', texto: 'Reservas' },
   { id: 'rutinas',  texto: 'Rutinas' },
+  { id: 'biblioteca', texto: 'Ejercicios' },
   { id: 'actividad', texto: 'Actividad' }
 ]
 
@@ -190,6 +192,7 @@ export default function PanelPC() {
             {seccion === 'usuarios' && <SeccionUsuarios usuarios={usuarios} {...comunes} />}
             {seccion === 'reservas' && <SeccionReservas reservas={reservas} {...comunes} />}
             {seccion === 'rutinas'  && <SeccionRutinas alExito={exito} alError={avisarError} />}
+            {seccion === 'biblioteca' && <SeccionBiblioteca alExito={exito} alError={avisarError} confirmar={confirmar} />}
             {seccion === 'actividad' && <SeccionActividad alError={avisarError} />}
           </>
         )}

@@ -5,7 +5,7 @@ import { obtenerMisRutinas } from '../services/profesorService'
 import NavBar from '../components/NavBar'
 import Progreso from '../components/Progreso'
 import { obtenerMiProgreso, registrarProgreso, borrarProgreso } from '../services/progresoService'
-import { IconoChevron, IconoRutina } from '../components/Iconos'
+import { IconoChevron, IconoRutina, IconoInfo, IconoCruz } from '../components/Iconos'
 import { fechaCorta } from '../utils/formato'
 import EncabezadoSocio from '../components/EncabezadoSocio'
 import { recordado, recordar } from '../utils/memoria'
@@ -95,6 +95,10 @@ export default function Rutinas() {
   // La animación de abrir va solo cuando el socio toca: la sesión que ya
   // viene abierta al entrar no se anima, si no la pantalla parpadeaba en cada visita.
   const [tocada, setTocada] = useState(false)
+
+  // El ejercicio cuyo consejo (y, con el VPS, su video) está abierto.
+  const [ficha, setFicha] = useState(null)
+  const cerrarFicha = useCallback(() => setFicha(null), [])
 
   const alternar = (rutinaId, sesionId) => {
     setTocada(true)
@@ -209,13 +213,13 @@ export default function Rutinas() {
                                           </p>
                                           <ul className="mt-2 flex flex-col gap-2.5 border-l-2 pl-3" style={{ borderColor: 'var(--color-acento)' }}>
                                             {g.ejercicios.map((ej, i) => (
-                                              <FilaEjercicio key={ej.id ?? i} numero={`${g.numero}${letra(i)}`} ejercicio={ej} />
+                                              <FilaEjercicio key={ej.id ?? i} numero={`${g.numero}${letra(i)}`} ejercicio={ej} alVer={setFicha} />
                                             ))}
                                           </ul>
                                         </div>
                                       ) : (
                                         <ul className="px-4 py-3">
-                                          <FilaEjercicio numero={g.numero} ejercicio={g.ejercicios[0]} series={g.series} />
+                                          <FilaEjercicio numero={g.numero} ejercicio={g.ejercicios[0]} series={g.series} alVer={setFicha} />
                                         </ul>
                                       )}
                                     </li>
@@ -259,6 +263,8 @@ export default function Rutinas() {
         </section>
       </main>
 
+      {ficha && <FichaEjercicio ejercicio={ficha} alCerrar={cerrarFicha} />}
+
       <NavBar />
     </div>
   )
@@ -274,7 +280,8 @@ const textoReps = (r) => (/^\d+(\s*[-–a]\s*\d+)?$/.test(String(r).trim()) ? `$
  * repeticiones abajo. Antes iban en la misma línea y el nombre se cortaba
  * con "…" en el celular.
  */
-function FilaEjercicio({ numero, ejercicio, series }) {
+function FilaEjercicio({ numero, ejercicio, series, alVer }) {
+  const tieneFicha = Boolean(ejercicio.consejo || ejercicio.video)
   return (
     <li className="flex items-start gap-2.5">
       <span
@@ -292,7 +299,61 @@ function FilaEjercicio({ numero, ejercicio, series }) {
           </span>
         )}
       </span>
+      {tieneFicha && (
+        <button
+          type="button" onClick={() => alVer(ejercicio)}
+          className="-my-1.5 -mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+          style={{ color: 'var(--color-acento)' }}
+          aria-label={`Cómo se hace ${ejercicio.nombre}`}
+        >
+          <IconoInfo size={19} />
+        </button>
+      )}
     </li>
+  )
+}
+
+/* ─── Cómo se hace ──────────────────────────────────────── */
+
+/**
+ * El consejo del dueño para el ejercicio, de la biblioteca (migración 020).
+ * Con el VPS se suma su video; para verlo, la CSP de vercel.json tiene que
+ * permitir esa dirección en `media-src`.
+ */
+function FichaEjercicio({ ejercicio, alCerrar }) {
+  useEffect(() => {
+    const conTecla = (e) => { if (e.key === 'Escape') alCerrar() }
+    window.addEventListener('keydown', conTecla)
+    return () => window.removeEventListener('keydown', conTecla)
+  }, [alCerrar])
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-end justify-center p-4 sm:items-center"
+      style={{ backgroundColor: 'rgba(0,0,0,.6)' }}
+      role="dialog" aria-modal="true" aria-labelledby="titulo-ficha"
+      onClick={alCerrar}
+    >
+      <div className="tarjeta aparecer flex w-full max-w-md flex-col gap-3 p-5" onClick={e => e.stopPropagation()}>
+        <div className="flex items-start justify-between gap-3">
+          <h2 id="titulo-ficha" className="break-words font-bold">{ejercicio.nombre}</h2>
+          <button onClick={alCerrar} className="btn btn-fantasma btn-chico shrink-0" aria-label="Cerrar">
+            <IconoCruz size={16} />
+          </button>
+        </div>
+        {ejercicio.video && (
+          <video
+            src={ejercicio.video} controls playsInline loop preload="metadata"
+            className="max-h-[60vh] w-full rounded-xl" style={{ backgroundColor: 'var(--color-elevado)' }}
+          />
+        )}
+        {ejercicio.consejo && (
+          <p className="whitespace-pre-line break-words text-sm leading-relaxed" style={{ color: 'var(--color-texto-2)' }}>
+            {ejercicio.consejo}
+          </p>
+        )}
+      </div>
+    </div>
   )
 }
 
