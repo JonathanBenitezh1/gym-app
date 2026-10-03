@@ -88,7 +88,7 @@ export default function CambioObligatorio() {
                 type="button"
                 onClick={() => setVer(v => !v)}
                 aria-label={ver ? 'Ocultar contraseñas' : 'Mostrar contraseñas'}
-                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-lg p-2.5 hover:bg-white/5"
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-lg p-2.5 hover:bg-tinte/5"
                 style={{ color: 'var(--color-texto-3)' }}
               >
                 {ver ? <IconoOjoTachado size={19} /> : <IconoOjo size={19} />}

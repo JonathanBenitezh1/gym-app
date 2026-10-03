@@ -175,7 +175,7 @@ export default function Rutinas() {
                           <button
                             onClick={() => alternar(rutina.id, sesion.id)}
                             aria-expanded={expandida}
-                            className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-white/[.03]"
+                            className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-tinte/[.03]"
                           >
                             <span className="min-w-0">
                               <span className="block truncate text-sm font-semibold uppercase tracking-wide">

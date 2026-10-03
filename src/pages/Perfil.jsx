@@ -11,8 +11,9 @@ import { useSocketEventos } from '../hooks/useSocketEventos'
 import NavBar from '../components/NavBar'
 import { recordado, recordar } from '../utils/memoria'
 import Cargando from '../components/Cargando'
-import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave, IconoReloj, IconoCampana } from '../components/Iconos'
+import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave, IconoReloj, IconoCampana, IconoSol } from '../components/Iconos'
 import AvisosCelular from '../components/AvisosCelular'
+import SelectorTema from '../components/SelectorTema'
 import { precio, fechaCorta, rangoFechas, hora, fechaHora, diasCortos } from '../utils/formato'
 import { estadoApto } from '../utils/apto'
 
@@ -251,6 +252,16 @@ export default function Perfil() {
         )}
 
         <Acordeon
+          nombre="apariencia" abierta={seccion} alAlternar={alternar} animar={tocado}
+          Icono={IconoSol} titulo="Apariencia"
+        >
+          <p className="mb-3 text-sm" style={{ color: 'var(--color-texto-2)' }}>
+            Elegí cómo ver la app en este celular.
+          </p>
+          <SelectorTema />
+        </Acordeon>
+
+        <Acordeon
           nombre="pagos" abierta={seccion} alAlternar={alternar} animar={tocado}
           Icono={IconoPago} titulo="Pagos de reservas"
         >
@@ -295,7 +306,7 @@ function Acordeon({ nombre, abierta, alAlternar, animar, Icono, titulo, insignia
       <button
         onClick={() => alAlternar(nombre)}
         aria-expanded={expandida}
-        className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-white/[.03]"
+        className="flex w-full items-center gap-3 px-4 py-4 text-left transition-colors hover:bg-tinte/[.03]"
       >
         <span style={{ color: 'var(--color-acento)' }}><Icono size={19} /></span>
         <span className="flex-1 text-sm font-semibold">{titulo}</span>
@@ -451,7 +462,7 @@ function SeccionClave({ alExito, alError }) {
           <button
             type="button" onClick={() => setVer(v => !v)}
             aria-label={ver ? 'Ocultar contraseñas' : 'Mostrar contraseñas'}
-            className="absolute right-1 top-1/2 -translate-y-1/2 rounded-lg p-2.5 hover:bg-white/5"
+            className="absolute right-1 top-1/2 -translate-y-1/2 rounded-lg p-2.5 hover:bg-tinte/5"
             style={{ color: 'var(--color-texto-3)' }}
           >
             {ver ? <IconoOjoTachado size={18} /> : <IconoOjo size={18} />}

@@ -63,7 +63,7 @@ export default function Consultas() {
               <li key={claveDe(c)} style={i > 0 ? { borderTop: '1px solid var(--color-linea-sutil)' } : undefined}>
                 <button
                   onClick={() => abrir(c)}
-                  className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-white/[.03]"
+                  className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-tinte/[.03]"
                 >
                   <span
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold"

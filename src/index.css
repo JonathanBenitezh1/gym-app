@@ -44,9 +44,54 @@
   --color-error:      #ec6a65;
   --color-error-bajo: #351c1c;
 
+  /* Velo para el hover de filas y botones sin fondo: blanco en el oscuro,
+     negro en el claro (bg-tinte/5 en vez de bg-tinte/5). */
+  --color-tinte:     #ffffff;
+
   /* Tipografía */
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
+
+/* ─── Modo claro (03/10/2026) ─────────────────────────────
+   El oscuro de arriba es el de siempre y sigue siendo el que viene de
+   fábrica. El socio elige en Perfil; el personal, con el sol/luna de su
+   barra. Lo pone utils/tema.js (y public/tema.js antes de que cargue la app,
+   para que no se vea un destello oscuro). Contraste AA en todo el texto:
+   texto-3 da 5:1 sobre elevado, estados 4,5:1 o más sobre su fondo -bajo. */
+:root[data-tema='claro'] {
+  --color-fondo:      #f2f3f5;
+  --color-superficie: #ffffff;
+  --color-elevado:    #e9ecef;
+  --color-linea:      #cfd5db;
+  --color-linea-sutil: #e1e5e9;
+
+  --color-texto:      #16181b;
+  --color-texto-2:    #48525b;
+  --color-texto-3:    #5a6570;
+
+  /* Espejo del oscuro: el acento es casi negro y lo de encima, blanco. */
+  --color-acento:      #1b1d20;
+  --color-acento-alto: #000000;
+  --color-acento-bajo: #dde1e5;
+  --color-sobre-acento: #ffffff;
+
+  --color-exito:      #167040;
+  --color-exito-bajo: #d9f2e3;
+  --color-alerta:     #8a5a00;
+  --color-alerta-bajo: #fbedd3;
+  --color-error:      #c0352f;
+  --color-error-bajo: #fbe2e1;
+
+  --color-tinte:      #000000;
+  color-scheme: light;
+}
+/* El logo de fondo es blanco: en el claro va oscuro, igual de tenue. */
+:root[data-tema='claro'] body::before { filter: invert(1); opacity: .045; }
+/* La letra del logo, plateada en el oscuro; en el claro, grafito. */
+:root[data-tema='claro'] .titulo-marca {
+  background-image: linear-gradient(180deg, #3a3f45 0%, #1b1d20 55%, #4b5158 100%);
+}
+:root[data-tema='claro'] .btn-secundario { color: #ffffff; }
 
 /* ─── Base ─────────────────────────────────────────────── */
 

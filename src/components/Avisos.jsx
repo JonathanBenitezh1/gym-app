@@ -107,7 +107,7 @@ function PilaDeAvisos({ avisos, alCerrar }) {
             </p>
             <button
               onClick={() => alCerrar(aviso.id)}
-              className="shrink-0 rounded-md p-1 transition-colors hover:bg-white/10"
+              className="shrink-0 rounded-md p-1 transition-colors hover:bg-tinte/10"
               style={{ color: 'var(--color-texto-3)' }}
               aria-label="Cerrar aviso"
             >

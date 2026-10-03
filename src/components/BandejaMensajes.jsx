@@ -88,7 +88,7 @@ export default function BandejaMensajes({ alError }) {
             <li key={c.id} style={i > 0 ? { borderTop: '1px solid var(--color-linea-sutil)' } : undefined}>
               <button
                 onClick={() => setAbierta(c)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-white/[.03]"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-tinte/[.03]"
               >
                 <span
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"

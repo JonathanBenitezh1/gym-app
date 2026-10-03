@@ -19,6 +19,7 @@ import SeccionCaja from './SeccionCaja'
 import SeccionRiesgo from './SeccionRiesgo'
 import SeccionBiblioteca from './SeccionBiblioteca'
 import BandejaMensajes from '../../components/BandejaMensajes'
+import SelectorTema from '../../components/SelectorTema'
 import { useNoLeidos } from '../../hooks/useNoLeidos'
 import { recordado, recordar } from '../../utils/memoria'
 import { precargarAdmin } from '../../utils/precarga'
@@ -163,6 +164,7 @@ export default function PanelPC() {
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <button onClick={() => navigate('/puerta')} className="btn btn-contorno btn-chico">Puerta</button>
             <BotonPresencia alExito={exito} alError={avisarError} />
+            <SelectorTema boton />
             <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
               <IconoSalir size={18} />
             </button>

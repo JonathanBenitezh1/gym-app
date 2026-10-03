@@ -14,6 +14,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="{{GYM_NOMBRE_CORTO}}" />
     <title>{{GYM_NOMBRE}}</title>
+    <!-- Modo claro u oscuro antes de dibujar nada (public/tema.js). -->
+    <script src="/tema.js"></script>
     <!-- Pantalla de arranque: se ve mientras baja la app, en vez de una
          pantalla vacía. React la reemplaza al dibujar la primera pantalla. -->
     <style>
@@ -27,6 +29,9 @@
       .arranque-puntos span:nth-child(3) { animation-delay: .3s; }
       @keyframes arranque { 0%, 80%, 100% { opacity: .25; transform: scale(.85); } 40% { opacity: 1; transform: scale(1); } }
       @media (prefers-reduced-motion: reduce) { .arranque-puntos span { animation: none; opacity: .6; } }
+      /* Modo claro: los mismos colores que en src/index.css. */
+      html[data-tema='claro'], html[data-tema='claro'] body { background: #f2f3f5; }
+      html[data-tema='claro'] .arranque-puntos span { background: #1b1d20; }
     </style>
   </head>
   <body>

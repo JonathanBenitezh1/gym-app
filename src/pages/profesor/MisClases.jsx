@@ -10,6 +10,7 @@ import { SkeletonLista } from '../../components/Skeleton'
 import BotonPresencia from '../../components/BotonPresencia'
 import SeccionRutinas from '../../components/SeccionRutinas'
 import BandejaMensajes from '../../components/BandejaMensajes'
+import SelectorTema from '../../components/SelectorTema'
 import { useNoLeidos } from '../../hooks/useNoLeidos'
 import Interruptor from '../../components/Interruptor'
 import SelectorDias from '../../components/SelectorDias'
@@ -78,6 +79,7 @@ export default function MisClases() {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <BotonPresencia alExito={exito} alError={avisarError} />
+            <SelectorTema boton />
             <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
               <IconoSalir size={18} />
             </button>
@@ -357,7 +359,7 @@ function SeccionAsistencia({ horarios, alError }) {
                       style={{
                         backgroundColor: a.asistio ? 'var(--color-exito)' : 'transparent',
                         border: a.asistio ? 'none' : '2px solid var(--color-linea)',
-                        color: '#0d1b22'
+                        color: 'var(--color-fondo)'
                       }}
                     >
                       {a.asistio && <IconoCheck size={15} />}

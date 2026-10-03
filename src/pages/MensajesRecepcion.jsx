@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from '../components/Avisos'
 import BandejaMensajes from '../components/BandejaMensajes'
+import SelectorTema from '../components/SelectorTema'
 import logoGimnasio from './img/logo.webp'
 import { GIMNASIO } from '../config/gimnasio'
 
@@ -29,12 +30,15 @@ export default function MensajesRecepcion() {
               <p className="truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
             </div>
           </div>
-          <button
-            onClick={() => navigate(usuario?.rol === 'admin' ? '/panel-gym' : '/puerta')}
-            className="btn btn-contorno btn-chico shrink-0"
-          >
-            {usuario?.rol === 'admin' ? 'Volver al panel' : 'Volver a la puerta'}
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <SelectorTema boton />
+            <button
+              onClick={() => navigate(usuario?.rol === 'admin' ? '/panel-gym' : '/puerta')}
+              className="btn btn-contorno btn-chico"
+            >
+              {usuario?.rol === 'admin' ? 'Volver al panel' : 'Volver a la puerta'}
+            </button>
+          </div>
         </div>
       </header>
 
