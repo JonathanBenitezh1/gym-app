@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useAvisos } from '../../components/Avisos'
@@ -266,16 +266,26 @@ function SeccionAsistencia({ horarios, alError }) {
   const [alumnos, setAlumnos]     = useState([])
   const [cargando, setCargando]   = useState(false)
 
+  // La clase y el día que se están mirando. La lista de otro día que llega
+  // tarde se descarta: antes quedaba en pantalla y al tocar a un alumno se
+  // marcaba su asistencia con el dato de ese otro día (auditoría del 04/10/2026).
+  const vigente = useRef('')
+
   const cargar = useCallback(async (id, dia) => {
+    const clave = `${id}|${dia}`
+    vigente.current = clave
     if (!id) return
     setCargando(true)
+    setAlumnos([])
     try {
-      setAlumnos(await obtenerAlumnosDeHorario(id, dia))
+      const lista = await obtenerAlumnosDeHorario(id, dia)
+      if (vigente.current === clave) setAlumnos(lista)
     } catch (err) {
+      if (vigente.current !== clave) return
       alError(err.response?.data?.error || 'No pudimos cargar los alumnos')
       setAlumnos([])
     } finally {
-      setCargando(false)
+      if (vigente.current === clave) setCargando(false)
     }
   }, [alError])
 

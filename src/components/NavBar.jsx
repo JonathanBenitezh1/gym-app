@@ -131,7 +131,7 @@ export default function NavBar({ hayBarraAccion = false }) {
                   {ruta === '/reservas' && pendientes > 0 && (
                     <span
                       className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
-                      style={{ backgroundColor: 'var(--color-error)', color: '#fff' }}
+                      style={{ backgroundColor: 'var(--color-error)', color: 'var(--color-sobre-error)' }}
                     >
                       {pendientes}
                     </span>

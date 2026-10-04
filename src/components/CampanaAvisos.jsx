@@ -112,7 +112,7 @@ export default function CampanaAvisos() {
         {nuevos > 0 && (
           <span
             className="absolute -right-0.5 -top-0.5 flex h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full px-1 text-[10px] font-bold"
-            style={{ backgroundColor: 'var(--color-error)', color: '#fff' }}
+            style={{ backgroundColor: 'var(--color-error)', color: 'var(--color-sobre-error)' }}
           >
             {nuevos}
           </span>

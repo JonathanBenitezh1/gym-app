@@ -109,7 +109,7 @@ export default function BandejaMensajes({ alError }) {
                 {c.no_leidos > 0 && (
                   <span
                     className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold"
-                    style={{ backgroundColor: 'var(--color-error)', color: '#fff' }}
+                    style={{ backgroundColor: 'var(--color-error)', color: 'var(--color-sobre-error)' }}
                   >
                     {c.no_leidos}
                   </span>

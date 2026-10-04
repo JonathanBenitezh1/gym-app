@@ -110,6 +110,11 @@ export default function Conversacion({ conversacionId, profesorId = null, titulo
   // De qué lado está quien mira: el socio escribe "de_alumno"; el personal, lo otro.
   const soyAlumno = conv ? conv.es_alumno : true
   const puedeEscribir = conv ? conv.puede_escribir : true
+  // El admin leyendo la de un profe: no es de ninguno de los dos lados. Antes
+  // los mensajes del profe le salían como propios, a la derecha y sin firma
+  // (auditoría del 04/10/2026).
+  const lectura = Boolean(conv) && !conv.es_alumno && !conv.atiende
+  const primerNombre = (nombre) => String(nombre ?? '').trim().split(' ')[0]
   const mensajes = datos?.mensajes ?? []
 
   return (
@@ -157,16 +162,23 @@ export default function Conversacion({ conversacionId, profesorId = null, titulo
               </p>
             )}
             {mensajes.map(m => {
-              const propio = m.de_alumno === soyAlumno
+              const propio = !lectura && m.de_alumno === soyAlumno
+              // A la derecha lo propio; leyendo la de un profe, lo del profe.
+              const derecha = lectura ? !m.de_alumno : propio
               // En la del gimnasio responde más de una persona: se firma quién.
-              const firma = !m.de_alumno && m.autor && conv?.profesor_id === null ? m.autor.split(' ')[0] : null
+              // Leyendo la de un profe, se firma todo.
+              const firma = lectura
+                ? primerNombre(m.de_alumno ? conv.alumno : m.autor) || null
+                : !m.de_alumno && m.autor && conv?.profesor_id === null ? primerNombre(m.autor) : null
               return (
-                <div key={m.id} className={`flex max-w-[85%] flex-col ${propio ? 'items-end self-end' : 'items-start self-start'}`}>
+                <div key={m.id} className={`flex max-w-[85%] flex-col ${derecha ? 'items-end self-end' : 'items-start self-start'}`}>
                   <div
                     className="whitespace-pre-line break-words rounded-2xl px-3.5 py-2 text-sm leading-snug"
                     style={propio
                       ? { backgroundColor: 'var(--color-acento)', color: 'var(--color-sobre-acento)', borderBottomRightRadius: '.375rem' }
-                      : { backgroundColor: 'var(--color-elevado)', borderBottomLeftRadius: '.375rem' }}
+                      : derecha
+                        ? { backgroundColor: 'var(--color-elevado)', borderBottomRightRadius: '.375rem' }
+                        : { backgroundColor: 'var(--color-elevado)', borderBottomLeftRadius: '.375rem' }}
                   >
                     {m.texto}
                   </div>

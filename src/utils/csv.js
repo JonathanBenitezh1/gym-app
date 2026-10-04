@@ -6,9 +6,13 @@
 
 const celda = (valor) => {
   if (valor === null || valor === undefined) return ''
+  // Un texto que empieza con = + - @ (o tab, o retorno) Excel lo toma como
+  // fórmula: un socio que se registraba como =HYPERLINK(...) mandaba el DNI y
+  // el teléfono de su fila a otro sitio al abrir el archivo. Con el apóstrofo
+  // adelante queda como texto (auditoría del 04/10/2026). Los números no.
   const texto = typeof valor === 'number'
     ? String(valor).replace('.', ',')
-    : String(valor)
+    : String(valor).replace(/^[=+\-@\t\r]/, "'$&")
   // Comillas si trae separadores, comillas o saltos de línea.
   return /[;"\n\r]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto
 }

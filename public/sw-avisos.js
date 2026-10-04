@@ -27,7 +27,10 @@ self.addEventListener('push', (evento) => {
 
 self.addEventListener('notificationclick', (evento) => {
   evento.notification.close()
-  const destino = new URL(evento.notification.data?.url || '/', self.location.origin).href
+  // Solo direcciones de la app: si algún día llegara una de otro sitio, se
+  // abre el inicio (auditoría del 04/10/2026).
+  const pedido = new URL(evento.notification.data?.url || '/', self.location.origin)
+  const destino = pedido.origin === self.location.origin ? pedido.href : self.location.origin + '/'
 
   evento.waitUntil((async () => {
     const abiertas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })

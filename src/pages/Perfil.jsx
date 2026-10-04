@@ -81,12 +81,12 @@ export default function Perfil() {
     ])
     if (p.status === 'fulfilled') setPerfil(p.value)
     else avisarError('No pudimos cargar tus datos')
-    const lista = r.status === 'fulfilled' ? r.value : []
-    const historial = pg.status === 'fulfilled' ? pg.value : []
-    setReservas(lista)
-    setPagos(historial)
-    if (p.status === 'fulfilled') {
-      recordar('perfil', { perfil: p.value, reservas: lista, pagos: historial, ...(c.status === 'fulfilled' ? c.value : {}) })
+    // Lo que falla no borra lo que ya había en pantalla (sin conexión, Perfil
+    // quedaba con las listas vacías; auditoría del 04/10/2026).
+    if (r.status === 'fulfilled') setReservas(r.value)
+    if (pg.status === 'fulfilled') setPagos(pg.value)
+    if (p.status === 'fulfilled' && r.status === 'fulfilled' && pg.status === 'fulfilled') {
+      recordar('perfil', { perfil: p.value, reservas: r.value, pagos: pg.value, ...(c.status === 'fulfilled' ? c.value : {}) })
     }
     setCargando(false)
   }, [avisarError, cargarCuota])

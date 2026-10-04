@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { obtenerRiesgo, anotarContactoRiesgo } from '../../services/adminService'
 import { useSocketEventos } from '../../hooks/useSocketEventos'
 import { SkeletonLista } from '../../components/Skeleton'
@@ -59,12 +59,19 @@ export default function SeccionRiesgo({ alError }) {
   const [filtro, setFiltro]     = useState('todos')
   const [busqueda, setBusqueda] = useState('')
 
+  // Si se cambian los días mientras carga, la respuesta vieja se descarta
+  // (auditoría del 04/10/2026).
+  const vigente = useRef(diasSin)
+
   const cargar = useCallback(async () => {
+    vigente.current = diasSin
     try {
       const d = await obtenerRiesgo(diasSin)
-      setDatos(d)
       recordar(`panel.riesgo.${diasSin}`, d)
+      if (vigente.current !== diasSin) return
+      setDatos(d)
     } catch {
+      if (vigente.current !== diasSin) return
       alError('No pudimos cargar los socios en riesgo')
       setDatos(prev => prev ?? false)
     }

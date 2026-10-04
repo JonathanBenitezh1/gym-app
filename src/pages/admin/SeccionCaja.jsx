@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { obtenerCaja, obtenerCobros, cerrarCaja } from '../../services/adminService'
 import { useSocketEventos } from '../../hooks/useSocketEventos'
 import { SkeletonLista } from '../../components/Skeleton'
@@ -29,15 +29,23 @@ export default function SeccionCaja({ alExito, alError, confirmar }) {
   // Lo último de ese día, al instante (utils/memoria.js); se actualiza por detrás.
   const [caja, setCaja] = useState(() => recordado(`panel.caja.${hoy}`) ?? null)
 
+  // El día que se está mirando. Si se tocan dos días seguidos y la respuesta
+  // del primero llega última, se descarta: antes mostraba sus cobros bajo la
+  // fecha del segundo (auditoría del 04/10/2026).
+  const vigente = useRef(fecha)
+
   const cargar = useCallback(async () => {
+    vigente.current = fecha
     // Otro día: lo que haya de ese día, o las barras. Nunca el día anterior
     // con la fecha nueva arriba.
     setCaja(prev => (prev && prev.fecha !== fecha ? (recordado(`panel.caja.${fecha}`) ?? null) : prev))
     try {
       const datos = await obtenerCaja(fecha)
-      setCaja(datos)
       recordar(`panel.caja.${fecha}`, datos)
+      if (vigente.current !== fecha) return
+      setCaja(datos)
     } catch (err) {
+      if (vigente.current !== fecha) return
       alError(err.response?.data?.error || 'No pudimos cargar la caja')
       setCaja(prev => prev ?? false)
     }

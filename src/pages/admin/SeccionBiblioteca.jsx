@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useId } from 'react'
 import {
   obtenerBiblioteca, obtenerPendientes, crearEjercicio, editarEjercicio, borrarEjercicio
 } from '../../services/bibliotecaService'
@@ -204,20 +204,24 @@ export default function SeccionBiblioteca({ alExito, alError, confirmar }) {
   )
 }
 
+// Cada formulario (el nuevo y el de editar) con sus propios ids: sin
+// htmlFor, el lector de pantalla no leía "Nombre" ni "Consejo".
 function CamposFicha({ datos, alCambiar, refConsejo }) {
+  const id = useId()
   return (
     <>
       <div>
-        <label className="etiqueta-campo">Nombre</label>
-        <input className="campo" required minLength={2} maxLength={100} placeholder="Press banca, Sentadilla…"
+        <label htmlFor={`${id}-nombre`} className="etiqueta-campo">Nombre</label>
+        <input id={`${id}-nombre`} className="campo" required minLength={2} maxLength={100} placeholder="Press banca, Sentadilla…"
                value={datos.nombre} onChange={e => alCambiar(d => ({ ...d, nombre: e.target.value }))} />
       </div>
       <div>
         <div className="flex items-baseline justify-between gap-2">
-          <label className="etiqueta-campo">Consejo</label>
+          <label htmlFor={`${id}-consejo`} className="etiqueta-campo">Consejo</label>
           <span className="text-[11px]" style={{ color: 'var(--color-texto-3)' }}>{datos.consejo.length}/{MAX_CONSEJO}</span>
         </div>
         <textarea
+          id={`${id}-consejo`}
           ref={refConsejo}
           className="campo resize-none" rows={3} maxLength={MAX_CONSEJO}
           placeholder="Ej: espalda derecha, bajá controlado y estirá bien los brazos"

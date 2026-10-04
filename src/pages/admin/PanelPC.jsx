@@ -1232,11 +1232,11 @@ function SeccionReservas({ reservas, alExito, alError, alRecargar, confirmar: pe
                 el mostrador, y se le puede recordar el pago por WhatsApp. */}
             {r.estado === 'pendiente' && (
               <div className="mt-3 flex gap-2">
-                {r.metodo !== 'mercadopago' && (
-                  <button onClick={() => confirmar(r)} className="btn btn-primario btn-chico flex-1">
-                    <IconoCheck size={14} /> Confirmar cobro
-                  </button>
-                )}
+                {/* También las que el socio marcó como Mercado Pago antes del
+                    04/10/2026: se cobran en el mostrador y quedan en efectivo. */}
+                <button onClick={() => confirmar(r)} className="btn btn-primario btn-chico flex-1">
+                  <IconoCheck size={14} /> Confirmar cobro
+                </button>
                 {linkWhatsapp(r.telefono, mensajePagoPendiente(r)) && (
                   <a
                     href={linkWhatsapp(r.telefono, mensajePagoPendiente(r))}

@@ -17,7 +17,12 @@ axios.interceptors.response.use(
     //
     // Desde el 27/09/2026 el servidor dice por qué (entró en otro
     // dispositivo, venció, cambió la clave): la pantalla de ingreso lo muestra.
-    const conSesion = Boolean(error.config?.headers?.Authorization)
+    //
+    // Y solo si el pedido era de la sesión de ahora: en un celular compartido,
+    // un pedido lento del que acaba de salir volvía 401 y sacaba al que
+    // recién entraba (auditoría del 04/10/2026).
+    const enviado = error.config?.headers?.Authorization
+    const conSesion = Boolean(enviado) && enviado === `Bearer ${localStorage.getItem('token')}`
     if (estado === 401 && conSesion) {
       salidaForzada(error.response?.data?.motivo, error.response?.data?.error)
       return Promise.reject(error)

@@ -43,6 +43,9 @@
   --color-alerta-bajo: #322713;
   --color-error:      #ec6a65;
   --color-error-bajo: #351c1c;
+  /* Letra de los numeritos rojos (no leídos, avisos). Blanca sobre este rojo
+     daba 3,1:1; oscura da 5,5:1 (auditoría del 04/10/2026). */
+  --color-sobre-error: #1b1d20;
 
   /* Velo para el hover de filas y botones sin fondo: blanco en el oscuro,
      negro en el claro (bg-tinte/5 en vez de bg-tinte/5). */
@@ -81,6 +84,7 @@
   --color-alerta-bajo: #fbedd3;
   --color-error:      #c0352f;
   --color-error-bajo: #fbe2e1;
+  --color-sobre-error: #ffffff;
 
   --color-tinte:      #000000;
   color-scheme: light;
