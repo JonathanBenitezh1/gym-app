@@ -61,7 +61,7 @@ export default function SeccionCaja({ alExito, alError, confirmar }) {
     <div className="flex flex-col gap-4">
       <div className="tarjeta flex flex-wrap items-center justify-between gap-3 p-4">
         <div className="flex items-center gap-2">
-          <button onClick={() => setFecha(f => sumarDias(f, -1))} className="btn btn-contorno btn-chico" aria-label="Día anterior">
+          <button onClick={() => setFecha(f => sumarDias(f, -1))} className="btn btn-contorno btn-chico btn-icono" aria-label="Día anterior">
             <IconoFlecha size={15} />
           </button>
           <input
@@ -70,7 +70,7 @@ export default function SeccionCaja({ alExito, alError, confirmar }) {
           />
           <button
             onClick={() => setFecha(f => sumarDias(f, 1))} disabled={esHoy}
-            className="btn btn-contorno btn-chico" aria-label="Día siguiente"
+            className="btn btn-contorno btn-chico btn-icono" aria-label="Día siguiente"
           >
             <IconoFlecha size={15} style={{ transform: 'rotate(180deg)' }} />
           </button>

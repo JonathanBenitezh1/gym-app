@@ -212,7 +212,7 @@ export default function Rutinas() {
                                     >
                                       {g.circuito ? (
                                         <div className="px-4 py-3">
-                                          <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-acento)' }}>
+                                          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-acento)' }}>
                                             Circuito{g.series ? ` · ${g.series} ${g.series === 1 ? 'vuelta' : 'vueltas'}` : ''} · hacelos seguidos
                                           </p>
                                           <ul className="mt-2 flex flex-col gap-2.5 border-l-2 pl-3" style={{ borderColor: 'var(--color-acento)' }}>
@@ -289,7 +289,7 @@ function FilaEjercicio({ numero, ejercicio, series, alVer }) {
   return (
     <li className="flex items-start gap-2.5">
       <span
-        className="mt-px flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md px-1 text-[11px] font-bold"
+        className="mt-px flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md px-1 text-xs font-bold"
         style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
       >
         {numero}
@@ -306,7 +306,7 @@ function FilaEjercicio({ numero, ejercicio, series, alVer }) {
       {tieneFicha && (
         <button
           type="button" onClick={() => alVer(ejercicio)}
-          className="-my-1.5 -mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+          className="-my-2.5 -mr-2.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
           style={{ color: 'var(--color-acento)' }}
           aria-label={`Cómo se hace ${ejercicio.nombre}`}
         >
@@ -338,7 +338,7 @@ function FichaEjercicio({ ejercicio, alCerrar }) {
       <div className="tarjeta aparecer flex w-full max-w-md flex-col gap-3 p-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-start justify-between gap-3">
           <h2 id="titulo-ficha" className="break-words font-bold">{ejercicio.nombre}</h2>
-          <button onClick={alCerrar} className="btn btn-fantasma btn-chico shrink-0" aria-label="Cerrar">
+          <button onClick={alCerrar} className="btn btn-fantasma btn-chico shrink-0 btn-icono" aria-label="Cerrar">
             <IconoCruz size={16} />
           </button>
         </div>

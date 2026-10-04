@@ -45,13 +45,13 @@ function BotonMensajes() {
       onClick={() => navigate('/consultas')}
       aria-current={pathname === '/consultas' ? 'page' : undefined}
       aria-label={noLeidos > 0 ? `Mensajes, ${noLeidos} sin leer` : 'Mensajes'}
-      className="btn btn-fantasma btn-chico relative"
-      style={{ paddingInline: '.5rem', color: pathname === '/consultas' ? 'var(--color-acento)' : undefined }}
+      className="btn btn-fantasma btn-chico btn-icono relative"
+      style={{ color: pathname === '/consultas' ? 'var(--color-acento)' : undefined }}
     >
       <IconoMensaje size={21} />
       {noLeidos > 0 && (
         <span
-          className="absolute -right-0.5 -top-0.5 flex h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full px-1 text-[10px] font-bold"
+          className="absolute -right-0.5 -top-0.5 flex h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full px-1 text-[11px] font-bold"
           style={{ backgroundColor: 'var(--color-error)', color: 'var(--color-sobre-error)' }}
         >
           {noLeidos}

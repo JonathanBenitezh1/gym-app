@@ -110,13 +110,12 @@ export default function CampanaAvisos() {
         onClick={alternar}
         aria-expanded={abierta}
         aria-label={nuevos > 0 ? `Avisos, ${nuevos} ${nuevos === 1 ? 'nuevo' : 'nuevos'}` : 'Avisos'}
-        className="btn btn-fantasma btn-chico relative"
-        style={{ paddingInline: '.5rem' }}
+        className="btn btn-fantasma btn-chico btn-icono relative"
       >
         <IconoCampana size={21} />
         {nuevos > 0 && (
           <span
-            className="absolute -right-0.5 -top-0.5 flex h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full px-1 text-[10px] font-bold"
+            className="absolute -right-0.5 -top-0.5 flex h-[1.1rem] min-w-[1.1rem] items-center justify-center rounded-full px-1 text-[11px] font-bold"
             style={{ backgroundColor: 'var(--color-error)', color: 'var(--color-sobre-error)' }}
           >
             {nuevos}

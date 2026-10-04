@@ -187,11 +187,11 @@ export default function SeccionBiblioteca({ alExito, alError, confirmar }) {
                   <button
                     aria-label={`Editar ${f.nombre}`}
                     onClick={() => { setEditando(f.id); setFormEdit({ nombre: f.nombre, consejo: f.consejo || '' }) }}
-                    className="btn btn-contorno btn-chico"
+                    className="btn btn-contorno btn-chico btn-icono"
                   >
                     <IconoLapiz size={15} />
                   </button>
-                  <button aria-label={`Borrar ${f.nombre}`} onClick={() => borrar(f)} className="btn btn-peligro btn-chico">
+                  <button aria-label={`Borrar ${f.nombre}`} onClick={() => borrar(f)} className="btn btn-peligro btn-chico btn-icono">
                     <IconoBasura size={15} />
                   </button>
                 </div>
@@ -218,7 +218,7 @@ function CamposFicha({ datos, alCambiar, refConsejo }) {
       <div>
         <div className="flex items-baseline justify-between gap-2">
           <label htmlFor={`${id}-consejo`} className="etiqueta-campo">Consejo</label>
-          <span className="text-[11px]" style={{ color: 'var(--color-texto-3)' }}>{datos.consejo.length}/{MAX_CONSEJO}</span>
+          <span className="text-xs" style={{ color: 'var(--color-texto-3)' }}>{datos.consejo.length}/{MAX_CONSEJO}</span>
         </div>
         <textarea
           id={`${id}-consejo`}

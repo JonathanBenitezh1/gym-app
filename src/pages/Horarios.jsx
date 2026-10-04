@@ -309,7 +309,7 @@ export default function Horarios() {
 
       <EncabezadoSocio>
         <div className="max-w-[6.5rem] text-right">
-          <p className="text-[11px]" style={{ color: 'var(--color-texto-3)' }}>Hola,</p>
+          <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>Hola,</p>
           <p className="truncate text-sm font-semibold leading-tight">{usuario?.nombre?.split(' ')[0]}</p>
         </div>
       </EncabezadoSocio>
@@ -394,7 +394,7 @@ export default function Horarios() {
                       : { color: 'var(--color-texto-2)' }}
                   >
                     {m.texto}
-                    <span className="ml-1 text-[11px] font-normal opacity-70">{m.detalle}</span>
+                    <span className="ml-1 text-xs font-normal opacity-70">{m.detalle}</span>
                   </button>
                 ))}
               </div>
@@ -672,7 +672,7 @@ function ListaPlanes({ planes, clases, cuota, planVigente, puedePedir, alPedir, 
               <p className="min-w-0 text-base font-bold">{p.nombre}</p>
               <p className="shrink-0 text-right">
                 <span className="text-lg font-bold">{precio(p.precio)}</span>
-                <span className="block text-[11px]" style={{ color: 'var(--color-texto-3)' }}>por mes</span>
+                <span className="block text-xs" style={{ color: 'var(--color-texto-3)' }}>por mes</span>
               </p>
             </div>
             {p.descripcion && (
@@ -789,10 +789,10 @@ function TarjetaHorario({ horario, tomado = false, textoTomado, incluido = false
                 <p className="font-bold" style={{ color: seleccionado ? 'var(--color-acento)' : 'var(--color-texto)' }}>
                   {precio(horario.precio)}
                 </p>
-                <p className="text-[11px]" style={{ color: 'var(--color-texto-3)' }}>por semana</p>
+                <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>por semana</p>
               </>
             )}
-            <p className="mt-1 flex items-center justify-end gap-1 text-[11px]" style={{ color: 'var(--color-texto-3)' }}>
+            <p className="mt-1 flex items-center justify-end gap-1 text-xs" style={{ color: 'var(--color-texto-3)' }}>
               <IconoUsuarios size={12} />
               {horario.cupos_disponibles}/{horario.cupos_totales}
             </p>

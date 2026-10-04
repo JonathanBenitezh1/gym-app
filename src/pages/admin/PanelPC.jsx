@@ -156,11 +156,11 @@ export default function PanelPC() {
           <div className="flex min-w-0 items-center gap-3">
             <img src={logoGimnasio} alt={GIMNASIO.nombre} className="h-9 w-auto shrink-0" />
             <div className="min-w-0">
-              <p className="flex items-center gap-1.5 text-sm font-bold leading-tight">
+              <h1 className="flex items-center gap-1.5 text-sm font-bold leading-tight">
                 <span className="hidden sm:inline-flex"><IconoPanel size={15} /></span>
                 <span className="sm:hidden">Admin</span>
                 <span className="hidden sm:inline">Administración</span>
-              </p>
+              </h1>
               <p className="truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function PanelPC() {
             <button onClick={() => navigate('/puerta')} className="btn btn-contorno btn-chico">Puerta</button>
             <BotonPresencia alExito={exito} alError={avisarError} />
             <SelectorTema boton />
-            <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
+            <button onClick={salir} className="btn btn-fantasma btn-chico btn-icono" aria-label="Cerrar sesión">
               <IconoSalir size={18} />
             </button>
           </div>
@@ -491,7 +491,7 @@ function SeccionClases({ clases, profesores, alExito, alError, alRecargar, confi
                     })
                   }}
                   aria-label="Editar clase"
-                  className="btn btn-contorno btn-chico shrink-0"
+                  className="btn btn-contorno btn-chico shrink-0 btn-icono"
                 >
                   <IconoLapiz size={15} />
                 </button>
@@ -772,11 +772,11 @@ function SeccionHorarios({ horarios, clases, alExito, alError, alRecargar, confi
                         precio: h.precio
                       })
                     }}
-                    className="btn btn-contorno btn-chico"
+                    className="btn btn-contorno btn-chico btn-icono"
                   >
                     <IconoLapiz size={15} />
                   </button>
-                  <button aria-label="Eliminar horario" onClick={() => borrar(h)} className="btn btn-peligro btn-chico">
+                  <button aria-label="Eliminar horario" onClick={() => borrar(h)} className="btn btn-peligro btn-chico btn-icono">
                     <IconoBasura size={15} />
                   </button>
                 </div>
@@ -995,13 +995,13 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
                     value={editandoApto.vence}
                     onChange={e => setEditandoApto({ id: u.id, vence: e.target.value })}
                   />
-                  <button type="submit" className="btn btn-primario btn-chico !text-[11px]">Guardar</button>
+                  <button type="submit" className="btn btn-primario btn-chico">Guardar</button>
                   {u.apto_vence && (
-                    <button type="button" onClick={() => guardarApto(u, null)} className="btn btn-fantasma btn-chico !text-[11px]">
+                    <button type="button" onClick={() => guardarApto(u, null)} className="btn btn-fantasma btn-chico">
                       Borrar
                     </button>
                   )}
-                  <button type="button" onClick={() => setEditandoApto(null)} className="btn btn-fantasma btn-chico !text-[11px]">
+                  <button type="button" onClick={() => setEditandoApto(null)} className="btn btn-fantasma btn-chico">
                     Cancelar
                   </button>
                 </form>
@@ -1016,14 +1016,17 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
                 </button>
               ))}
             </div>
-            <div className="flex w-full flex-wrap items-center justify-end gap-1.5 lg:w-auto lg:shrink-0 lg:flex-col lg:items-end">
+            {/* En el celular, una grilla de dos: antes las acciones quedaban
+                sueltas y alineadas a la derecha sin orden (auditoría de diseño
+                del 04/10/2026). "Dar de baja" va al final, lejos del rol. */}
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-1.5 lg:w-auto lg:shrink-0 lg:flex-col lg:items-end">
               {u.cuenta_puerta ? (
-                <button onClick={() => cerrarSesiones(u)} className="btn btn-contorno btn-chico !text-[11px]">
+                <button onClick={() => cerrarSesiones(u)} className="btn btn-contorno btn-chico col-span-2">
                   Cerrar sesión de la puerta
                 </button>
               ) : (
                 <select
-                  className="campo w-auto !min-h-9 !py-1.5 text-xs"
+                  className="campo col-span-2 sm:w-auto sm:!min-h-9 sm:!py-1.5 sm:text-xs"
                   value={u.rol}
                   onChange={e => cambiar(u, e.target.value)}
                   aria-label={`Rol de ${u.nombre}`}
@@ -1032,28 +1035,25 @@ function SeccionUsuarios({ usuarios, alExito, alError, alRecargar, confirmar }) 
                 </select>
               )}
               {u.rol === 'alumno' && (
-                <button onClick={() => setFotoDe(u)} className="btn btn-fantasma btn-chico !text-[11px]">
+                <button onClick={() => setFotoDe(u)} className="btn btn-contorno btn-chico">
                   {u.tiene_foto ? 'Ver foto' : 'Sacar foto'}
                 </button>
               )}
-              <button
-                onClick={() => restablecer(u)}
-                className="btn btn-fantasma btn-chico !text-[11px]"
-              >
+              <button onClick={() => restablecer(u)} className="btn btn-contorno btn-chico">
                 <IconoLlave size={13} /> Restablecer clave
               </button>
-              <button
-                onClick={() => cambiarEstado(u)}
-                className="btn btn-fantasma btn-chico !text-[11px]"
-                style={{ color: u.activo === false ? 'var(--color-exito)' : 'var(--color-error)' }}
-              >
-                {u.activo === false ? 'Reactivar' : 'Dar de baja'}
-              </button>
               {!u.cuenta_puerta && (
-                <button onClick={() => cerrarSesiones(u)} className="btn btn-fantasma btn-chico !text-[11px]">
+                <button onClick={() => cerrarSesiones(u)} className="btn btn-contorno btn-chico">
                   Cerrar sesiones
                 </button>
               )}
+              <button
+                onClick={() => cambiarEstado(u)}
+                className={`btn btn-chico ${u.activo === false ? 'btn-contorno' : 'btn-peligro'}`}
+                style={u.activo === false ? { color: 'var(--color-exito)' } : undefined}
+              >
+                {u.activo === false ? 'Reactivar' : 'Dar de baja'}
+              </button>
             </div>
           </article>
         ))}

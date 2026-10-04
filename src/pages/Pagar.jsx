@@ -76,7 +76,7 @@ export default function Pagar() {
         <div className="contenedor flex items-center gap-3 py-3">
           <button
             onClick={() => navigate('/reservas')}
-            className="btn btn-fantasma btn-chico -ml-2"
+            className="btn btn-fantasma btn-chico -ml-2 btn-icono"
             aria-label="Volver a mis reservas"
           >
             <IconoFlecha size={18} />

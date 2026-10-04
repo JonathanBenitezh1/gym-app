@@ -90,7 +90,7 @@ export default function Progreso({ registros, alGuardar, alBorrar, vacio }) {
                       {editable && (
                         <button
                           type="button" onClick={() => alBorrar(p)}
-                          className="btn btn-fantasma btn-chico" aria-label={`Borrar registro del ${fechaCorta(p.fecha)}`}
+                          className="btn btn-fantasma btn-chico btn-icono" aria-label={`Borrar registro del ${fechaCorta(p.fecha)}`}
                         >
                           <IconoBasura size={14} />
                         </button>

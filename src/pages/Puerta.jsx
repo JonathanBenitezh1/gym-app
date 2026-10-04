@@ -333,7 +333,7 @@ export default function Puerta() {
         <div className="flex items-center gap-3">
           <img src={logoGimnasio} alt={GIMNASIO.nombre} className="h-9 w-auto" />
           <div>
-            <p className="text-sm font-bold leading-tight">Ingreso</p>
+            <h1 className="text-sm font-bold leading-tight">Ingreso</h1>
             <p className="text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
           </div>
           <EstadoConexion enLinea={enLinea} porMandar={porMandar} padronDesde={padronDesde} />
@@ -354,7 +354,7 @@ export default function Puerta() {
           {usuario?.rol === 'admin' && (
             <button onClick={() => navigate('/panel-gym')} className="btn btn-contorno btn-chico">Volver al panel</button>
           )}
-          <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión"><IconoSalir size={18} /></button>
+          <button onClick={salir} className="btn btn-fantasma btn-chico btn-icono" aria-label="Cerrar sesión"><IconoSalir size={18} /></button>
         </div>
       </header>
 

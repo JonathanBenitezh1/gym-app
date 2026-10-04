@@ -139,7 +139,7 @@ function Cifra({ valor, titulo, detalle, acento, alerta }) {
         {valor}
       </p>
       <p className="mt-0.5 text-xs" style={{ color: 'var(--color-texto-3)' }}>{titulo}</p>
-      {detalle && <p className="mt-1 text-[11px]" style={{ color: 'var(--color-texto-2)' }}>{detalle}</p>}
+      {detalle && <p className="mt-1 text-xs" style={{ color: 'var(--color-texto-2)' }}>{detalle}</p>}
     </div>
   )
 }
@@ -181,7 +181,7 @@ function BarrasMensuales({ ingresos }) {
       <div className="mt-1.5 flex gap-2">
         {ingresos.map((m, i) => (
           <span
-            key={m.mes} className="flex-1 text-center text-[11px]"
+            key={m.mes} className="flex-1 text-center text-xs"
             style={{ color: i === activo ? 'var(--color-texto)' : 'var(--color-texto-3)' }}
           >
             {nombreMes(m.mes)}

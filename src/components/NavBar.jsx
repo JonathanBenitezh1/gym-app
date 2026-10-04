@@ -130,14 +130,14 @@ export default function NavBar({ hayBarraAccion = false }) {
                   <Icono size={21} />
                   {ruta === '/reservas' && pendientes > 0 && (
                     <span
-                      className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold"
+                      className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[11px] font-bold"
                       style={{ backgroundColor: 'var(--color-error)', color: 'var(--color-sobre-error)' }}
                     >
                       {pendientes}
                     </span>
                   )}
                 </span>
-                <span className="text-[10.5px] font-semibold leading-none">{texto}</span>
+                <span className="text-xs font-semibold leading-none">{texto}</span>
                 {activa && (
                   <span
                     className="absolute -top-px h-0.5 w-7 rounded-full"
@@ -154,7 +154,7 @@ export default function NavBar({ hayBarraAccion = false }) {
             style={{ color: 'var(--color-texto-3)' }}
           >
             <IconoSalir size={21} />
-            <span className="text-[10.5px] font-semibold leading-none">Salir</span>
+            <span className="text-xs font-semibold leading-none">Salir</span>
           </button>
         </div>
       </nav>

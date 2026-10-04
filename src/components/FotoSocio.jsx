@@ -145,7 +145,7 @@ export default function FotoSocio({ socio, alCerrar, alExito, alError }) {
       <div className="tarjeta aparecer flex w-full max-w-md flex-col gap-4 p-5">
         <div className="flex items-center justify-between gap-3">
           <h2 id="titulo-foto" className="font-bold">Foto de {socio.nombre}</h2>
-          <button onClick={cerrar} className="btn btn-fantasma btn-chico" aria-label="Cerrar"><IconoCruz size={16} /></button>
+          <button onClick={cerrar} className="btn btn-fantasma btn-chico btn-icono" aria-label="Cerrar"><IconoCruz size={16} /></button>
         </div>
 
         <div className="mx-auto flex aspect-square w-full max-w-72 items-center justify-center overflow-hidden rounded-2xl"

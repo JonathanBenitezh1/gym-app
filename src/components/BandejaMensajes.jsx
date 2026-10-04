@@ -101,7 +101,7 @@ export default function BandejaMensajes({ alError }) {
                 <span className="min-w-0 flex-1">
                   <span className="flex items-baseline justify-between gap-2">
                     <span className="truncate text-sm font-semibold">{c.alumno}</span>
-                    <span className="shrink-0 text-[11px]" style={{ color: 'var(--color-texto-3)' }}>{momento(c.ultimo_en)}</span>
+                    <span className="shrink-0 text-xs" style={{ color: 'var(--color-texto-3)' }}>{momento(c.ultimo_en)}</span>
                   </span>
                   <span className="block truncate text-xs" style={{ color: c.no_leidos ? 'var(--color-texto)' : 'var(--color-texto-3)' }}>
                     {esAdmin && <>{c.profesor_id === null ? 'Gimnasio' : `Prof. ${c.profesor}`} · </>}
@@ -110,7 +110,7 @@ export default function BandejaMensajes({ alError }) {
                 </span>
                 {c.no_leidos > 0 && (
                   <span
-                    className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] font-bold"
+                    className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-xs font-bold"
                     style={{ backgroundColor: 'var(--color-error)', color: 'var(--color-sobre-error)' }}
                   >
                     {c.no_leidos}

@@ -76,14 +76,14 @@ export default function MisClases() {
           <div className="flex min-w-0 items-center gap-3">
             <img src={logoGimnasio} alt={GIMNASIO.nombre} className="h-9 w-auto shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm font-bold leading-tight">Panel del profesor</p>
+              <h1 className="text-sm font-bold leading-tight">Panel del profesor</h1>
               <p className="truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>{usuario?.nombre}</p>
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <BotonPresencia alExito={exito} alError={avisarError} />
             <SelectorTema boton />
-            <button onClick={salir} className="btn btn-fantasma btn-chico" aria-label="Cerrar sesión">
+            <button onClick={salir} className="btn btn-fantasma btn-chico btn-icono" aria-label="Cerrar sesión">
               <IconoSalir size={18} />
             </button>
           </div>

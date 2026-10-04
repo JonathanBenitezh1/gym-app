@@ -62,7 +62,7 @@ export default function GrillaSemanal({ items, desde }) {
                   : { backgroundColor: 'var(--color-superficie)', color: d.items.length ? 'var(--color-texto-2)' : 'var(--color-texto-3)' }}
               >
                 {d.corto}
-                <span className="text-[11px] font-normal opacity-80">{d.fecha ?? (d.items.length || '–')}</span>
+                <span className="text-xs font-normal opacity-80">{d.fecha ?? (d.items.length || '–')}</span>
               </button>
             )
           })}
@@ -104,7 +104,7 @@ export function SelectorFormato({ formato, alCambiar }) {
           type="button"
           aria-pressed={formato === valor}
           onClick={() => alCambiar(valor)}
-          className="rounded-md px-3 py-1 text-xs font-semibold transition-colors"
+          className="segmento rounded-md px-3.5 text-xs font-semibold transition-colors"
           style={formato === valor
             ? { backgroundColor: 'var(--color-acento)', color: 'var(--color-sobre-acento)' }
             : { color: 'var(--color-texto-2)' }}
@@ -125,7 +125,7 @@ function Bloque({ item, compacto = false }) {
   }
   const contenido = (
     <>
-      <p className="text-[11px] font-semibold tabular-nums" style={{ color: item.resaltado ? t.texto : 'var(--color-texto-2)' }}>
+      <p className="text-xs font-semibold tabular-nums" style={{ color: item.resaltado ? t.texto : 'var(--color-texto-2)' }}>
         {hora(item.hora_inicio)}{compacto ? '' : ` a ${hora(item.hora_fin)}`}
       </p>
       <p className={`font-semibold ${compacto ? 'text-xs leading-snug' : 'text-sm'} break-words`}>{item.titulo}</p>
@@ -133,7 +133,7 @@ function Bloque({ item, compacto = false }) {
         <p className="truncate text-xs" style={{ color: 'var(--color-texto-3)' }}>{item.subtitulo}</p>
       )}
       {item.nota && (
-        <p className="mt-0.5 text-[11px] font-medium leading-snug" style={{ color: t.texto }}>{item.nota}</p>
+        <p className="mt-0.5 text-xs font-medium leading-snug" style={{ color: t.texto }}>{item.nota}</p>
       )}
     </>
   )

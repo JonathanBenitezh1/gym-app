@@ -14,8 +14,7 @@ export default function SelectorTema({ boton = false }) {
       <button
         type="button"
         onClick={() => cambiarTema(otro)}
-        className="btn btn-fantasma btn-chico"
-        style={{ paddingInline: '.5rem' }}
+        className="btn btn-fantasma btn-chico btn-icono"
         aria-label={`Pasar a modo ${otro}`}
         title={`Modo ${otro}`}
       >

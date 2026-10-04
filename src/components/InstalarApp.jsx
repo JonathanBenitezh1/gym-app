@@ -48,7 +48,7 @@ export default function InstalarApp({ className = '' }) {
             Queda en tu pantalla de inicio y abre como cualquier app.
           </p>
         </div>
-        <button onClick={cerrar} className="btn btn-fantasma btn-chico -mr-2 -mt-1 shrink-0" aria-label="Ahora no">
+        <button onClick={cerrar} className="btn btn-fantasma btn-chico -mr-2 -mt-1 shrink-0 btn-icono" aria-label="Ahora no">
           <IconoCruz size={16} />
         </button>
       </div>
@@ -82,7 +82,7 @@ function Paso({ numero, children }) {
   return (
     <li className="flex items-start gap-2.5">
       <span
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold"
         style={{ backgroundColor: 'var(--color-acento-bajo)', color: 'var(--color-acento)' }}
       >
         {numero}

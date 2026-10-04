@@ -125,7 +125,7 @@ export default function Conversacion({ conversacionId, profesorId = null, titulo
         className="flex items-center gap-2 px-2 py-2.5"
         style={{ backgroundColor: 'var(--color-superficie)', borderBottom: '1px solid var(--color-linea-sutil)', paddingTop: 'max(.625rem, env(safe-area-inset-top))' }}
       >
-        <button onClick={alVolver} className="btn btn-fantasma btn-chico shrink-0" aria-label="Volver">
+        <button onClick={alVolver} className="btn btn-fantasma btn-chico shrink-0 btn-icono" aria-label="Volver">
           <IconoFlecha size={18} />
         </button>
         <div className="min-w-0">
@@ -180,7 +180,7 @@ export default function Conversacion({ conversacionId, profesorId = null, titulo
                   >
                     {m.texto}
                   </div>
-                  <span className="mt-0.5 px-1 text-[10.5px]" style={{ color: 'var(--color-texto-3)' }}>
+                  <span className="mt-0.5 px-1 text-[11px]" style={{ color: 'var(--color-texto-3)' }}>
                     {firma && <>{firma} · </>}{momento(m.creado_en)}
                   </span>
                 </div>

@@ -323,7 +323,7 @@ button, a, [role="button"] {
     display: inline-flex;
     align-items: center;
     gap: .3rem;
-    font-size: .7rem;
+    font-size: .75rem; /* 12 px: era 11,2 (auditoría de diseño del 04/10/2026) */
     font-weight: 600;
     padding: .22rem .55rem;
     border-radius: 999px;
@@ -365,7 +365,7 @@ button, a, [role="button"] {
 
   /* ── Encabezados de sección ── */
   .titulo-seccion {
-    font-size: .72rem;
+    font-size: .75rem; /* 12 px: era 11,5 */
     font-weight: 700;
     letter-spacing: .09em;
     text-transform: uppercase;
@@ -415,6 +415,8 @@ button, a, [role="button"] {
     background-color: var(--color-exito);
   }
   .interruptor:disabled { opacity: .55; cursor: not-allowed; }
+  /* Se ve de 24 px de alto pero se toca en 44: el área extra es invisible. */
+  .interruptor::before { content: ''; position: absolute; inset: -10px -2px; }
   .interruptor:focus-visible { outline: 2px solid var(--color-acento); outline-offset: 2px; }
 }
 
@@ -431,3 +433,22 @@ button, a, [role="button"] {
   to   { opacity: 1; transform: translateY(0); }
 }
 .bajar-aviso { animation: bajar-aviso .22s ease-out both; }
+
+/* ─── Con el dedo (auditoría de diseño del 04/10/2026) ────────────────────
+   Con mouse, los botones chicos y las pastillas siguen de 34 px y el panel
+   en la PC no cambia. En el celular y la tablet llegan a 44 px, el mínimo
+   para tocar sin errarle (Apple 44 pt; los de 34 px se erraban en filas de
+   pastillas y en las acciones de cada socio). */
+@media (pointer: coarse) {
+  .btn-chico, .pildora { min-height: 44px; }
+  .btn-icono { min-width: 44px; }
+  .segmento { min-height: 40px; }
+}
+/* Insignias que se tocan (el apto en Usuarios): se ven igual, se tocan en 44 px. */
+button.insignia { position: relative; }
+button.insignia::before { content: ''; position: absolute; inset: -10px -4px; }
+/* Las opciones de un selector de dos o tres (Lista / Semana): antes 24 px. */
+.segmento { min-height: 32px; }
+/* Botón de solo ícono (campanita, mensajes, tema, salir, cerrar): cuadrado
+   para que el área de toque no dependa del ícono. */
+.btn-icono { min-width: 40px; padding-inline: .5rem; }

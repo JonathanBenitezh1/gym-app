@@ -364,7 +364,7 @@ export default function SeccionRutinas({ alExito, alError }) {
                   Usar
                 </button>
                 {puedeBorrar && (
-                  <button onClick={quitarPlantilla} className="btn btn-peligro btn-chico shrink-0" aria-label="Borrar plantilla">
+                  <button onClick={quitarPlantilla} className="btn btn-peligro btn-chico shrink-0 btn-icono" aria-label="Borrar plantilla">
                     <IconoBasura size={15} />
                   </button>
                 )}
@@ -389,7 +389,7 @@ export default function SeccionRutinas({ alExito, alError }) {
                   onChange={e => setNombrePlantilla(e.target.value)}
                 />
                 <button type="submit" className="btn btn-primario btn-chico shrink-0">Guardar</button>
-                <button type="button" onClick={() => setNombrePlantilla(null)} className="btn btn-fantasma btn-chico shrink-0" aria-label="Cancelar">
+                <button type="button" onClick={() => setNombrePlantilla(null)} className="btn btn-fantasma btn-chico shrink-0 btn-icono" aria-label="Cancelar">
                   <IconoCruz size={15} />
                 </button>
               </form>
@@ -422,7 +422,7 @@ export default function SeccionRutinas({ alExito, alError }) {
                 {sesiones.length > 1 && (
                   <button
                     onClick={() => quitarSesion(si)}
-                    className="btn btn-peligro btn-chico shrink-0"
+                    className="btn btn-peligro btn-chico shrink-0 btn-icono"
                     aria-label="Quitar sesión"
                   >
                     <IconoCruz size={15} />
@@ -446,13 +446,13 @@ export default function SeccionRutinas({ alExito, alError }) {
                           }}
                         >
                           {(miembro || encabeza) && (
-                            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--color-acento)' }}>
+                            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--color-acento)' }}>
                               {miembro ? 'En circuito con el de arriba' : 'Circuito: se hacen seguidos'}
                             </p>
                           )}
                           <div className="mb-2 flex items-center gap-2">
                             <span
-                              className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md px-1 text-[11px] font-bold"
+                              className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-md px-1 text-xs font-bold"
                               style={{ backgroundColor: 'var(--color-elevado)', color: 'var(--color-texto-3)' }}
                             >
                               {texto}
@@ -467,7 +467,7 @@ export default function SeccionRutinas({ alExito, alError }) {
                             {sesion.ejercicios.length > 1 && (
                               <button
                                 onClick={() => quitarEjercicio(si, ei)}
-                                className="btn btn-fantasma btn-chico shrink-0"
+                                className="btn btn-fantasma btn-chico shrink-0 btn-icono"
                                 aria-label="Quitar ejercicio"
                               >
                                 <IconoCruz size={14} />
@@ -548,7 +548,7 @@ function ListaComentarios({ comentarios, conAlumno = false, alAbrir }) {
               <span className="min-w-0 text-sm font-semibold">
                 {conAlumno && <>{c.alumno} · </>}{c.dia}
               </span>
-              <span className="shrink-0 text-[11px]" style={{ color: 'var(--color-texto-3)' }}>{fechaHora(c.creado_en)}</span>
+              <span className="shrink-0 text-xs" style={{ color: 'var(--color-texto-3)' }}>{fechaHora(c.creado_en)}</span>
             </span>
             <span className="mt-1.5 flex flex-wrap gap-1.5">
               <span className={`insignia ${sensacion?.insignia}`}>Se sintió {sensacion?.texto.toLowerCase()}</span>

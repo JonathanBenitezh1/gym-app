@@ -200,11 +200,11 @@ export default function SeccionPlanes({ clases, horarios, alExito, alError, conf
                         incluye_todo: p.incluye_todo, clases_ids: p.clases_ids
                       })
                     }}
-                    className="btn btn-contorno btn-chico"
+                    className="btn btn-contorno btn-chico btn-icono"
                   >
                     <IconoLapiz size={15} />
                   </button>
-                  <button aria-label="Eliminar plan" onClick={() => borrar(p)} className="btn btn-peligro btn-chico">
+                  <button aria-label="Eliminar plan" onClick={() => borrar(p)} className="btn btn-peligro btn-chico btn-icono">
                     <IconoBasura size={15} />
                   </button>
                 </div>
