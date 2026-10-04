@@ -41,6 +41,9 @@ socket.on('sesion_cerrada', ({ motivo, mensaje } = {}) => salidaForzada(motivo, 
 // "SESION:motivo". Sin esto, la app reintentaba conectarse para siempre.
 socket.on('connect_error', (error) => {
   if (String(error?.message).startsWith('SESION:')) salidaForzada(error.message.slice(7))
+  // Con la clave temporal el servidor no deja conectar: se deja de reintentar.
+  // Después de elegir una propia, la próxima pantalla que se suscribe conecta.
+  if (error?.message === 'CLAVE_TEMPORAL') socket.disconnect()
 })
 
 export default socket
