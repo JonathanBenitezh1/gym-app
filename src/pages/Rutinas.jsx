@@ -10,6 +10,7 @@ import { IconoChevron, IconoRutina, IconoInfo, IconoCruz, IconoMensaje } from '.
 import { fechaCorta } from '../utils/formato'
 import EncabezadoSocio from '../components/EncabezadoSocio'
 import { recordado, recordar } from '../utils/memoria'
+import { useDialogo } from '../hooks/useDialogo'
 import Cargando from '../components/Cargando'
 import { agruparEjercicios, letra, SENSACIONES, GANAS, sensacionDe } from '../utils/rutinas'
 import { comentarDia, obtenerMisComentarios } from '../services/comentariosService'
@@ -324,17 +325,14 @@ function FilaEjercicio({ numero, ejercicio, series, alVer }) {
  * permitir esa dirección en `media-src`.
  */
 function FichaEjercicio({ ejercicio, alCerrar }) {
-  useEffect(() => {
-    const conTecla = (e) => { if (e.key === 'Escape') alCerrar() }
-    window.addEventListener('keydown', conTecla)
-    return () => window.removeEventListener('keydown', conTecla)
-  }, [alCerrar])
+  const caja = useDialogo(alCerrar)
 
   return (
     <div
       className="fixed inset-0 z-[70] flex items-end justify-center p-4 sm:items-center"
       style={{ backgroundColor: 'rgba(0,0,0,.6)' }}
       role="dialog" aria-modal="true" aria-labelledby="titulo-ficha"
+      ref={caja} tabIndex={-1}
       onClick={alCerrar}
     >
       <div className="tarjeta aparecer flex w-full max-w-md flex-col gap-3 p-5" onClick={e => e.stopPropagation()}>

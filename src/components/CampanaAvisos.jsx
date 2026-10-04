@@ -24,13 +24,18 @@ import AvisosCelular from './AvisosCelular'
  * que cambia (otra fecha, otro plan) vuelve a contar como nuevo.
  */
 
-const CLAVE_VISTOS = 'avisos.vistos'
+// Por persona, no por teléfono: en uno compartido, lo que vio uno no le
+// apagaba el numerito al otro (auditoría del 04/10/2026).
+const claveVistos = (usuarioId) => `avisos.vistos.${usuarioId}`
 
-const leerVistos = () => {
-  try { return JSON.parse(localStorage.getItem(CLAVE_VISTOS)) ?? [] } catch { return [] }
+const leerVistos = (usuarioId) => {
+  try {
+    localStorage.removeItem('avisos.vistos') // la clave vieja, compartida
+    return JSON.parse(localStorage.getItem(claveVistos(usuarioId))) ?? []
+  } catch { return [] }
 }
-const guardarVistos = (ids) => {
-  try { localStorage.setItem(CLAVE_VISTOS, JSON.stringify(ids)) } catch { /* sin guardar: vuelven a contar */ }
+const guardarVistos = (usuarioId, ids) => {
+  try { localStorage.setItem(claveVistos(usuarioId), JSON.stringify(ids)) } catch { /* sin guardar: vuelven a contar */ }
 }
 
 const COLOR = {
@@ -44,7 +49,7 @@ export default function CampanaAvisos() {
   const navigate = useNavigate()
   const { usuario } = useAuth()
   const [avisos, setAvisos] = useState(() => recordado('avisos') ?? [])
-  const [vistos, setVistos] = useState(leerVistos)
+  const [vistos, setVistos] = useState(() => leerVistos(usuario?.id))
   const [abierta, setAbierta] = useState(false)
   const [arriba, setArriba] = useState(60)
   const caja = useRef(null)
@@ -90,7 +95,7 @@ export default function CampanaAvisos() {
       // Al abrir quedan vistos. Se guardan solo los de ahora, para que la
       // lista no crezca para siempre.
       const ids = avisos.map(a => a.id)
-      guardarVistos(ids)
+      guardarVistos(usuario?.id, ids)
       setVistos(ids)
       // El panel va justo debajo de la barra.
       setArriba(caja.current.getBoundingClientRect().bottom + 8)

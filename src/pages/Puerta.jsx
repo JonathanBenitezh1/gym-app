@@ -14,6 +14,7 @@ import { IconoSalir, IconoAlerta } from '../components/Iconos'
 import logoGimnasio from './img/logo.webp'
 import { GIMNASIO } from '../config/gimnasio'
 import { useNoLeidos } from '../hooks/useNoLeidos'
+import { hayVersionNueva, recargarSiHayNueva } from '../utils/actualizacion'
 
 // Cuánto queda el resultado en pantalla antes de volver a "esperando".
 const SEGUNDOS_EN_PANTALLA = 5
@@ -124,6 +125,16 @@ export default function Puerta() {
 
   const [lectura, setLectura]   = useState('')
   const [actual, setActual]     = useState(null) // { respuesta, sexo, foto }
+
+  // Versión nueva de la app: la puerta está siempre a la vista, así que se
+  // recarga cuando no hay nadie en pantalla ni ingresos por mandar.
+  useEffect(() => {
+    if (actual) return
+    const revisar = setInterval(() => {
+      if (hayVersionNueva() && pendientes().length === 0) recargarSiHayNueva()
+    }, 30 * 1000)
+    return () => clearInterval(revisar)
+  }, [actual])
   const [ultimos, setUltimos]   = useState([])
   const [enviando, setEnviando] = useState(false)
   const campo = useRef(null)
@@ -150,11 +161,13 @@ export default function Puerta() {
     }
   }, [])
 
-  // Manda lo anotado sin conexión, de a 500.
+  // Manda lo anotado sin conexión, de a 100. El servidor guarda cada tanda en
+  // una sola consulta (auditoría del 04/10/2026); antes tandas de 500 de a
+  // un ingreso por vez pasaban la espera y la puerta quedaba en rojo.
   const sincronizar = useCallback(async () => {
     let lista = pendientes()
     while (lista.length > 0) {
-      const tanda = lista.slice(0, 500)
+      const tanda = lista.slice(0, 100)
       try {
         await mandarLote(tanda)
         quitarPendientes(tanda.map(i => i.id_local))

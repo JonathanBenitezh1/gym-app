@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { guardarFotoSocio, borrarFotoSocio } from '../services/adminService'
 import { obtenerFotoUrl } from '../services/puertaService'
 import { IconoCruz } from './Iconos'
+import { useDialogo } from '../hooks/useDialogo'
 
 // La foto se achica antes de mandarla: 480 px de lado y JPG. Así pesa 30 a
 // 60 KB y entra en el límite del servidor sin agrandarlo.
@@ -35,6 +36,12 @@ export default function FotoSocio({ socio, alCerrar, alExito, alError }) {
   const [nueva, setNueva]     = useState(null)   // data URL por guardar
   const [camara, setCamara]   = useState('apagada') // apagada | encendida | sin_permiso
   const [guardando, setGuardando] = useState(false)
+  const [pidiendo, setPidiendo]   = useState(false)
+  // Si el diálogo se cierra mientras el navegador pide permiso, la cámara que
+  // llega después se apaga en vez de quedar prendida en la PC de recepción
+  // (auditoría del 04/10/2026).
+  const montado = useRef(true)
+  useEffect(() => () => { montado.current = false }, [])
 
   useEffect(() => {
     let url = null
@@ -51,14 +58,24 @@ export default function FotoSocio({ socio, alCerrar, alExito, alError }) {
   useEffect(() => apagar, [])
 
   const encender = async () => {
+    if (pidiendo) return
+    setPidiendo(true)
     try {
-      flujo.current = await navigator.mediaDevices.getUserMedia({ video: { width: 960, height: 720, facingMode: 'user' } })
+      const nuevo = await navigator.mediaDevices.getUserMedia({ video: { width: 960, height: 720, facingMode: 'user' } })
+      if (!montado.current) {
+        nuevo.getTracks().forEach(t => t.stop())
+        return
+      }
+      apagar()
+      flujo.current = nuevo
       setCamara('encendida')
       setNueva(null)
       // El video se monta con el estado nuevo; se conecta en el próximo cuadro.
       requestAnimationFrame(() => { if (video.current) video.current.srcObject = flujo.current })
     } catch {
-      setCamara('sin_permiso')
+      if (montado.current) setCamara('sin_permiso')
+    } finally {
+      if (montado.current) setPidiendo(false)
     }
   }
 
@@ -115,12 +132,15 @@ export default function FotoSocio({ socio, alCerrar, alExito, alError }) {
   }
 
   const cerrar = () => { apagar(); alCerrar(false) }
+  // Foco adentro, Tab que da la vuelta y Escape que cierra (y apaga la cámara).
+  const caja = useDialogo(cerrar)
 
   return (
     <div
       className="fixed inset-0 z-[70] flex items-end justify-center p-4 sm:items-center"
       style={{ backgroundColor: 'rgba(0,0,0,.6)' }}
       role="dialog" aria-modal="true" aria-labelledby="titulo-foto"
+      ref={caja} tabIndex={-1}
     >
       <div className="tarjeta aparecer flex w-full max-w-md flex-col gap-4 p-5">
         <div className="flex items-center justify-between gap-3">
@@ -153,7 +173,7 @@ export default function FotoSocio({ socio, alCerrar, alExito, alError }) {
           {camara === 'encendida' ? (
             <button onClick={sacar} className="btn btn-primario flex-1">Sacar foto</button>
           ) : (
-            <button onClick={encender} className="btn btn-contorno flex-1">{nueva || actual ? 'Sacar otra' : 'Abrir cámara'}</button>
+            <button onClick={encender} disabled={pidiendo} className="btn btn-contorno flex-1">{nueva || actual ? 'Sacar otra' : 'Abrir cámara'}</button>
           )}
           <label className="btn btn-contorno flex-1 cursor-pointer">
             Subir archivo

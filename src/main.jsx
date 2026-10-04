@@ -9,6 +9,9 @@ import { ProveedorAvisos } from './components/Avisos.jsx'
 import './services/axiosConfig.js'
 // Temprano: el aviso de "se puede instalar" de Android llega una sola vez, al cargar.
 import './utils/instalacion.js'
+import { registrarServiceWorker } from './utils/actualizacion.js'
+
+registrarServiceWorker()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

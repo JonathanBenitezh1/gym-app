@@ -4,6 +4,7 @@ import { useSocketEventos } from '../hooks/useSocketEventos'
 import { useAuth } from '../context/AuthContext'
 import { SkeletonLista } from './Skeleton'
 import Conversacion from './Conversacion'
+import { useConversacionEnUrl } from '../hooks/useConversacionEnUrl'
 import AvisosCelular from './AvisosCelular'
 import { IconoBuscar } from './Iconos'
 import { recordado, recordar } from '../utils/memoria'
@@ -21,7 +22,7 @@ export default function BandejaMensajes({ alError }) {
   const [cargando, setCargando] = useState(() => !recordado('mensajes.bandeja'))
   const [filtro, setFiltro] = useState('responder')   // admin: 'responder' | 'profes'
   const [buscar, setBuscar] = useState('')
-  const [abierta, setAbierta] = useState(null)
+  const { con, abrir, cerrar: cerrarEnUrl } = useConversacionEnUrl()
 
   const cargar = useCallback(async () => {
     try {
@@ -38,7 +39,8 @@ export default function BandejaMensajes({ alError }) {
   useEffect(() => { cargar() }, [cargar])
   useSocketEventos({ mensaje_nuevo: cargar })
 
-  const cerrar = useCallback(() => { setAbierta(null); cargar() }, [cargar])
+  const abierta = con ? lista.find(c => String(c.id) === con) : null
+  const cerrar = useCallback(() => { cerrarEnUrl(); cargar() }, [cerrarEnUrl, cargar])
 
   const texto = buscar.trim().toLowerCase()
   const visibles = lista
@@ -87,7 +89,7 @@ export default function BandejaMensajes({ alError }) {
           {visibles.map((c, i) => (
             <li key={c.id} style={i > 0 ? { borderTop: '1px solid var(--color-linea-sutil)' } : undefined}>
               <button
-                onClick={() => setAbierta(c)}
+                onClick={() => abrir(c.id)}
                 className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-tinte/[.03]"
               >
                 <span

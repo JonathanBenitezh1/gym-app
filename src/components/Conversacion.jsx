@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { obtenerConversacion, enviarMensaje } from '../services/mensajesService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
+import { useDialogo } from '../hooks/useDialogo'
 import { avisarLeidos } from '../hooks/useNoLeidos'
 import { useAvisos } from './Avisos'
 import { IconoFlecha, IconoEnviar } from './Iconos'
@@ -58,12 +59,8 @@ export default function Conversacion({ conversacionId, profesorId = null, titulo
     mensaje_nuevo: (d) => { if (d?.conversacion_id === id) cargar() }
   })
 
-  // Escape vuelve a la lista.
-  useEffect(() => {
-    const conTecla = (e) => { if (e.key === 'Escape') alVolver() }
-    window.addEventListener('keydown', conTecla)
-    return () => window.removeEventListener('keydown', conTecla)
-  }, [alVolver])
+  // Foco adentro, Tab que da la vuelta y Escape que vuelve a la lista.
+  const caja = useDialogo(alVolver)
 
   const anteriores = async () => {
     const primero = datos?.mensajes[0]
@@ -122,6 +119,7 @@ export default function Conversacion({ conversacionId, profesorId = null, titulo
       className="fixed inset-0 z-[60] flex flex-col"
       style={{ backgroundColor: 'var(--color-fondo)' }}
       role="dialog" aria-modal="true" aria-labelledby="titulo-conversacion"
+      ref={caja} tabIndex={-1}
     >
       <header
         className="flex items-center gap-2 px-2 py-2.5"

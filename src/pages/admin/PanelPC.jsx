@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useAvisos } from '../../components/Avisos'
 import { useSocketEventos } from '../../hooks/useSocketEventos'
@@ -74,7 +74,10 @@ export default function PanelPC() {
   // Al volver al panel (desde la puerta, por ejemplo) se muestra al instante
   // lo último y se actualiza por detrás (utils/memoria.js).
   const [previo] = useState(() => recordado('panel'))
-  const [seccion, setSeccion]     = useState('panel')
+  // ?seccion=mensajes: el aviso de un mensaje abre directo esa sección.
+  const [params] = useSearchParams()
+  const [seccion, setSeccion]     = useState(() =>
+    SECCIONES.some(s => s.id === params.get('seccion')) ? params.get('seccion') : 'panel')
   const { no_leidos: mensajesSinLeer } = useNoLeidos()
   const [clases, setClases]       = useState(previo?.clases ?? [])
   const [horarios, setHorarios]   = useState(previo?.horarios ?? [])

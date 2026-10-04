@@ -41,6 +41,7 @@ export const obtenerPadron = async () => {
 }
 
 export const mandarLote = async (ingresos) => {
-  const res = await axios.post(`${API}/puerta/ingresos/lote`, { ingresos }, config(20000))
+  // 30 s: una tanda tarda menos de 1 s, pero Render puede estar despertando.
+  const res = await axios.post(`${API}/puerta/ingresos/lote`, { ingresos }, config(30000))
   return res.data
 }

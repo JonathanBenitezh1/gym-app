@@ -45,6 +45,9 @@ export default defineConfig({
     datosDelGimnasioEnElHtml(),
     VitePWA({
       registerType: 'autoUpdate',
+      // El registro lo hace src/utils/actualizacion.js: busca versión nueva
+      // cada hora y recarga cuando no molesta (auditoría del 04/10/2026).
+      injectRegister: false,
       // Los íconos no van al caché sin conexión: el celular los baja al
       // instalar, y con el logo metálico pesan medio mega entre todos.
       includeAssets: ['favicon.png'],

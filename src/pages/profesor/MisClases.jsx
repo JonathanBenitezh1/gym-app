@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useAvisos } from '../../components/Avisos'
 import {
@@ -35,7 +35,10 @@ export default function MisClases() {
   const { exito, error: avisarError, confirmar } = useAvisos()
   const navigate = useNavigate()
 
-  const [solapa, setSolapa]     = useState('horarios')
+  // ?solapa=mensajes: el aviso de un mensaje abre directo esa solapa.
+  const [params] = useSearchParams()
+  const [solapa, setSolapa]     = useState(() =>
+    SOLAPAS.some(s => s.id === params.get('solapa')) ? params.get('solapa') : 'horarios')
   const { no_leidos: mensajesSinLeer } = useNoLeidos()
   // Lo último, al instante (utils/memoria.js); se actualiza por detrás.
   const [horarios, setHorarios] = useState(() => recordado('profe.horarios') ?? [])

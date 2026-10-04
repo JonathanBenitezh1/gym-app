@@ -11,7 +11,11 @@
          no recién con el primer pedido: medio segundo menos en el celular. -->
     <link rel="preconnect" href="%VITE_API_URL%" crossorigin />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Barra de estado negra aparte, arriba de la app. Con "black-translucent"
+         la app quedaba debajo del reloj (sin viewport-fit=cover el encabezado
+         se tapaba) y en modo claro la letra blanca no se leía sobre el fondo
+         blanco (auditoría del 04/10/2026). -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="{{GYM_NOMBRE_CORTO}}" />
     <title>{{GYM_NOMBRE}}</title>
     <!-- Modo claro u oscuro antes de dibujar nada (public/tema.js). -->

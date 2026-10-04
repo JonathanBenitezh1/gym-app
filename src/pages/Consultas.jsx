@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useConversacionEnUrl } from '../hooks/useConversacionEnUrl'
 import { obtenerContactos } from '../services/mensajesService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import { useAvisos } from '../components/Avisos'
@@ -26,7 +26,7 @@ export default function Consultas() {
   const { error: avisarError } = useAvisos()
   const [contactos, setContactos] = useState(() => recordado('consultas') ?? [])
   const [cargando, setCargando] = useState(() => !recordado('consultas'))
-  const [params, setParams] = useSearchParams()
+  const { con, abrir: abrirEnUrl, cerrar: cerrarEnUrl } = useConversacionEnUrl()
 
   const cargar = useCallback(async () => {
     try {
@@ -43,9 +43,9 @@ export default function Consultas() {
   useEffect(() => { cargar() }, [cargar])
   useSocketEventos({ mensaje_nuevo: cargar })
 
-  const abierta = contactos.find(c => claveDe(c) === params.get('con'))
-  const abrir = (c) => setParams({ con: claveDe(c) })
-  const cerrar = useCallback(() => { setParams({}); cargar() }, [setParams, cargar])
+  const abierta = contactos.find(c => claveDe(c) === con)
+  const abrir = (c) => abrirEnUrl(claveDe(c))
+  const cerrar = useCallback(() => { cerrarEnUrl(); cargar() }, [cerrarEnUrl, cargar])
 
   return (
     <div className="min-h-screen" style={{ paddingBottom: 'calc(var(--alto-nav) + 1.5rem)' }}>
