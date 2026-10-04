@@ -5,11 +5,6 @@
  * Mostrarlas así era ilegible; acá se convierten al formato argentino.
  */
 
-const MESES = [
-  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
-]
-
 /**
  * Convierte una fecha del backend a Date, sin que el huso horario
  * la corra un día. Las fechas de reserva son días calendario, no
@@ -31,13 +26,6 @@ export function fechaCorta(valor) {
   const dd = String(f.getDate()).padStart(2, '0')
   const mm = String(f.getMonth() + 1).padStart(2, '0')
   return `${dd}/${mm}/${f.getFullYear()}`
-}
-
-/** "2026-07-20" → "20 de julio" */
-export function fechaLarga(valor) {
-  const f = aFechaLocal(valor)
-  if (!f) return ''
-  return `${f.getDate()} de ${MESES[f.getMonth()]}`
 }
 
 /** Rango de una reserva: "20/07 → 27/07" */

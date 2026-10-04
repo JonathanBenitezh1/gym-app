@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { obtenerNoLeidos } from '../services/mensajesService'
 import { useSocketEventos } from './useSocketEventos'
-import { recordado, recordar } from '../utils/memoria'
+import { recordado, recordar, pedidoReciente, anotarPedido } from '../utils/memoria'
 
 /**
  * Mensajes sin leer, para el numerito (migración 021). Se actualiza con cada
@@ -19,7 +19,9 @@ export function useNoLeidos() {
   }, [])
 
   useEffect(() => {
-    actualizar()
+    // Al montar, solo si no se pidió hace poco (utils/memoria.js): el ícono
+    // se monta de nuevo en cada pantalla. Los mensajes nuevos llegan igual.
+    if (!pedidoReciente('noLeidos')) { anotarPedido('noLeidos'); actualizar() }
     const alVolver = () => { if (document.visibilityState === 'visible') actualizar() }
     document.addEventListener('visibilitychange', alVolver)
     window.addEventListener('mensajes-leidos', actualizar)

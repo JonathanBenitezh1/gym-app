@@ -4,7 +4,7 @@ import { obtenerMisReservas } from '../services/clasesService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import { useAuth } from '../context/AuthContext'
 import { useAvisos } from './Avisos'
-import { recordado, recordar } from '../utils/memoria'
+import { recordado, recordar, pedidoReciente, anotarPedido } from '../utils/memoria'
 import { linkContactoGimnasio } from '../utils/whatsapp'
 import { hora } from '../utils/formato'
 import {
@@ -53,7 +53,13 @@ export default function NavBar({ hayBarraAccion = false }) {
     }
   }, [])
 
-  useEffect(() => { cargarPendientes() }, [cargarPendientes])
+  // Al cambiar de pantalla, solo si no se pidió hace poco (utils/memoria.js);
+  // los pagos y cancelaciones llegan igual por tiempo real.
+  useEffect(() => {
+    if (pedidoReciente('pendientes')) return
+    anotarPedido('pendientes')
+    cargarPendientes()
+  }, [cargarPendientes])
 
   useSocketEventos({
     pago_confirmado: () => {

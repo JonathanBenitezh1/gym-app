@@ -26,11 +26,6 @@ export const editarClase = async (id, datos) => {
   return res.data
 }
 
-export const eliminarClase = async (id) => {
-  const res = await axios.delete(`${API}/admin/clases/${id}`, config())
-  return res.data
-}
-
 // ─── HORARIOS ─────────────────────────────────────────
 
 export const obtenerHorariosAdmin = async () => {

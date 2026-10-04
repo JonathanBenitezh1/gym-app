@@ -95,7 +95,6 @@
 :root[data-tema='claro'] .titulo-marca {
   background-image: linear-gradient(180deg, #3a3f45 0%, #1b1d20 55%, #4b5158 100%);
 }
-:root[data-tema='claro'] .btn-secundario { color: #ffffff; }
 
 /* ─── Base ─────────────────────────────────────────────── */
 
@@ -246,10 +245,6 @@ button, a, [role="button"] {
   .btn-primario {
     background-color: var(--color-acento);
     color: var(--color-sobre-acento);
-  }
-  .btn-secundario {
-    background-color: var(--color-teal);
-    color: var(--color-texto);
   }
   .btn-contorno {
     background-color: transparent;

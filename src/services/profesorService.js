@@ -6,11 +6,6 @@ const config = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
 })
 
-export const obtenerMisClases     = async () => {
-  const res = await axios.get(`${API}/profesor/mis-clases`, config())
-  return res.data
-}
-
 export const obtenerMisHorarios   = async () => {
   const res = await axios.get(`${API}/profesor/mis-horarios`, config())
   return res.data

@@ -5,7 +5,7 @@ import { obtenerMiEspera } from '../services/clasesService'
 import { useSocketEventos } from '../hooks/useSocketEventos'
 import { IconoCampana } from './Iconos'
 import { armarAvisos } from '../utils/avisos'
-import { recordado, recordar } from '../utils/memoria'
+import { recordado, recordar, pedidoReciente, anotarPedido } from '../utils/memoria'
 import { sincronizarAvisos } from '../utils/avisosCelular'
 import { useAuth } from '../context/AuthContext'
 import AvisosCelular from './AvisosCelular'
@@ -56,6 +56,7 @@ export default function CampanaAvisos() {
 
   // Todo es secundario: lo que falla, no avisa.
   const cargar = useCallback(async () => {
+    anotarPedido('avisos')
     const [cuota, perfil, espera] = await Promise.allSettled([obtenerMiCuota(), obtenerPerfil(), obtenerMiEspera()])
     const lista = armarAvisos({
       cuota: cuota.status === 'fulfilled' ? cuota.value : null,
@@ -66,7 +67,8 @@ export default function CampanaAvisos() {
     recordar('avisos', lista)
   }, [])
 
-  useEffect(() => { cargar() }, [cargar])
+  // Al cambiar de pantalla, solo si no se pidió hace poco (utils/memoria.js).
+  useEffect(() => { if (!pedidoReciente('avisos')) cargar() }, [cargar])
   // Los avisos al celular, al día con el servidor (una vez por apertura de la app).
   useEffect(() => { if (usuario?.id) sincronizarAvisos(usuario.id) }, [usuario?.id])
   useSocketEventos({
