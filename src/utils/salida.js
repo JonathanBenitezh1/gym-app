@@ -23,7 +23,8 @@ const TEXTOS = {
   admin:            'El gimnasio cerró tu sesión. Iniciá sesión de nuevo.',
   baja:             'Tu usuario está dado de baja. Consultá en el gimnasio.',
   vencida:          'Tu sesión venció por no usar la app. Iniciá sesión de nuevo.',
-  actualizacion:    'Actualizamos la seguridad de la app. Iniciá sesión de nuevo.'
+  actualizacion:    'Actualizamos la seguridad de la app. Iniciá sesión de nuevo.',
+  eliminada:        'Tu cuenta y tus datos se eliminaron.'
 }
 
 let saliendo = false

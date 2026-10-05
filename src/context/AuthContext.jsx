@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 import socket from '../services/socket'
 import { borrarDatosDeLaPuerta } from '../utils/puertaLocal'
 import { olvidarTodo } from '../utils/memoria'
@@ -45,6 +45,20 @@ const AuthContext = createContext()
 export function AuthProvider({ children }) {
   // Si ya había un usuario guardado en localStorage, lo recuperamos
   const [usuario, setUsuario] = useState(usuarioGuardado)
+
+  // Lo dispara axiosConfig.js cuando el servidor marca términos sin aceptar.
+  useEffect(() => {
+    // Trae la versión que falta. Una respuesta lenta que salió antes de
+    // aceptar trae la misma que ya se aceptó: no vuelve a pedirla.
+    const marcar = (e) => setUsuario(u => {
+      if (!u || u.legal_pendiente || (u.legal_aceptada ?? 0) >= e.detail) return u
+      const nuevo = { ...u, legal_pendiente: true }
+      localStorage.setItem('usuario', JSON.stringify(nuevo))
+      return nuevo
+    })
+    window.addEventListener('legal-pendiente', marcar)
+    return () => window.removeEventListener('legal-pendiente', marcar)
+  }, [])
 
   const guardarSesion = (token, nuevo) => {
     const tokenCambio = localStorage.getItem('token') !== token

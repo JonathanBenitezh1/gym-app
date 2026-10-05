@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { registrarUsuario } from '../services/authService'
 import { useAuth } from '../context/AuthContext'
@@ -6,6 +6,9 @@ import { inicioDe } from '../components/RutaProtegida'
 import { IconoOjo, IconoOjoTachado } from '../components/Iconos'
 import logoGimnasio from './img/logo.webp'
 import { GIMNASIO } from '../config/gimnasio'
+import CamposLegales from '../components/CamposLegales'
+import { LEGAL_VACIO, validarLegal, legalParaEnviar } from '../utils/legal'
+import { obtenerVersionLegal } from '../services/legalService'
 
 const VACIO = { nombre: '', dni: '', telefono: '', email: '', password: '', confirmar: '' }
 
@@ -39,6 +42,11 @@ export default function Registro() {
   const [errorGeneral, setErrorGeneral] = useState('')
   const [verClave, setVerClave] = useState(false)
   const [cargando, setCargando] = useState(false)
+  // Versión vigente de los términos: null mientras se pregunta, 0 apagados.
+  const [versionLegal, setVersionLegal] = useState(null)
+  const [legal, setLegal] = useState(LEGAL_VACIO)
+
+  useEffect(() => { obtenerVersionLegal().then(setVersionLegal) }, [])
 
   const navigate = useNavigate()
   const { usuario, guardarSesion } = useAuth()
@@ -62,7 +70,7 @@ export default function Registro() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.email.trim())) e.email = 'Revisá el formato del email'
     if (datos.password.length < 8)             e.password  = 'Mínimo 8 caracteres'
     if (datos.password !== datos.confirmar)    e.confirmar = 'Las contraseñas no coinciden'
-    return e
+    return versionLegal > 0 ? { ...e, ...validarLegal(legal) } : e
   }
 
   const enviar = async (ev) => {
@@ -80,7 +88,8 @@ export default function Registro() {
         datos.email.trim(),
         datos.password,
         datos.dni.trim(),
-        datos.telefono.trim()
+        datos.telefono.trim(),
+        versionLegal > 0 ? { acepta_legal: true, ...legalParaEnviar(legal) } : {}
       )
       guardarSesion(resultado.token, resultado.usuario)
       navigate('/horarios', { replace: true })
@@ -160,6 +169,17 @@ export default function Registro() {
             autoComplete="new-password"
           />
 
+          {versionLegal > 0 && (
+            <CamposLegales
+              valor={legal}
+              errores={errores}
+              alCambiar={(v) => {
+                setLegal(v)
+                setErrores(err => ({ ...err, menor: null, tutor: null, acepta: null }))
+              }}
+            />
+          )}
+
           {errorGeneral && (
             <p
               className="rounded-lg px-3 py-2 text-sm"
@@ -170,8 +190,9 @@ export default function Registro() {
             </p>
           )}
 
-          <button type="submit" disabled={cargando} className="btn btn-primario btn-bloque mt-1">
-            {cargando ? 'Creando cuenta…' : 'Crear cuenta'}
+          {/* Hasta saber si hay que aceptar los términos, para no mandar sin ellos. */}
+          <button type="submit" disabled={cargando || versionLegal === null} className="btn btn-primario btn-bloque mt-1">
+            {cargando ? 'Creando cuenta…' : versionLegal === null ? 'Conectando…' : 'Crear cuenta'}
           </button>
         </form>
 

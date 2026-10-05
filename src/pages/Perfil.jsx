@@ -11,11 +11,13 @@ import { useSocketEventos } from '../hooks/useSocketEventos'
 import NavBar from '../components/NavBar'
 import { recordado, recordar } from '../utils/memoria'
 import Cargando from '../components/Cargando'
-import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave, IconoReloj, IconoCampana, IconoSol } from '../components/Iconos'
+import { IconoChevron, IconoPerfil, IconoPago, IconoCalendario, IconoOjo, IconoOjoTachado, IconoLlave, IconoReloj, IconoCampana, IconoSol, IconoInfo } from '../components/Iconos'
 import AvisosCelular from '../components/AvisosCelular'
 import SelectorTema from '../components/SelectorTema'
 import { precio, fechaCorta, rangoFechas, hora, fechaHora, diasCortos } from '../utils/formato'
 import { estadoApto } from '../utils/apto'
+import { eliminarMiCuenta } from '../services/legalService'
+import { salidaForzada } from '../utils/salida'
 
 const METODOS_CUOTA = {
   efectivo: 'Efectivo', transferencia: 'Transferencia', mercadopago: 'Mercado Pago', otro: 'Otro'
@@ -290,6 +292,15 @@ export default function Perfil() {
             </ul>
           )}
         </Acordeon>
+
+        {perfil?.rol === 'alumno' && (
+          <Acordeon
+            nombre="privacidad" abierta={seccion} alAlternar={alternar} animar={tocado}
+            Icono={IconoInfo} titulo="Privacidad y cuenta"
+          >
+            <SeccionPrivacidad perfil={perfil} alError={avisarError} />
+          </Acordeon>
+        )}
       </main>
 
       <NavBar />
@@ -488,6 +499,98 @@ function SeccionClave({ alExito, alError }) {
       <button onClick={enviar} disabled={guardando} className="btn btn-primario btn-bloque mt-1">
         {guardando ? 'Cambiando…' : 'Cambiar contraseña'}
       </button>
+    </div>
+  )
+}
+
+/**
+ * Los términos aceptados y "Eliminar mi cuenta" (Ley 25.326, art. 16). La
+ * eliminación es inmediata y pide la contraseña; lo que se borra y lo que
+ * queda lo explica el servidor en perfilController.eliminarCuenta.
+ */
+function SeccionPrivacidad({ perfil, alError }) {
+  const navigate = useNavigate()
+  const { confirmar } = useAvisos()
+  const [abierto, setAbierto] = useState(false)
+  const [clave, setClave] = useState('')
+  const [ver, setVer] = useState(false)
+  const [borrando, setBorrando] = useState(false)
+
+  const eliminar = async () => {
+    if (!clave) return alError('Escribí tu contraseña para confirmar')
+    const seguir = await confirmar({
+      titulo: '¿Eliminar tu cuenta?',
+      mensaje: 'Se borran tus datos y no vas a poder volver a entrar con esta cuenta. No se puede deshacer.',
+      textoConfirmar: 'Sí, eliminar',
+      textoCancelar: 'No, volver',
+      peligroso: true
+    })
+    if (!seguir) return
+    setBorrando(true)
+    try {
+      await eliminarMiCuenta(clave)
+      // Limpia el teléfono y vuelve al ingreso con el aviso.
+      salidaForzada('eliminada')
+    } catch (err) {
+      alError(err.response?.data?.error || 'No pudimos eliminar tu cuenta. Revisá tu conexión.')
+      setBorrando(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4 text-sm">
+      {perfil.legal_vigente > 0 && (
+        <div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => navigate('/terminos')} className="btn btn-contorno flex-1">Términos</button>
+            <button onClick={() => navigate('/privacidad')} className="btn btn-contorno flex-1">Privacidad</button>
+          </div>
+          {perfil.legal_aceptado_en && (
+            <p className="mt-2 text-xs" style={{ color: 'var(--color-texto-3)' }}>
+              Aceptaste la versión {perfil.legal_version} el {fechaCorta(perfil.legal_aceptado_en)}.
+            </p>
+          )}
+        </div>
+      )}
+
+      {!abierto ? (
+        <button onClick={() => setAbierto(true)} className="btn btn-peligro btn-bloque">
+          Eliminar mi cuenta
+        </button>
+      ) : (
+        <div className="aparecer flex flex-col gap-3 rounded-xl p-3" style={{ border: '1px solid var(--color-linea)' }}>
+          <p style={{ color: 'var(--color-texto-2)' }}>
+            Se borran tu foto, tu progreso, tus rutinas, tus mensajes y tus avisos, y se cancelan
+            tus reservas sin pagar. Tus pagos quedan registrados sin tu nombre, porque el gimnasio
+            tiene que guardarlos por ley.
+          </p>
+          <div>
+            <label htmlFor="e-clave" className="etiqueta-campo">Tu contraseña</label>
+            <div className="relative">
+              <input
+                id="e-clave" type={ver ? 'text' : 'password'} className="campo pr-12"
+                autoComplete="current-password" value={clave} onChange={e => setClave(e.target.value)}
+              />
+              <button
+                type="button" onClick={() => setVer(v => !v)}
+                aria-label={ver ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                className="absolute right-1 top-1/2 -translate-y-1/2 rounded-lg p-2.5 hover:bg-tinte/5"
+                style={{ color: 'var(--color-texto-3)' }}
+              >
+                {ver ? <IconoOjoTachado size={18} /> : <IconoOjo size={18} />}
+              </button>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={eliminar} disabled={borrando} className="btn btn-peligro flex-1">
+              {borrando ? 'Eliminando…' : 'Eliminar definitivamente'}
+            </button>
+            <button onClick={() => { setAbierto(false); setClave('') }} disabled={borrando} className="btn btn-contorno">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

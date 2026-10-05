@@ -39,6 +39,7 @@ const MisClases = conReintento(() => import('./pages/profesor/MisClases'))
 const Puerta    = conReintento(() => import('./pages/Puerta'))
 const Consultas = conReintento(() => import('./pages/Consultas'))
 const MensajesRecepcion = conReintento(() => import('./pages/MensajesRecepcion'))
+const Legal     = conReintento(() => import('./pages/Legal'))
 
 // Los profesionales (nutrición, kinesiología, entrenamiento personal)
 // gestionan sus clases igual que los profesores.
@@ -53,6 +54,8 @@ function App() {
           {/* Públicas */}
           <Route path="/"         element={<Login />} />
           <Route path="/registro" element={<Registro />} />
+          <Route path="/privacidad" element={<Legal cual="privacidad" />} />
+          <Route path="/terminos"   element={<Legal cual="terminos" />} />
 
           {/* Alumnos */}
           <Route path="/horarios" element={

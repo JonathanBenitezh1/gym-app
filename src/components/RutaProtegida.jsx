@@ -1,6 +1,7 @@
 import { useAuth } from '../context/AuthContext'
 import { Navigate } from 'react-router-dom'
 import CambioObligatorio from './CambioObligatorio'
+import AceptarLegal from './AceptarLegal'
 
 /** Pantalla de inicio de cada rol, después de iniciar sesión. */
 export const INICIO_POR_ROL = {
@@ -27,6 +28,12 @@ export default function RutaProtegida({ children, roles }) {
   // que elija una propia.
   if (usuario.debe_cambiar_password) {
     return <CambioObligatorio />
+  }
+
+  // Hay términos nuevos sin aceptar (lo marca el servidor: al entrar, o en
+  // cualquier respuesta si la sesión ya estaba abierta).
+  if (usuario.rol === 'alumno' && usuario.legal_pendiente) {
+    return <AceptarLegal />
   }
 
   const destino = inicioDe(usuario.rol)

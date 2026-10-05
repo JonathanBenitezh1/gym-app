@@ -24,5 +24,19 @@ export const GIMNASIO = {
   // WhatsApp del gimnasio, con característica: "3511234567". Vacío esconde el
   // botón de contacto. `VITE_WHATSAPP` en el entorno lo reemplaza sin tocar
   // este archivo.
-  whatsapp: ''
+  whatsapp: '',
+
+  // Lo que va entre corchetes en los términos y la política (src/legal/*.md).
+  // Vacío deja el corchete a la vista: hay que completarlo todo antes de
+  // prender LEGAL_VERSION en el servidor.
+  legal: {
+    'RAZÓN SOCIAL O NOMBRE DEL TITULAR': '',
+    'CUIT': '',
+    'DOMICILIO DEL GIMNASIO': '',
+    'DOMICILIO': '',
+    'EMAIL DE CONTACTO': '',
+    'NOMBRE DEL DESARROLLADOR': '',
+    'NÚMERO DE INSCRIPCIÓN': '',
+    'FECHA DE LANZAMIENTO': ''
+  }
 }

@@ -2,7 +2,15 @@ import axios from 'axios'
 import { salidaForzada } from '../utils/salida'
 
 axios.interceptors.response.use(
-  response => response,
+  response => {
+    // Términos nuevos sin aceptar, con la sesión abierta de antes: el
+    // servidor lo marca en la respuesta y AuthContext interpone la pantalla.
+    const legal = Number(response.headers?.['x-legal-pendiente'])
+    if (legal > 0) {
+      window.dispatchEvent(new CustomEvent('legal-pendiente', { detail: legal }))
+    }
+    return response
+  },
   async error => {
     const estado = error.response?.status
     const codigo = error.response?.data?.codigo

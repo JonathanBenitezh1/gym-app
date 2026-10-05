@@ -7,6 +7,7 @@ import { IconoOjo, IconoOjoTachado } from '../components/Iconos'
 import logoGimnasio from './img/logo.webp'
 import { GIMNASIO } from '../config/gimnasio'
 import { verMotivoSalida, olvidarMotivoSalida } from '../utils/salida'
+import { obtenerVersionLegal } from '../services/legalService'
 
 export default function Login() {
   const [email, setEmail]       = useState('')
@@ -17,6 +18,9 @@ export default function Login() {
   // Por qué se cerró la sesión, si no fue la persona (utils/salida.js).
   const [aviso] = useState(verMotivoSalida)
   useEffect(() => { olvidarMotivoSalida() }, [])
+  // Los links a los términos aparecen cuando el servidor los tiene prendidos.
+  const [hayLegal, setHayLegal] = useState(false)
+  useEffect(() => { obtenerVersionLegal().then(v => setHayLegal(v > 0)) }, [])
 
   const navigate = useNavigate()
   const { usuario, guardarSesion } = useAuth()
@@ -142,6 +146,14 @@ export default function Login() {
             Registrate
           </button>
         </p>
+
+        {hayLegal && (
+          <p className="mt-4 text-center text-xs" style={{ color: 'var(--color-texto-3)' }}>
+            <button onClick={() => navigate('/terminos')} className="inline-flex min-h-11 items-center px-2 underline-offset-4 hover:underline">Términos y condiciones</button>
+            {' · '}
+            <button onClick={() => navigate('/privacidad')} className="inline-flex min-h-11 items-center px-2 underline-offset-4 hover:underline">Privacidad</button>
+          </p>
+        )}
       </div>
     </div>
   )
